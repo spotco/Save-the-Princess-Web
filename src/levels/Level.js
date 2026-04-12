@@ -153,34 +153,34 @@ export default class Level {
                 else if (gp === 'up')    stolist.push(new GuardPath(3, x * 25, y * 25, gpStop));
 
                 if (this._tileProp(mapX, mapY, x, y, 'princess') === 'true') {
-                    stolist.push(new Princess(x * 25, y * 25));
+                    stolist.push(new Princess(x * 25, y * 25, this.scene));
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'cratespawn') === 'true') {
-                    stolist.push(new Crate(x * 25, y * 25));
+                    stolist.push(new Crate(x * 25, y * 25, this.scene));
                 }
 
                 const door = this._tileProp(mapX, mapY, x, y, 'door');
-                if      (door === 'closed') stolist.push(new Door(true,  x * 25, y * 25));
-                else if (door === 'open')   stolist.push(new Door(false, x * 25, y * 25));
+                if      (door === 'closed') stolist.push(new Door(true,  x * 25, y * 25, this.scene));
+                else if (door === 'open')   stolist.push(new Door(false, x * 25, y * 25, this.scene));
 
                 if (this._tileProp(mapX, mapY, x, y, 'doorbutton') === 'true') {
-                    stolist.push(new DoorButton(x * 25, y * 25));
+                    stolist.push(new DoorButton(x * 25, y * 25, this.scene));
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'key') === 'true') {
-                    stolist.push(new Key(x * 25, y * 25));
+                    stolist.push(new Key(x * 25, y * 25, this.scene));
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'keydoor') === 'true') {
-                    stolist.push(new KeyDoor(x * 25, y * 25));
+                    stolist.push(new KeyDoor(x * 25, y * 25, this.scene));
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'exit') === 'true') {
                     const dir = this._tileProp(mapX, mapY, x, y, 'direction', 'null');
-                    stolist.push(new Exit(x * 25, y * 25, dir));
+                    stolist.push(new Exit(x * 25, y * 25, dir, this.scene));
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'window') === 'true') {
-                    stolist.push(new Window(x * 25, y * 25));
+                    stolist.push(new Window(x * 25, y * 25, this.scene));
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'torch') === 'true') {
-                    stolist.push(new Torch(x * 25, y * 25));
+                    stolist.push(new Torch(x * 25, y * 25, this.scene));
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'tracker') === 'true') {
                     stolist.push(new Tracker());

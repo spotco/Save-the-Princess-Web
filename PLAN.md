@@ -227,49 +227,49 @@ Mirrors `KnightBoss.java`.
 ### 3g. Other/ objects
 
 #### Door.js (type 51)
-- [ ] Fields: `isClosed`, `hasAddedRect`
-- [ ] `update(game)`: on first frame if `isClosed`, add `hitbox` rect to `staticsList`
-- [ ] `openOrClose(game)`: toggle `isClosed`, add/remove rect from `staticsList`
-- [ ] `render()`: draw bars.png if `isClosed`
+- [x] Fields: `isClosed`, `hasAddedRect`
+- [x] `update(game)`: on first frame if `isClosed`, add `hitbox` rect to `staticsList`
+- [x] `openOrClose(game)`: toggle `isClosed`, add/remove rect from `staticsList`
+- [x] `render()`: draw bars.png if `isClosed`
 
 #### DoorButton.js
-- [ ] Fields: `isStep` (prevents re-trigger)
-- [ ] Hitbox: 12×10 at (x+6, y+6)
-- [ ] `update(game)`: check player overlap OR any non-fireball enemy overlap
-  - [ ] On first step: set `isStep=true`, find all Door objects (type 51), call `door.openOrClose()` on each
-- [ ] `render()`: draw pressed/unpressed image
+- [x] Fields: `isStep` (prevents re-trigger)
+- [x] Hitbox: 12×10 at (x+6, y+6)
+- [x] `update(game)`: check player overlap OR any non-fireball enemy overlap
+  - [x] On first step: set `isStep=true`, find all Door objects (type 51), call `door.openOrClose()` on each
+- [x] `render()`: draw pressed/unpressed image
 
 #### Key.js
-- [ ] 6-frame rotation animation (200ms/frame)
-- [ ] Hitbox: 9×18
-- [ ] `update(game)`: if player overlaps and `!player.hasKey` → set `player.hasKey=true`, play `getkey` SFX, remove self
+- [x] 6-frame rotation animation (200ms/frame)
+- [x] Hitbox: 9×18
+- [x] `update(game)`: if player overlaps and `!player.hasKey` → set `player.hasKey=true`, play `getkey` SFX, remove self
 
 #### KeyDoor.js
-- [ ] Fields: `active`, `hasAddedRect`
-- [ ] Hitbox: 27×27 (oversized for detection)
-- [ ] `update(game)`: add static on first frame if `active`; if player overlaps with key → call `removeme()`
-- [ ] `removeme(game)`: remove static, set `active=false`, remove self from objectList, play `unlockdoor` SFX
-- [ ] `render()`: draw keydoor.png if `active`
+- [x] Fields: `active`, `hasAddedRect`
+- [x] Hitbox: 27×27 (oversized for detection)
+- [x] `update(game)`: add static on first frame if `active`; if player overlaps with key → call `removeme()`
+- [x] `removeme(game)`: remove static, set `active=false`, remove self from objectList, play `unlockdoor` SFX
+- [x] `render()`: draw keydoor.png if `active`
 
 #### Exit.js
-- [ ] Fields: `direction` ("up"/"down"/"left"/"right")
-- [ ] Hitbox: 25×8 (horizontal exits) or 8×25 (vertical exits)
-- [ ] `update(game)`: if player overlaps hitbox:
-  - [ ] Teleport player to opposite edge
-  - [ ] Update `game.locationX` / `game.locationY`
-  - [ ] Call `game.changeloc()`
-- [ ] Direction logic:
+- [x] Fields: `direction` ("up"/"down"/"left"/"right")
+- [x] Hitbox: 25×8 (horizontal exits) or 8×25 (vertical exits)
+- [x] `update(game)`: if player overlaps hitbox:
+  - [x] Teleport player to opposite edge
+  - [x] Update `game.locationX` / `game.locationY`
+  - [x] Call `game.changeloc()`
+- [x] Direction logic:
   - up → `locationY++`, player Y = 591
   - down → `locationY--`, player Y = 9
   - left → `locationX--`, player X = 591
   - right → `locationX++`, player X = 9
-- [ ] `render()`: draw exit pointer arrow (25 frames on, 25 frames off per 50-frame cycle)
+- [x] `render()`: draw exit pointer arrow (25 frames on, 25 frames off per 50-frame cycle)
 
 #### GuardPath.js (type 99)
-- [ ] Fields: `orientation`, `isStop`
-- [ ] Hitbox: 25×25 (one tile)
-- [ ] No render (invisible waypoint)
-- [ ] Data only — Guard reads these in `insidePathChangeSq()`
+- [x] Fields: `orientation`, `isStop`
+- [x] Hitbox: 25×25 (one tile)
+- [x] No render (invisible waypoint)
+- [x] Data only — Guard reads these in `insidePathChangeSq()`
 
 #### Crate.js
 - [ ] Fields: `hitbox` (20×20), push edge rects (pushleft/right/up/down, 2–3px wide)
@@ -437,3 +437,5 @@ Phase 3g: interactive objects — Door, DoorButton, Key, KeyDoor, Exit, Crate, P
 
 **Instructions for Claude**:  
 Always check this file before starting work. Work on one item at a time. After completing or making progress on a task, update the checkboxes, move items between sections if needed, and keep the phase and milestone accurate.
+
+Update 2026-04-12: Fixed `Level.createObjects()` to pass `this.scene` into interactive object constructors that create Phaser display objects immediately. This resolves the `Torch.js:16` `scene.add` crash and prevents the same failure in `Window`, `Door`, `DoorButton`, `Key`, `KeyDoor`, `Exit`, `Crate`, and `Princess`.
