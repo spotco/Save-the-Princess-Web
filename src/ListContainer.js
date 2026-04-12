@@ -1,6 +1,6 @@
 // Mirrors ListContainer.java
 
-class ListContainer {
+export default class ListContainer {
     constructor() {
         this.staticslist = [];
         this.enemylist = [];

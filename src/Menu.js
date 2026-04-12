@@ -1,6 +1,8 @@
 // Menu.js — title screen and level loader
 // Mirrors Menu.java
 
+import TimerCounter from './TimerCounter.js';
+
 export default class Menu {
     constructor(scene, sound, save) {
         this.scene = scene;
@@ -63,6 +65,7 @@ export default class Menu {
 
             if (K(k.space) || K(k.enter)) {
                 this.sound.sfx('menuchange');
+                // TODO Phase 4b: trigger TitleScreenAnimation here instead of going straight to loader
                 this._switchToLoader();
             }
 

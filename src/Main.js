@@ -1,6 +1,30 @@
 // Main.js — Boot, config, and scene management
 // Mirrors the role of STPGame.java / STPView.java in the original
 
+import SoundManager from './SoundManager.js';
+import SaveReader   from './SaveReader.js';
+import Menu         from './Menu.js';
+import Level1       from './levels/Level1.js';
+import Level2       from './levels/Level2.js';
+import Level3       from './levels/Level3.js';
+import Level4       from './levels/Level4.js';
+import Level5       from './levels/Level5.js';
+import Level6       from './levels/Level6.js';
+
+// Factory: instantiate the correct Level subclass by name.
+// Mirrors the switch in STPView.java that selects the level class.
+function createLevel(scene, levelName) {
+    switch (levelName) {
+        case 'Level1': return new Level1(scene);
+        case 'Level2': return new Level2(scene);
+        case 'Level3': return new Level3(scene);
+        case 'Level4': return new Level4(scene);
+        case 'Level5': return new Level5(scene);
+        case 'Level6': return new Level6(scene);
+        default:       return new Level1(scene);
+    }
+}
+
 // BootScene: preloads all assets, shows loading bar, then starts MenuScene.
 // Mirrors the deferred-loading sequence in STPView.java.
 class BootScene extends Phaser.Scene {
@@ -95,6 +119,8 @@ class BootScene extends Phaser.Scene {
         this.load.image('loader',        'img/menu/loader.png');
         this.load.image('loadercursor',  'img/menu/loadercursor.png');
         this.load.image('menunew',       'img/menu/menunew.png');
+        this.load.image('space2start',   'img/menu/space2start.png');
+        this.load.image('timesmenu',     'img/menu/timesmenu.png');
         this.load.image('CAUGHT',        'img/menu/CAUGHT.png');
         this.load.image('OUCH',          'img/menu/OUCH.png');
         this.load.image('dogkiller',     'img/menu/dogkiller.png');
@@ -240,31 +266,40 @@ class BootScene extends Phaser.Scene {
 }
 
 // MenuScene — title screen and level loader.
-// Placeholder: actual logic implemented in Menu.js (Phase 1f).
+// Delegates to Menu.js (mirrors Menu.java).
 class MenuScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MenuScene' });
     }
 
     create() {
-        // TODO Phase 1f: full menu logic from Menu.java
-        this.add.text(200, 300, 'SAVE THE PRINCESS\n\n[Phase 1f: Menu — TODO]', {
-            fontFamily: 'monospace',
-            fontSize: '16px',
-            color: '#ffffff'
-        });
+        this.soundManager = new SoundManager(this);
+        this.saveReader   = new SaveReader();
+        this.menu         = new Menu(this, this.soundManager, this.saveReader);
+        this.menu.create();
+        this.soundManager.play('menu1');
+    }
+
+    update() {
+        this.menu.update();
     }
 }
 
 // GameScene — main game loop.
-// Placeholder: actual logic implemented in STPView.js (Phase 2d).
+// Delegates to STPView.js (Phase 2d). Level is selected via scene data { levelName }.
 class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
     }
 
     create() {
-        // TODO Phase 2d: STPView.java port
+        const levelName = this.scene.settings.data && this.scene.settings.data.levelName
+            ? this.scene.settings.data.levelName
+            : 'Level1';
+        // TODO Phase 2d: instantiate STPView with createLevel(this, levelName) and run game loop
+        this.add.text(10, 10, 'GameScene: ' + levelName + '\n[Phase 2d: STPView — TODO]', {
+            fontFamily: 'monospace', fontSize: '14px', color: '#ffffff'
+        });
     }
 
     update(time, delta) {

@@ -1,7 +1,7 @@
 // Mirrors SaveReader.java
 // Replaces file-based save.dat with localStorage (key: "stpsave")
 
-class SaveReader {
+export default class SaveReader {
     constructor() {
         this.levellist = ['Level1', 'Level2', 'Level3', 'Level4', 'Level5', 'Level6', 'End'];
         this.clvl = 0;

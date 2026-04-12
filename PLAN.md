@@ -85,12 +85,12 @@ Mirrors `Menu.java`. **Module written but NOT wired up — see "Known Wiring Gap
   - [x] Load Game → `save.loadGame()` → start saved level
   - [x] ESC goes back from loader to menu image
 - [x] `menuchange` SFX on cursor move
-- [ ] **Integration (blockers — do these before Phase 2):**
-  - [ ] Convert `Main.js` to use ES module imports (currently `type="module"` in index.html but Main.js has zero `import` statements, so nothing is actually wired)
-  - [ ] Import `Menu` into `MenuScene` and instantiate it in `create()` / call `update()` in the scene loop; remove the "Phase 1f: Menu — TODO" placeholder text
-  - [ ] Add missing `import TimerCounter from './TimerCounter.js';` to `Menu.js` (line 15 `new TimerCounter(null)` will throw ReferenceError at runtime)
-  - [ ] Add missing preloads in `BootScene`: `space2start` and `timesmenu` image keys are referenced by `Menu.js` but not loaded
-  - [ ] Verify `loadercursor`, `loader` image keys are loaded in BootScene (spot-check while adding the above)
+- [x] **Integration:**
+  - [x] Added `import SoundManager`, `SaveReader`, `Menu` to `Main.js`
+  - [x] Added `export default` to `SaveReader.js` and `ListContainer.js` (were missing)
+  - [x] Added `import TimerCounter` to `Menu.js` (was missing, caused ReferenceError)
+  - [x] Added `space2start` and `timesmenu` preloads to `BootScene`
+  - [x] Replaced placeholder `MenuScene` class with real implementation that instantiates `Menu`, calls `menu.create()` / `menu.update()`, starts music
   - [ ] Manually test menu flow via `python -m http.server 8000`: title → loader → new game / load / times / ESC back
 
 ---
@@ -99,44 +99,29 @@ Mirrors `Menu.java`. **Module written but NOT wired up — see "Known Wiring Gap
 
 ### 2a. Level.js base class
 Mirrors `Level.java`.
-- [ ] `constructor(scene)` — set scene ref, init screen grid
-- [ ] `init()` — load TMX files into `storedMap[x][y]` array
-  - [ ] Support 1×1, 1×3, 2×2 screen grids (see level configs below)
-  - [ ] Parse TMX via Phaser's tilemap loader
-- [ ] `createMasterList()` — for each screen, call create* methods
-- [ ] `createStatics(mapX, mapY)` — iterate tiles, collect tiles with `wall=true` property → `Rectangle` array
-  - [ ] Each tile is 25×25 pixels; static rect = `{x: tileCol*25, y: tileRow*25, w:25, h:25}`
-- [ ] `createEnemies(mapX, mapY)` — parse tile properties:
-  - [ ] `dog` → new Dog(tileX, tileY, orientation)
-  - [ ] `guardspawn` → new Guard(tileX, tileY, orientation)
-  - [ ] `wizard` → new Wizard(tileX, tileY, orientation)
-  - [ ] `knightboss` → new KnightBoss(tileX, tileY)
-- [ ] `createObjects(mapX, mapY)` — parse tile properties:
-  - [ ] `player` → record player spawn (x, y)
-  - [ ] `princess` → new Princess(tileX, tileY)
-  - [ ] `cratespawn` → new Crate(tileX, tileY)
-  - [ ] `door` → new Door(tileX, tileY)
-  - [ ] `doorbutton` → new DoorButton(tileX, tileY)
-  - [ ] `key` → new Key(tileX, tileY)
-  - [ ] `keydoor` → new KeyDoor(tileX, tileY)
-  - [ ] `exit` → new Exit(tileX, tileY, direction)
-  - [ ] `guardpoint` → new GuardPath(tileX, tileY, orientation, isStop)
-  - [ ] `window` → new Window(tileX, tileY)
-  - [ ] `torch` → new Torch(tileX, tileY)
-  - [ ] `tracker` → new Tracker(tileX, tileY)
-  - [ ] `bossactivate` → new KnightBossInitialActivate(tileX, tileY)
-  - [ ] `bossactivatespawn` → new KnightBossSpawn(tileX, tileY)
-  - [ ] `final` → new FinalCutscene(tileX, tileY)
-- [ ] `getActiveList(x, y)` → return `masterList[x][y]` (ListContainer)
-- [ ] `mapsong` property → music ID to play on load
+- [x] `constructor(scene)` — set scene ref, init screen grid
+- [x] `async init()` — TMX files parsed via `_parseTMXInto(cacheKey, x, y)` in subclasses
+  - [x] TMX data read from Phaser XML cache (`scene.cache.xml.get(key)`)
+  - [x] Tile properties parsed from `<tileset><tile>` elements
+  - [x] Layer data decoded: base64+gzip → uint32 GID array via `DecompressionStream`
+- [x] `createMasterList(sx, sy)` — for each screen, builds `masterList[x][y]` (ListContainer)
+- [x] `createStatics(mapX, mapY)` — `{x,y,width:25,height:25}` rects for `wall=true` tiles
+- [x] `createEnemies(mapX, mapY)` — Dog, Guard, Wizard, KnightBoss
+- [x] `createObjects(mapX, mapY)` — all interactive objects (GuardPath, Princess, Crate, Door, DoorButton, Key, KeyDoor, Exit, Window, Torch, Tracker, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene)
+- [x] `createPlayer(mapX, mapY)` → `{x, y}` spawn (separate from createObjects, mirrors Java)
+- [x] `getActiveList(x, y)` → `masterList[x][y]`
+- [x] `mapsong` property set in each subclass
+- Note: Level6 mapsong is 'main1' (matches Java source); boss music starts via KnightBossInitAnimation
 
 ### 2b. Level1–Level6 subclasses
-- [ ] Level1.js: 1×1, `data/level1.tmx`, music: main1, desc: "why are there so many dogs"
-- [ ] Level2.js: 1×1, `data/level2.tmx`, music: main1, desc: "buttons and doors"
-- [ ] Level3.js: 1×1, `data/level3.tmx`, music: main1, desc: "your friendly introduction to crates"
-- [ ] Level4.js: 2×2, `data/level4(X-Y).tmx` grid, music: main1, desc: "maximum security"
-- [ ] Level5.js: 1×3, `data/level5(0-Y).tmx` vertical stack, music: main1, desc: "are u a wizard"
-- [ ] Level6.js: 2×2, `data/level6(X-Y).tmx` grid, music: boss (not main1), desc: "1v1 me bicth anytiem"
+- [x] Level1.js: 1×1, `data/level1.tmx`, music: main1
+- [x] Level2.js: 1×1, `data/level2.tmx`, music: main1
+- [x] Level3.js: 1×1, `data/level3.tmx`, music: main1
+- [x] Level4.js: 2×2, `data/level4(X-Y).tmx` grid, music: main1
+- [x] Level5.js: 1×3, `data/level5(0-Y).tmx` vertical stack, music: main1
+- [x] Level6.js: 2×2, `data/level6(X-Y).tmx` grid, music: main1
+- [x] `createLevel(scene, levelName)` factory function in Main.js
+- [x] All enemy/other placeholder files given `export default class` stubs so imports resolve
 
 ### 2c. Player.js
 Mirrors `Player.java`.
@@ -450,22 +435,17 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 1f — Menu integration / wiring.** All Phase 1 modules (Main, SoundManager, TimerCounter, SaveReader, ListContainer, Menu) exist as standalone files, but `Main.js` does not yet `import` any of them, so at runtime only BootScene actually runs. The `MenuScene` class in `Main.js` is still a placeholder showing "Phase 1f: Menu — TODO".
+**Phase 2a/2b complete.** Level.js base class and Level1–6 subclasses implemented. TMX parsing uses DecompressionStream (gzip). All enemy/other files have export stubs. `createLevel()` factory in Main.js. GameScene shows level name placeholder.
 
 ## Next Milestone
-Wire `Menu.js` into `MenuScene` (see the "Integration (blockers)" checklist under 1f). Once the menu flow runs end-to-end in the browser, begin Phase 2a (Level.js base class).
+Phase 2c (Player.js) then Phase 2d (STPView.js / GameScene).
 
 ---
 
-## Known Wiring Gaps (read before editing)
+## Known Notes (read before editing)
 
-These are issues discovered 2026-04-12 that are not obvious from reading individual files in isolation:
-
-1. **Main.js uses no ES module imports.** It's loaded via `<script type="module">` in `index.html`, but the file itself defines `BootScene`, `MenuScene`, `GameScene`, `AnimationScene` as plain classes with no `import` statements. Every other file in `src/` uses `export default`. Before wiring Phase 1f (or any later phase) you must add imports to Main.js — e.g. `import Menu from './Menu.js';`, `import SoundManager from './SoundManager.js';`, etc.
-2. **Menu.js has a missing import.** Line 15 does `new TimerCounter(null)` without importing `TimerCounter`. This will throw `ReferenceError` the moment `MenuScene` constructs a `Menu`. Fix: add `import TimerCounter from './TimerCounter.js';` at the top.
-3. **BootScene is missing two image preloads** used by Menu.js: `space2start` and `timesmenu`. Add them to `BootScene.preload()` alongside the existing `menunew` load. Verify the actual filenames against `img/menu/` — the original Java uses `space2start.png` and `timesmenu.png`.
-4. **Placeholder `MenuScene` class in Main.js** (around line 244) must be replaced with one that instantiates `Menu` and forwards `create()` / `update()` calls. The current placeholder just draws a debug string.
-5. **Title screen animation is not wired.** `Menu.java`'s real flow is menu-image → `TitleScreenAnimation` → loader. The current `Menu.js` skips the animation and goes directly to the loader. This is acceptable for Phase 1f (animations are Phase 4b) but leave a `// TODO Phase 4b` marker when wiring.
+1. **Title screen animation is not wired.** `Menu.java`'s real flow is menu-image → `TitleScreenAnimation` → loader. The current `Menu.js` skips the animation and goes directly to the loader. This is intentional until Phase 4b. A `// TODO Phase 4b` comment marks the spot in `Menu.js`.
+2. **GameScene is still a placeholder.** `Menu._loadGame()` calls `this.scene.scene.start('GameScene', { levelName })`. `GameScene` will receive the level name via `this.scene.settings.data.levelName` in its `create()`. Phase 2d implements the real game loop.
 
 ---
 
