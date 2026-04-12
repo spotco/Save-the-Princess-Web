@@ -65,6 +65,10 @@ export default class STPView {
     // Load lists and rebuild tilemap for the current locationx/locationy.
     // Mirrors STPGame.changeloc().
     changeloc() {
+        // Hide sprites from the outgoing screen's entities
+        for (const e of this.enemyList)  { if (e.hide) e.hide(); }
+        for (const o of this.objectList) { if (o.hide) o.hide(); }
+
         const lc = this.level.masterList[this.level.locationx][this.level.locationy];
         this.staticsList = lc.staticslist;
         this.enemyList   = lc.enemylist;

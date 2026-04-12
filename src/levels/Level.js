@@ -109,28 +109,28 @@ export default class Level {
 
                 // Dogs
                 const dog = this._tileProp(mapX, mapY, x, y, 'dog');
-                if      (dog === 'down')  stolist.push(new Dog(0, x * 25, y * 25));
-                else if (dog === 'right') stolist.push(new Dog(1, x * 25, y * 25));
-                else if (dog === 'left')  stolist.push(new Dog(2, x * 25, y * 25));
-                else if (dog === 'up')    stolist.push(new Dog(3, x * 25, y * 25));
+                if      (dog === 'down')  stolist.push(new Dog(0, x * 25, y * 25, this.scene));
+                else if (dog === 'right') stolist.push(new Dog(1, x * 25, y * 25, this.scene));
+                else if (dog === 'left')  stolist.push(new Dog(2, x * 25, y * 25, this.scene));
+                else if (dog === 'up')    stolist.push(new Dog(3, x * 25, y * 25, this.scene));
 
                 // Guards
                 const guard = this._tileProp(mapX, mapY, x, y, 'guardspawn');
-                if      (guard === 'down')  stolist.push(new Guard(0, x * 25, y * 25));
-                else if (guard === 'right') stolist.push(new Guard(1, x * 25, y * 25));
-                else if (guard === 'left')  stolist.push(new Guard(2, x * 25, y * 25));
-                else if (guard === 'up')    stolist.push(new Guard(3, x * 25, y * 25));
+                if      (guard === 'down')  stolist.push(new Guard(0, x * 25, y * 25, this.scene));
+                else if (guard === 'right') stolist.push(new Guard(1, x * 25, y * 25, this.scene));
+                else if (guard === 'left')  stolist.push(new Guard(2, x * 25, y * 25, this.scene));
+                else if (guard === 'up')    stolist.push(new Guard(3, x * 25, y * 25, this.scene));
 
                 // Wizards
                 const wizard = this._tileProp(mapX, mapY, x, y, 'wizard');
-                if      (wizard === 'down')  stolist.push(new Wizard(x * 25, y * 25, 0));
-                else if (wizard === 'right') stolist.push(new Wizard(x * 25, y * 25, 1));
-                else if (wizard === 'left')  stolist.push(new Wizard(x * 25, y * 25, 2));
-                else if (wizard === 'up')    stolist.push(new Wizard(x * 25, y * 25, 3));
+                if      (wizard === 'down')  stolist.push(new Wizard(x * 25, y * 25, 0, this.scene));
+                else if (wizard === 'right') stolist.push(new Wizard(x * 25, y * 25, 1, this.scene));
+                else if (wizard === 'left')  stolist.push(new Wizard(x * 25, y * 25, 2, this.scene));
+                else if (wizard === 'up')    stolist.push(new Wizard(x * 25, y * 25, 3, this.scene));
 
                 // Knight boss
                 if (this._tileProp(mapX, mapY, x, y, 'knightboss') === 'true') {
-                    stolist.push(new KnightBoss(x * 25, y * 25, x, y, false));
+                    stolist.push(new KnightBoss(x * 25, y * 25, x, y, false, this.scene));
                 }
             }
         }

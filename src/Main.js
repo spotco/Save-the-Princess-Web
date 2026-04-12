@@ -134,6 +134,7 @@ class BootScene extends Phaser.Scene {
         this.load.image('guydead',       'img/menu/guydead.png');
         this.load.image('heart',         'img/menu/heart.png');
         this.load.image('knightkiller',  'img/menu/knightkiller.png');
+        this.load.image('wizardkiller',  'img/menu/wizardkiller.png');
         this.load.image('fireballkiller','img/menu/fireballkiller.png');
         this.load.image('gatekiller',    'img/menu/gatekiller.png');
         this.load.image('notice_menu',   'img/menu/notice.png');

@@ -148,69 +148,68 @@ Mirrors `STPGame.java`.
 
 ### 3a. Enemy.js base class
 Mirrors `Enemy.java`.
-- [ ] Fields: `x, y`, `hitbox` (Rectangle), `img` (current animation key)
-- [ ] `los(direction, game)` — expand rectangle from position in given direction until:
+- [x] Fields: `x, y`, `hitbox` (Rectangle), `sprite`, `emoteSprite`, `killerimg`
+- [x] `los(direction, game)` — expand rectangle from position in given direction until:
   - Hits a static → stop, return false
   - Contains player hitbox → return true
-- [ ] `viewboxStaticHit(viewbox, game)` — test viewbox against all statics
-- [ ] `render(scene)` — draw current animation at (x, y)
-- [ ] `update(game)` — abstract (override in subclass)
+- [x] `viewboxstatichit(viewbox, staticslist)` — returns false if any static intersects (mirrors Java inverted naming)
+- [x] `render()` — setVisible(true), setPosition
+- [x] `hide()` — setVisible(false) on sprite + emoteSprite (called on screen transition)
+- [x] `update(game)` — no-op base, override in subclass
 
 ### 3b. Dog.js
 Mirrors `Dog.java`.
-- [ ] Fields: `orientation` (0=down,1=right,2=left,3=up), `notice`, `noticeReturn`, `counter`
-- [ ] Animations: dogdown/right/left/up (idle, 1 frame), dog walk variants
-- [ ] `update(game)`:
-  - [ ] Increment `counter`; every 5 frames, check LOS in `orientation` direction
-  - [ ] LOS hit → set `notice=true`, play `dogbark` SFX once
-  - [ ] `notice` state: move 2px/frame in `orientation`
-  - [ ] If no floor under dog (not in staticsList) → set `noticeReturn=true`
-  - [ ] `noticeReturn`: move 1px/frame backward until back on floor
-  - [ ] Display notice emote while `notice` is active
-- [ ] `centerme()` — offset position based on orientation for correct sprite alignment
+- [x] Fields: `orientation` (0=down,1=right,2=left,3=up), `notice`, `noticereturn`, `counter`
+- [x] `imageinit(scene)` — register shared Phaser animations (once), create sprite + emoteSprite initially hidden
+- [x] `update(game)`:
+  - [x] Increment `counter`; every 5 frames, check LOS in `orientation` direction
+  - [x] LOS hit → set `notice=true`, play `dogbark` SFX once, set walk animation
+  - [x] `notice` state: move 2px/frame in `orientation` via `_noticeRun()`
+  - [x] If dog hitbox hits a static while chasing → switch to `noticereturn`, reverse 3 steps, set return animation
+  - [x] `noticereturn`: move 1px/frame backward via `_noticeReturnRun()`; if hits static, stop and stand
+  - [x] Display notice emote while `notice` is active
+- [x] `_centerme()` — offset position based on orientation for correct sprite alignment
+- [x] Level.js updated to pass `this.scene` to Dog (and Guard/Wizard/KnightBoss) constructors
+- [x] STPView.changeloc() updated to hide outgoing screen entities before switching
 
 ### 3c. Guard.js
 Mirrors `Guard.java`.
-- [ ] Fields: `orientation`, `chase`, `questionCounter`, `stuckCounter`, `paths` (GuardPath refs)
-- [ ] Animations: 8 directional stand + 8 directional walk (2 frames each) + search
-- [ ] Emote images: notice.png, question.png, help.png
-- [ ] `update(game)`:
-  - [ ] Every 10 frames: check LOS → if hit, set `chase=true`, play `hey` SFX once
-  - [ ] `chase` state:
-    - [ ] Move 2px/frame in orientation toward player
-    - [ ] `stuckCounter`: increment each frame not on floor; if >3 → enter question state
-    - [ ] While chasing, recheck LOS; if lost → increment question timer
-  - [ ] Question state:
-    - [ ] Display help emote
-    - [ ] Rotate through all 4 directions checking LOS (500 frames total)
-    - [ ] If LOS found → re-enter chase; otherwise → return to patrol
-  - [ ] Patrol state:
-    - [ ] `normalupdate()`: move 1px/frame in `orientation`
-    - [ ] `insidePathChangeSq()`: if fully inside a GuardPath tile, change orientation (and stop if `isStop`)
-    - [ ] If hits wall (static) → reverse orientation
-- [ ] Display appropriate emote (notice on first sight, question when searching)
+- [x] Fields: `orientation`, `chase`, `questioncounter`, `stuckcounter`, `counter`
+- [x] Animations: 4 stand + 4 walk (walkdown/up 4-frame, walkleft/right 2-frame) + search (4-frame cycle)
+- [x] Emote sprites: notice (chasing), question (searching), help (stuck)
+- [x] `update(game)`:
+  - [x] Every 10 frames: check LOS in orientation → if hit and not chasing, set `chase=true`, play `hey` SFX
+  - [x] `chase` state: move 1px or 2px/frame (counter%3 determines); if hits wall → questioncounter=100, step back 4px, chase=false, stuckcounter++
+  - [x] `stuckcounter > 3 && in wall` → freeze (stuck guard overrides all)
+  - [x] Question state (questioncounter > 0): scan all 4 directions for LOS each frame; questioncounter decrements in render(); reverse orientation on last 2 frames
+  - [x] Patrol hit wall: step back 1px, rotate orientation (0→2,1→0,2→3,3→1), stuckcounter++
+  - [x] Normal patrol: `_insidepathchangesq()` checks GuardPath tiles (type 99), changes orientation; move 1px if no stop flag
+- [x] GuardPath.js: implemented with `getType()=99`, `getOrientation()`, `isStop`, 25×25 hitbox
 
 ### 3d. Wizard.js
 Mirrors `Wizard.java`.
-- [ ] Fields: `orientation`, `fireballTimer`, `isFiring`
-- [ ] Animations: stand and shoot variants for all 4 directions (2 frames each)
-- [ ] `update(game)`:
-  - [ ] Check LOS in `orientation` direction every frame
-  - [ ] If LOS: set `isFiring=true`, increment `fireballTimer`
-  - [ ] Every 35 frames while firing: spawn `new Fireball(x+7, y+7, orientation)`, add to `game.enemyList`
-  - [ ] If no LOS: set `isFiring=false`, reset `fireballTimer`
-- [ ] `imgUpdate()` — switch animation: if `isFiring` use shoot anim, else stand anim
+- [x] Fields: `orientation`, `fireballtimer`, `isfiring`
+- [x] Animations: stand and shoot variants for all 4 directions (stand: 1 frame static; shoot: 2 frames at 2.5fps)
+- [x] Also registers fireball animations (`fb_down/up/left/right`, 3 frames at 5fps) so Fireball can use them
+- [x] `update(game)`:
+  - [x] Check LOS in `orientation` direction every frame
+  - [x] If LOS: set `isfiring=true`, increment `fireballtimer`; if > 35 → play `fireball` SFX, spawn Fireball, reset to 0
+  - [x] If no LOS: set `isfiring=false`
+- [x] `imgupdate()` — switch animation: if `isfiring` use shoot anim, else stand anim
+- [x] Emote (notice.png) shown at (x+8, y-10) while isfiring
 
 ### 3e. Fireball.js
 Mirrors `Fireball.java`.
-- [ ] Fields: `orientation`, `extraSpdCounter`
-- [ ] Hitbox: 9×9 at (x+2, y+2)
-- [ ] Animations: directional fireball sprites from `art/wizard/fb/`
-- [ ] `update(game)`:
-  - [ ] Move 1px/frame in `orientation`
-  - [ ] `extraSpdCounter++`; if `extraSpdCounter % 3 === 0` → move 1 extra px
-  - [ ] Check hitbox against staticsList → if hit, remove self from `game.enemyList`
-- [ ] Does NOT trigger death (player can walk through? — check original — actually it does kill; it's in enemyList so hitbox check in STPView kills player)
+- [x] Fields: `orientation`, `_extraspdcounter`
+- [x] `getType()` = 27
+- [x] Hitbox: 9×9 at (x+2, y+2)
+- [x] Animations: directional fireball sprites (`fb_down/up/left/right`) registered by Wizard
+- [x] `killerimg` = 'fireballkiller'
+- [x] `update(game)`:
+  - [x] Move 1px/frame in `orientation`; extra 1px every 3rd frame (`_extraspdcounter > 2`)
+  - [x] `_hitboxupdate()` after each move
+  - [x] If hitbox hits a static → destroy sprite, splice self from `game.enemyList`
+- [x] Kills player via enemyList hitbox check in STPView (same as all enemies)
 
 ### 3f. KnightBoss.js
 Mirrors `KnightBoss.java`.
@@ -409,10 +408,10 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 2 complete.** Player, Level, STPView all implemented. The game loop runs: TMX loads, tilemap renders, player moves with collision, timer ticks. Enemies/objects are stubs only — no AI, no interactions yet.
+**Phase 3 in progress.** Enemy base (3a), Dog (3b), Guard (3c), GuardPath (3g partial), Wizard (3d), Fireball (3e) all implemented. Next: KnightBoss (3f) and the interactive objects in 3g.
 
 ## Next Milestone
-Phase 3: implement enemy AI and interactive objects, starting with 3a (Enemy.js base) then 3b (Dog.js).
+Phase 3f: KnightBoss.js — breadcrumb-heatmap pathfinding via Tracker.
 
 ---
 
