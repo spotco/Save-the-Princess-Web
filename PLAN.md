@@ -40,11 +40,11 @@ Mirrors `STPGame.java` / `STPView.java`.
 
 ### 1b. SoundManager.js
 Mirrors `SoundManager.java`.
-- [ ] `play(id)` — stop current music, start looping new track
-- [ ] `stop()` — stop current music
-- [ ] `sfx(id)` — play one-shot sound effect
-- [ ] Music IDs: menu1, main1, main2, boss, wind, credits
-- [ ] SFX IDs: win1, die1, dogbark, menuchange, hey, gate, getkey, unlockdoor, fireball, standandfight
+- [x] `play(id)` — stop current music, start looping new track
+- [x] `stop()` — stop current music
+- [x] `sfx(id)` — play one-shot sound effect
+- [x] Music IDs: menu1, main1, boss, wind, credits (main2 not present in assets)
+- [x] SFX IDs: win1, die1, dogbark, menuchange, hey, gate, getkey, unlockdoor, fireball, standandfight
 
 ### 1c. TimerCounter.js
 Mirrors `TimerCounter.java`.
