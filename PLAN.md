@@ -280,17 +280,17 @@ Mirrors `KnightBoss.java`.
 - [x] `render()`: draw crate.png
 
 #### Princess.js (type 23)
-- [ ] 2-frame standing animation (800ms/frame)
-- [ ] `hit(game)`: trigger WinAnimation via AnimationManager
-- [ ] `render()`: draw animation
+- [x] 2-frame standing animation (800ms/frame)
+- [x] `hit(game)`: trigger WinAnimation via AnimationManager
+- [x] `render()`: draw animation
 
 #### Torch.js
-- [ ] 6-frame animation (200ms/frame) from `art/tiles/torch/`
-- [ ] No collision (hitbox 0×0)
+- [x] 6-frame animation (200ms/frame) from `art/tiles/torch/`
+- [x] No collision (hitbox 0×0)
 
 #### Window.js
-- [ ] 5-frame animation (400ms/frame): window1–5.png
-- [ ] No collision
+- [x] 5-frame animation (400ms/frame): window1–5.png
+- [x] No collision
 
 #### Tracker.js (type 67)
 - [x] Fields: `nodemap[25][25]` of `TrackNode {activated, steptime, hitbox, pathbox}`
@@ -299,20 +299,20 @@ Mirrors `KnightBoss.java`.
 - [x] `initKnightPath(boss, direction)`: set initial breadcrumb trail from boss position in given direction
 
 #### KnightBossInitialActivate.js
-- [ ] `update(game)`: if player overlaps:
-  - [ ] Start KnightBossInitAnimation via AnimationManager
-  - [ ] Call `tracker.initKnightPath()` with initial direction
-  - [ ] Remove self from objectList
+- [x] `update(game)`: if player overlaps:
+  - [x] Start KnightBossInitAnimation via AnimationManager
+  - [x] Call `tracker.initKnightPath()` with initial direction
+  - [x] Remove self from objectList
 
 #### KnightBossSpawn.js (extends KnightBossInitialActivate)
-- [ ] `update(game)`: if player overlaps:
-  - [ ] Read TMX property "knightbossdelayspawn" to get spawn position
-  - [ ] Spawn KnightBoss, add to enemyList
-  - [ ] Play `standandfight` SFX
-  - [ ] Remove self from objectList
+- [x] `update(game)`: if player overlaps:
+  - [x] Read TMX property "knightbossdelayspawn" to get spawn position
+  - [x] Spawn KnightBoss, add to enemyList
+  - [x] Play `standandfight` SFX
+  - [x] Remove self from objectList
 
 #### FinalCutscene.js
-- [ ] `update(game)`: if player overlaps → start "finalTowerLedge" animation
+- [x] `update(game)`: if player overlaps → start "finalTowerLedge" animation
 
 ---
 
@@ -407,10 +407,10 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 3 in progress.** Enemy base (3a), Dog (3b), Guard (3c), GuardPath (3g partial), Wizard (3d), Fireball (3e), KnightBoss (3f), Tracker (3g partial), Door, DoorButton, Key, KeyDoor, Exit, and Crate all implemented. Next: the remaining interactive objects in 3g (Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene).
+**Phase 4 ready.** Phase 3 enemies and interactive objects are complete, including KnightBossSpawn and FinalCutscene. Next: wire the cutscene system through AnimationManager and start the Phase 4 animation ports.
 
 ## Next Milestone
-Phase 3g: interactive objects — Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene.
+Phase 4a: AnimationManager — start/end animation routing and in-game handoff.
 
 ---
 
@@ -435,7 +435,7 @@ Phase 3g: interactive objects — Princess, Torch, Window, KnightBossInitialActi
 
 ---
 
-**Instructions for Claude**:  
+**Instructions for all agents**:  
 Always check this file before starting work. Work on one item at a time. After completing or making progress on a task, update the checkboxes, move items between sections if needed, and keep the phase and milestone accurate.
 
 Update 2026-04-12: Fixed `Level.createObjects()` to pass `this.scene` into interactive object constructors that create Phaser display objects immediately. This resolves the `Torch.js:16` `scene.add` crash and prevents the same failure in `Window`, `Door`, `DoorButton`, `Key`, `KeyDoor`, `Exit`, `Crate`, and `Princess`.
