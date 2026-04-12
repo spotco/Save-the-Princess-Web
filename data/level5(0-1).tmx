@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="25" height="25" tilewidth="25" tileheight="25">
+ <tileset firstgid="1" source="../art/guard1set.tsx"/>
+ <tileset firstgid="26" source="../art/tileset1.tsx"/>
+ <tileset firstgid="51" name="wizard1set" tilewidth="25" tileheight="25">
+  <image source="../art/wizard1set.png"/>
+  <tile id="0">
+   <properties>
+    <property name="wizard" value="up"/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="wizard" value="right"/>
+   </properties>
+  </tile>
+  <tile id="10">
+   <properties>
+    <property name="wizard" value="down"/>
+   </properties>
+  </tile>
+  <tile id="15">
+   <properties>
+    <property name="wizard" value="left"/>
+   </properties>
+  </tile>
+ </tileset>
+ <layer name="Tile Layer 1" width="25" height="25">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC7VWXUsDQQyMVtQ++6BwxTs50VtbqOKLL/7/v+Ut3eHGuexHBRdCIZdkkkk2W7O/n2mWu/T7XyfGDg0Y3SyHjPQV+10jRvx+O8tNsodcka8Xl6UFI0icXnxhw6K4LRiToxtmGSn3c+K2YtQ4AWYvulF0nLNy/mE+d+z77eTn6TZ26jvnvLWl75pHT745Dlg3UJ7a90vBYM64Xo8DxLUUt2TLGK/p95hqD079mHudyyfHLgjGp1MPML36kTsw9va7xwfSTbbMyostMxOsvR+456gPErnYCldvTuwSx4rr3XPUC5vHDEbtLrH9s+Sd2yWKUdpDiqFzBLvIRezPvZ16tnN8NF70Qe+gO9I35bS0W3IY75LzRnwvbOk3esLvyr4Bg/MYbN1njue9Fy11dLbez14/cu/FaPU5ZV1n6z2je7dUz7W13Y+vAh8qvD8iv9pL7Gzdu7n/DJ4wFyXfc95JPTH2g+RZOz+j4mcGxAkAAA==
+  </data>
+ </layer>
+</map>

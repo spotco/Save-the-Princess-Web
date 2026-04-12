@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="25" height="25" tilewidth="25" tileheight="25">
+ <tileset firstgid="1" name="wizard1set" tilewidth="25" tileheight="25">
+  <image source="../art/wizard1set.png"/>
+  <tile id="0">
+   <properties>
+    <property name="wizard" value="up"/>
+    <property name="wizard" value="up"/>
+    <property name="wizard" value="up"/>
+   </properties>
+  </tile>
+  <tile id="4">
+   <properties>
+    <property name="knightboss" value="true"/>
+    <property name="knightboss" value="true"/>
+    <property name="knightboss" value="true"/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="wizard" value="right"/>
+    <property name="wizard" value="right"/>
+    <property name="wizard" value="right"/>
+   </properties>
+  </tile>
+  <tile id="10">
+   <properties>
+    <property name="wizard" value="down"/>
+    <property name="wizard" value="down"/>
+    <property name="wizard" value="down"/>
+   </properties>
+  </tile>
+  <tile id="15">
+   <properties>
+    <property name="wizard" value="left"/>
+    <property name="wizard" value="left"/>
+    <property name="wizard" value="left"/>
+   </properties>
+  </tile>
+  <tile id="16">
+   <properties>
+    <property name="knightbossdelayspawn" value="true"/>
+    <property name="knightbossdelayspawn" value="true"/>
+    <property name="knightbossdelayspawn" value="true"/>
+   </properties>
+  </tile>
+  <tile id="17">
+   <properties>
+    <property name="" value=""/>
+    <property name="" value=""/>
+    <property name="" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="tracker" value="true"/>
+    <property name="tracker" value="true"/>
+    <property name="tracker" value="true"/>
+   </properties>
+  </tile>
+  <tile id="21">
+   <properties>
+    <property name="bossactivate" value="true"/>
+    <property name="bossactivate" value="true"/>
+    <property name="bossactivate" value="true"/>
+   </properties>
+  </tile>
+  <tile id="22">
+   <properties>
+    <property name="bossactivatespawn" value="true"/>
+    <property name="bossactivatespawn" value="true"/>
+    <property name="bossactivatespawn" value="true"/>
+   </properties>
+  </tile>
+  <tile id="24">
+   <properties>
+    <property name="final" value="true"/>
+    <property name="final" value="true"/>
+    <property name="final" value="true"/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="26" source="../art/guard1set.tsx"/>
+ <tileset firstgid="51" source="../art/tileset1.tsx"/>
+ <layer name="Tile Layer 1" width="25" height="25">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC82UMQvCMBCFb3Jx0UHcnKS4CkYrdLBFF///DzKBHNjz2uY9qPTgEVoufHm53In04xJVRTXgWosfO+dfG7Um1A4wvEi5HSGGcQM0xXgZhRkYJ+P5QDLu+Yxe7a2PmmQgdWHr8SAYzLtCGPb+nnl/k9e3k4MyjsD5r3kPwtD3gSiADDZYRpqPUx60H1hGyl9J2ZxiGd+1UU/2jWlOMN/WZ6kntGc2oC9lqB+dOWM9o/4Qxl5+738OH7qntI9QH0vtsSUytn9gnEnGBz9Wt+bECQAA
+  </data>
+ </layer>
+</map>

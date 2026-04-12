@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="25" height="25" tilewidth="25" tileheight="25">
+ <tileset firstgid="1" name="tileset1" tilewidth="25" tileheight="25">
+  <image source="../art/tileset1.png"/>
+  <tile id="0">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="dog" value="left"/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="dog" value="right"/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="" value=""/>
+    <property name="torch" value="true"/>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="10">
+   <properties>
+    <property name="dog" value="down"/>
+   </properties>
+  </tile>
+  <tile id="11">
+   <properties>
+    <property name="dog" value="up"/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="13">
+   <properties>
+    <property name="" value=""/>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="16">
+   <properties>
+    <property name="princess" value="true"/>
+   </properties>
+  </tile>
+  <tile id="17">
+   <properties>
+    <property name="" value=""/>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="19">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="player" value="true"/>
+   </properties>
+  </tile>
+  <tile id="21">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="22">
+   <properties>
+    <property name="cratespawn" value="true"/>
+   </properties>
+  </tile>
+  <tile id="23">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="24">
+   <properties>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="26" name="guard1set" tilewidth="25" tileheight="25">
+  <image source="../art/guard1set.png"/>
+  <tile id="0">
+   <properties>
+    <property name="guardspawn" value="right"/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="guardspawn" value="up"/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="guardpoint" value="right"/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="guardpoint" value="left"/>
+   </properties>
+  </tile>
+  <tile id="4">
+   <properties>
+    <property name="door" value="closed"/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="guardspawn" value="down"/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="guardspawn" value="left"/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="guardpoint" value="down"/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="guardpoint" value="up"/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="door" value="open"/>
+   </properties>
+  </tile>
+  <tile id="10">
+   <properties>
+    <property name="doorbutton" value="true"/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="wall" value="true"/>
+    <property name="window" value="true"/>
+   </properties>
+  </tile>
+  <tile id="13">
+   <properties>
+    <property name="direction" value="right"/>
+    <property name="exit" value="true"/>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="direction" value="left"/>
+    <property name="exit" value="true"/>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="15">
+   <properties>
+    <property name="guardpoint" value="right"/>
+    <property name="stop" value="true"/>
+   </properties>
+  </tile>
+  <tile id="16">
+   <properties>
+    <property name="guardpoint" value="left"/>
+    <property name="stop" value="true"/>
+   </properties>
+  </tile>
+  <tile id="17">
+   <properties>
+    <property name="key" value="true"/>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="direction" value="up"/>
+    <property name="exit" value="true"/>
+    <property name="wall" value="true"/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="guardpoint" value="down"/>
+    <property name="stop" value="true"/>
+   </properties>
+  </tile>
+  <tile id="21">
+   <properties>
+    <property name="guardpoint" value="up"/>
+    <property name="stop" value="true"/>
+   </properties>
+  </tile>
+  <tile id="22">
+   <properties>
+    <property name="keydoor" value="true"/>
+   </properties>
+  </tile>
+  <tile id="23">
+   <properties>
+    <property name="direction" value="down"/>
+    <property name="exit" value="true"/>
+   </properties>
+  </tile>
+ </tileset>
+ <layer name="Tile Layer 1" width="25" height="25">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC9VUSQrDMAw0Tpt0TxcKeUH//8TaYIE6jCylh0INwsTRSKM1pf7JRV5FDsF7dOyxMxe5BmXT9L/1sQ3IP/j4Ra5q7R+GjE1nKTLAuz6ZvOeGqfiJYLxYMab6fYR3xCLGiu3e8YHvut49jCWW/tS41JkaACP/JKderYaVnFj/IK9q86i+sX6R/kGOHi/dJ7p/Iv0tPATD5hHnRfOZiS0W805hLB9LwAfr55Q+8x2NY1L6rHetufByJTVAe6x3WZ9HcrVmnrxceX2VG+d9u0eCt3pNbJyKXNqdCdbaSVgj4XJWXHRMem4Q29tJM9G7GXrWPtXYp8qh5rSWS8+HYK2aox7j4vETYfsqspt6/FjN2EG9qFR7b+HoUVzECQAA
+  </data>
+ </layer>
+</map>

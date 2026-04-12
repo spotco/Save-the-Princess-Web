@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="25" height="25" tilewidth="25" tileheight="25">
+ <tileset firstgid="1" source="../art/guard1set.tsx"/>
+ <tileset firstgid="26" source="../art/tileset1.tsx"/>
+ <tileset firstgid="51" source="../art/wizard1set.tsx"/>
+ <layer name="Tile Layer 1" width="25" height="25">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC92VzQrCMAzHMxV0Jw8eNzS6gxUF2TN4EN//hUwgZVlsZ1tE0MKfMrbml69mAGnLkTayf3o1pAupJZ1IKM8h7QoZ7Pde7L9TaYyasZ3QPzEQyuqSwyitSw7j+AWG+xFGyv0oYSDE77VVKSN18cyx8ya3h9lGRzrIbs+z7ysY8raAsrrE7oCOoRF+as78zNVzt4PXfGi+E80SGTZ+K58PVL6j8ieV4eNnn8/y3ItN7Svvc8WvMxn6fCWx2T51AT9yGaF6Wgazl5DXV5aBMOT6CuPah/oKIX5H7D+cGTWMaz01T2yfhWZCa855n3v1jc+79yfUV/7erEk3Y/MBw/+Aa11FfNa9M9VXqfMuplbsYOTdnfQEJajNVsQJAAA=
+  </data>
+ </layer>
+</map>

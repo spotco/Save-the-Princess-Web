@@ -8,12 +8,12 @@
 - [x] Clone original Save-the-Princess Java source
 - [x] Initialize Save-the-Princess-Web repo
 - [x] Create index.html, CLAUDE.md, PLAN.md, .gitignore
-- [ ] Copy assets from original repo:
-  - [ ] `art/` → `img/` (all subdirs: guy, guard, dog, wizard, knight, princess, menu, misc, final, tiles, pointers, nopointers)
-  - [ ] `art/tileset1.png`, `art/guard1set.png`, `art/wizard1set.png` → `img/`
-  - [ ] `snd/` → `snd/` (all .ogg and .wav files)
-  - [ ] `data/` → `data/` (all .tmx level files + levels.dat)
-- [ ] Create placeholder JS files for all source modules (see Phase 1+)
+- [x] Copy assets from original repo:
+  - [x] `art/` → `img/` (all subdirs: guy, guard, dog, wizard, knight, princess, menu, misc, final, tiles, pointers, nopointers)
+  - [x] `art/tileset1.png`, `art/guard1set.png`, `art/wizard1set.png` → `img/`
+  - [x] `snd/` → `snd/` (all .ogg and .wav files)
+  - [x] `data/` → `data/` (all .tmx level files + levels.dat)
+- [x] Create placeholder JS files for all source modules (see Phase 1+)
 
 ---
 
