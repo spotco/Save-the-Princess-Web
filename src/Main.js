@@ -5,6 +5,7 @@ import SoundManager from './SoundManager.js';
 import SaveReader   from './SaveReader.js';
 import Menu         from './Menu.js';
 import STPView      from './STPView.js';
+import AnimationManager from './AnimationManager.js';
 import Level1       from './levels/Level1.js';
 import Level2       from './levels/Level2.js';
 import Level3       from './levels/Level3.js';
@@ -133,6 +134,8 @@ class BootScene extends Phaser.Scene {
         this.load.image('guy2',          'img/menu/guy2.png');
         this.load.image('guydead',       'img/menu/guydead.png');
         this.load.image('heart',         'img/menu/heart.png');
+        this.load.image('menu_princess1','img/menu/princess1.png');
+        this.load.image('menu_princess2','img/menu/princess2.png');
         this.load.image('knightkiller',  'img/menu/knightkiller.png');
         this.load.image('wizardkiller',  'img/menu/wizardkiller.png');
         this.load.image('fireballkiller','img/menu/fireballkiller.png');
@@ -142,6 +145,13 @@ class BootScene extends Phaser.Scene {
         this.load.image('exitpointerU',  'img/menu/exitpointerU.png');
         this.load.image('exitpointerL',  'img/menu/exitpointerL.png');
         this.load.image('exitpointerR',  'img/menu/exitpointerR.png');
+        this.load.image('spotcologo1',   'img/menu/spotcologo/1.png');
+        this.load.image('spotcologo2',   'img/menu/spotcologo/2.png');
+        this.load.image('spotcologo3',   'img/menu/spotcologo/3.png');
+        this.load.image('spotcologo4',   'img/menu/spotcologo/4.png');
+        this.load.image('spotcologo5',   'img/menu/spotcologo/5.png');
+        this.load.image('spotcologo6',   'img/menu/spotcologo/6.png');
+        this.load.image('spotcologo7',   'img/menu/spotcologo/7.png');
 
         // --- Misc in-game sprites ---
         this.load.image('crate',    'img/misc/crate.png');
@@ -279,11 +289,22 @@ class MenuScene extends Phaser.Scene {
         this.soundManager = new SoundManager(this);
         this.saveReader   = new SaveReader();
         this.menu         = new Menu(this, this.soundManager, this.saveReader);
+        this.menu.animationManager = new AnimationManager(this, this.menu);
         this.menu.create();
         this.soundManager.play('menu1');
+
+        const data = this.scene.settings.data || {};
+        if (data.playIntro) {
+            this.menu.startIntroAnimation();
+        }
     }
 
     update() {
+        if (this.menu.animationManager && this.menu.animationManager.inAnimation) {
+            this.menu.animationManager.update(this.menu);
+            this.menu.animationManager.render();
+            return;
+        }
         this.menu.update();
     }
 }

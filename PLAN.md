@@ -322,61 +322,61 @@ All animations are full-screen overlays managed by AnimationManager.
 
 ### 4a. AnimationManager.js
 Mirrors `AnimationManager.java`.
-- [ ] `startAnimation(type, altArg)` — factory: instantiate correct animation class, set `inAnimation=true`
-- [ ] `update(game)` — delegate to active animation's `update()`
-- [ ] `render()` — delegate to active animation's `render()`
-- [ ] `done()` — set `inAnimation=false`, resume game or transition
+- [x] `startAnimation(type, altArg)` — factory: instantiate correct animation class, set `inAnimation=true`
+- [x] `update(game)` — delegate to active animation's `update()`
+- [x] `render()` — delegate to active animation's `render()`
+- [x] `done()` — set `inAnimation=false`, resume game or transition
 
 ### 4b. TitleScreenAnimation.js (1825-frame sequence)
-- [ ] Frame 0–200: Spotco logo fade in/out
-- [ ] Frame 200–350: Guy and princess walk in from edges
-- [ ] Frame 350–700: Standing pose with heart, guards walk toward center
-- [ ] Frame 700–1200: Princess and guards walk off screen, guy moves left
-- [ ] Frame 1200+: Scroll menu.png up from bottom into view
-- [ ] SPACE skips to end
+- [x] Frame 0–200: Spotco logo fade in/out
+- [x] Frame 200–350: Guy and princess walk in from edges
+- [x] Frame 350–700: Standing pose with heart, guards walk toward center
+- [x] Frame 700–1200: Princess and guards walk off screen, guy moves left
+- [x] Frame 1200+: Scroll menu.png up from bottom into view
+- [x] SPACE skips to end
 
 ### 4c. DeathAnimation.js (100-frame + sound)
-- [ ] Frame 50–100: Guy walking animation enters from left
-- [ ] Frame 25–50: Guy dead sprite + "CAUGHT" text
-- [ ] Frame 0–25: Killer image (killerimg) flies from right to center
-- [ ] SPACE to skip; end → reload current level
+- [x] Frame 50–100: Guy walking animation enters from left
+- [x] Frame 25–50: Guy dead sprite + "CAUGHT" text
+- [x] Frame 0–25: Killer image (killerimg) flies from right to center
+- [x] SPACE to skip; end → reload current level
 
 ### 4d. CrushedAnimation.js (100-frame)
-- [ ] Frame 75–100: Guy walks in
-- [ ] Frame 35–87: "OUCH" text
-- [ ] Killer image (gate): Y = 120 + 6×(100-timer) (falls from top)
-- [ ] SPACE to skip; end → reload current level
+- [x] Frame 75–100: Guy walks in
+- [x] Frame 35–87: "OUCH" text
+- [x] Killer image (gate): Y = 120 + 6×(100-timer) (falls from top)
+- [x] SPACE to skip; end → reload current level
 
 ### 4e. WinAnimation.js (250-frame + sound)
-- [ ] On start: stop timer, save time to high scores, play `win1` SFX
-- [ ] Frame 200–250: Guy walks in from left
-- [ ] Frame 100–200: Guy static at left, princess at center, guards retreat off screen
-- [ ] Frame 0–150: Princess walks toward guy
-- [ ] Display current time vs best time
-- [ ] SPACE to advance; end → `save.nextLevel()`, load next level
+- [x] On start: stop timer, save time to high scores, play `win1` SFX
+- [x] Frame 200–250: Guy walks in from left
+- [x] Frame 100–200: Guy static at left, princess at center, guards retreat off screen
+- [x] Frame 0–150: Princess walks toward guy
+- [x] Display current time vs best time
+- [x] SPACE to advance; end → `save.nextLevel()`, load next level
 
 ### 4f. KnightBossInitAnimation.js (250-frame)
-- [ ] Frame 150–250: Guy enters from left, knight enters from right, walk toward each other
-- [ ] Frame 50–150: Both static, "WE MUST FIGHT" text displayed
-- [ ] Frame 0–50: Knight rushes toward guy
-- [ ] SPACE to skip; end → play `standandfight` SFX, set `boss.activated = true`
+- [x] Frame 150–250: Guy enters from left, knight enters from right, walk toward each other
+- [x] Frame 50–150: Both static, "WE MUST FIGHT" text displayed
+- [x] Frame 0–50: Knight rushes toward guy
+- [x] SPACE to skip; end → play `standandfight` SFX, set `boss.activated = true`
 
 ### 4g. FinalTowerLedgeActiveAnimation.js (interactive)
-- [ ] Background: firstview.png + firstviewrail.png (parallax foreground)
-- [ ] Princess static animation at center
-- [ ] Player sprite with directional walk, controlled by left/right arrow keys
-- [ ] Player X clamped at 543 (right boundary)
-- [ ] Real-time timer overlay displayed
-- [ ] If player reaches princess (overlap) → start CreditScrollAnimation
+- [x] Background: firstview.png + firstviewrail.png (parallax foreground)
+- [x] Princess static animation at center
+- [x] Player sprite with directional walk, controlled by left/right arrow keys
+- [x] Player X clamped at 543 (right boundary)
+- [x] Real-time timer overlay displayed
+- [x] If player reaches princess (overlap) → start CreditScrollAnimation
 
 ### 4h. CreditScrollAnimation.js (2300+ frames)
-- [ ] Scroll creditscreen.png + creditslist.png upward at variable speed
-- [ ] 400-frame pause at bottom
-- [ ] Postscript sequence (240 frames):
-  - [ ] Notice, knight (postscriptknight.png), "WE MUST FIGHT" animated entrance/exit
-  - [ ] `standandfight` SFX at postscript frame 89
-- [ ] TBC screen (tbc.png) displayed for 500 frames
-- [ ] End → loop to TitleScreenAnimation
+- [x] Scroll creditscreen.png + creditslist.png upward at variable speed
+- [x] 400-frame pause at bottom
+- [x] Postscript sequence (240 frames):
+  - [x] Notice, knight (postscriptknight.png), "WE MUST FIGHT" animated entrance/exit
+  - [x] `standandfight` SFX at postscript frame 89
+- [x] TBC screen (tbc.png) displayed for 500 frames
+- [x] End → loop to TitleScreenAnimation
 
 ---
 
@@ -407,10 +407,10 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 4 ready.** Phase 3 enemies and interactive objects are complete, including KnightBossSpawn and FinalCutscene. Next: wire the cutscene system through AnimationManager and start the Phase 4 animation ports.
+**Phase 4 complete.** All cutscene and end-sequence scaffolding in Phase 4 is now ported. Next: move into Phase 5 controls/polish and verify the full cutscene chain in browser.
 
 ## Next Milestone
-Phase 4a: AnimationManager — start/end animation routing and in-game handoff.
+Phase 5a: Controls — verify keyboard flow end-to-end and add remaining control/pause polish.
 
 ---
 

@@ -3,6 +3,7 @@
 
 import Player       from './Player.js';
 import TimerCounter from './TimerCounter.js';
+import AnimationManager from './AnimationManager.js';
 
 export default class STPView {
 
@@ -20,7 +21,7 @@ export default class STPView {
         this.seeme        = true;
         this.seemecounter = 26;   // mirrors STPGame.loadlevel() initial value
         this.timercounter = null;
-        this.animationManager = null; // wired in Phase 4a
+        this.animationManager = new AnimationManager(this.scene, this);
 
         // Phaser display refs
         this.currentTilemap   = null;
@@ -79,6 +80,12 @@ export default class STPView {
     // Called every frame from GameScene.update(time, delta).
     // Mirrors STPGame.update().
     update(delta) {
+        if (this.animationManager && this.animationManager.inAnimation) {
+            this.animationManager.update(this);
+            this.animationManager.render();
+            return;
+        }
+
         this.player.update(this);
 
         // Update enemies (iterate by index — list may shrink mid-loop in later phases)

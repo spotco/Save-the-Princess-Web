@@ -65,8 +65,13 @@ export default class Menu {
 
             if (K(k.space) || K(k.enter)) {
                 this.sound.sfx('menuchange');
-                // TODO Phase 4b: trigger TitleScreenAnimation here instead of going straight to loader
-                this._switchToLoader();
+                if (this.animationManager) {
+                    this.menuImg.setVisible(false);
+                    this.pressImg.setVisible(false);
+                    this.animationManager.startAnimation('titleScreenAnimation', null);
+                } else {
+                    this._switchToLoader();
+                }
             }
 
         } else if (this.inloaderimg) {
@@ -171,11 +176,28 @@ export default class Menu {
         this.inmenuimg        = true;
         this.inloaderimg      = false;
         this.loaderImgMenuStatus = 0;
+        this.counter          = 0;
+        this.displaypress     = false;
         this.loaderImg.setVisible(false);
         this.cursorImg.setVisible(false);
         this._setTimesVisible(false);
         this.menuImg.setVisible(true);
+        this.pressImg.setVisible(false);
         this.sound.stop();
         this.sound.play('menu1');
+    }
+
+    startIntroAnimation() {
+        this.inmenuimg   = true;
+        this.inloaderimg = false;
+        this.menuImg.setVisible(false);
+        this.pressImg.setVisible(false);
+        this.loaderImg.setVisible(false);
+        this.cursorImg.setVisible(false);
+        this._setTimesVisible(false);
+
+        if (this.animationManager) {
+            this.animationManager.startAnimation('titleScreenAnimation', null);
+        }
     }
 }
