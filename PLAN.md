@@ -48,18 +48,12 @@ Mirrors `SoundManager.java`.
 
 ### 1c. TimerCounter.js
 Mirrors `TimerCounter.java`.
-- [ ] Fields: `tenms`, `sec`, `min`, `abs` (centiseconds total)
-- [ ] `start()` / `stop()` / `reset()`
-- [ ] `tick(delta)` — increment using Phaser delta time (call from update loop)
-- [ ] `getCurTime()` → "min:sec:tenms" string
-- [ ] `getRecTime(levelName)` → developer record in centiseconds (hardcoded per level)
-  - Level1: hardcoded record
-  - Level2: hardcoded record
-  - Level3: hardcoded record
-  - Level4: hardcoded record
-  - Level5: hardcoded record
-  - Level6: hardcoded record
-- [ ] `gettime(levelName)` / `writetime(levelName, time)` via localStorage
+- [x] Fields: `tenms`, `sec`, `min`, `abs` (centiseconds total)
+- [x] `start()` / `stop()` / `reset()`
+- [x] `tick(delta)` — increment using Phaser delta time (call from update loop)
+- [x] `getCurTime()` → "min:sec:tenms" string
+- [x] `getRecTime(levelName)` → developer record in centiseconds (hardcoded per level)
+- [x] `gettime(levelName)` / `writetime(levelName, time)` via localStorage
   - Only update if new time < existing best
 
 ### 1d. SaveReader.js
