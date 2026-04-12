@@ -213,16 +213,16 @@ Mirrors `Fireball.java`.
 
 ### 3f. KnightBoss.js
 Mirrors `KnightBoss.java`.
-- [ ] Fields: `basicX, basicY` (grid cell 0–24), `x, y`, `hitbox`, `walkbox` (20×21), `orientation`, `activated`, `emoteTimer`
-- [ ] Animations: 4-direction walk (2–3 frames each)
-- [ ] Emote images: fight.png, coward.png (from art/misc/)
-- [ ] `update(game)`:
-  - [ ] If not `activated`, skip
-  - [ ] `getBasicLoc()`: determine 25×25 grid cell from `walkbox` center
-  - [ ] `getCurrentTarget()` via Tracker: check 4 adjacent cells, move toward highest `steptime`
-  - [ ] Move 1px/frame in determined direction, update `orientation`
-  - [ ] Emote cycle: `emoteTimer++`; fight emote at 400–500, coward emote at 1000–1100, reset at 1700
-- [ ] `getTracker(game)` — find Tracker object (type 67) in objectList
+- [x] Fields: `basicx, basicy` (grid cell 0–24), `x, y`, `hitbox`, `walkbox` (20×21), `orientation`, `activated`, `emotecounter`
+- [x] Animations: 4-direction walk (2–3 frames each) + stand stills
+- [x] Emote images: fight.png, coward.png (from art/misc/) — both preloaded in BootScene
+- [x] `update(game)`:
+  - [x] Lazy-init Tracker on first frame via `_getTracker(game)`
+  - [x] `_getBasicLoc()`: determine 25×25 grid cell from walkbox corners
+  - [x] `_getCurrentTarget()` via Tracker: check 4 adjacent cells, move toward highest `steptime`
+  - [x] Move 1px/frame in determined direction, collision-revert via `viewboxstatichit`
+  - [x] Emote cycle: `emotecounter++`; fight emote at 400–500, coward emote at 1000–1100, reset at 1700
+- [x] `_getTracker(game)` — find Tracker object (type 67) in objectList
 
 ### 3g. Other/ objects
 
@@ -293,11 +293,10 @@ Mirrors `KnightBoss.java`.
 - [ ] No collision
 
 #### Tracker.js (type 67)
-- [ ] Fields: `nodeMap[25][25]` of `TrackNode {activated, steptime, hitbox, pathbox}`
-- [ ] Each node: 25×25 hitbox aligned to grid
-- [ ] `update(game)`: for each activated? node, check if player hitbox intersects node's pathbox → set `steptime = Date.now()`
-- [ ] Actually: ALL nodes check player intersection each frame; update steptime if overlapping
-- [ ] `initKnightPath(direction)`: set initial breadcrumb trail from boss position in given direction
+- [x] Fields: `nodemap[25][25]` of `TrackNode {activated, steptime, hitbox, pathbox}`
+- [x] Each node: 25×25 hitbox aligned to grid
+- [x] `update(game)`: ALL nodes check player intersection each frame; update `steptime = performance.now()` if overlapping
+- [x] `initKnightPath(boss, direction)`: set initial breadcrumb trail from boss position in given direction
 
 #### KnightBossInitialActivate.js
 - [ ] `update(game)`: if player overlaps:
@@ -408,10 +407,10 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 3 in progress.** Enemy base (3a), Dog (3b), Guard (3c), GuardPath (3g partial), Wizard (3d), Fireball (3e) all implemented. Next: KnightBoss (3f) and the interactive objects in 3g.
+**Phase 3 in progress.** Enemy base (3a), Dog (3b), Guard (3c), GuardPath (3g partial), Wizard (3d), Fireball (3e), KnightBoss (3f), Tracker (3g partial) all implemented. Next: the remaining interactive objects in 3g (Door, DoorButton, Key, KeyDoor, Exit, Crate, Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene).
 
 ## Next Milestone
-Phase 3f: KnightBoss.js — breadcrumb-heatmap pathfinding via Tracker.
+Phase 3g: interactive objects — Door, DoorButton, Key, KeyDoor, Exit, Crate, Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene.
 
 ---
 

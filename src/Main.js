@@ -146,6 +146,7 @@ class BootScene extends Phaser.Scene {
         // --- Misc in-game sprites ---
         this.load.image('crate',    'img/misc/crate.png');
         this.load.image('fight',    'img/misc/fight.png');
+        this.load.image('coward',   'img/misc/coward.png');
         this.load.image('foiled',   'img/misc/foiled.png');
         this.load.image('goal',     'img/misc/goal.png');
         this.load.image('havekey',  'img/misc/havekey.png');
