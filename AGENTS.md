@@ -110,6 +110,11 @@ Save-the-Princess-Web/
 ## Coding Guidelines
 
 - Mirror the original Java structure and naming wherever possible
+- Preserve local JS style exactly when editing existing files
+- Before editing an existing JS file, inspect nearby methods and mirror that file's conventions rather than applying conventions from another file or from the original Java source
+- This includes naming conventions, method prefixes, field prefixes, comment style, spacing/alignment patterns, and overall code shape
+- Do not rename methods/properties, switch between public-looking and underscore-prefixed helpers, or otherwise "improve" style unless the file already uses that style or the task explicitly asks for it
+- Behavioral fixes should be minimal and style-neutral whenever possible
 - Use clear, descriptive variable and method names (Java style)
 - Keep comments helpful when porting or modifying logic
 - Prefer performance-friendly Phaser patterns

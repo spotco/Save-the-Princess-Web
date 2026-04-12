@@ -73,6 +73,7 @@ export default class Crate {
     }
 
     render() {
+        this.sprite.setVisible(true);
         this.sprite.setPosition(this.x, this.y);
     }
 

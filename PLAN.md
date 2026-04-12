@@ -272,12 +272,12 @@ Mirrors `KnightBoss.java`.
 - [x] Data only — Guard reads these in `insidePathChangeSq()`
 
 #### Crate.js
-- [ ] Fields: `hitbox` (20×20), push edge rects (pushleft/right/up/down, 2–3px wide)
-- [ ] `update(game)`: add hitbox to staticsList each frame
-- [ ] `canDir(direction, game)` — test if push direction is clear (no statics/enemies)
-- [ ] `createPushBoxes()` — define 4 edge detection rects
-- [ ] Push detection: player overlap with edge rect + movement in correct direction + `canDir()` → move crate
-- [ ] `render()`: draw crate.png
+- [x] Fields: `hitbox` (20×20), push edge rects (pushleft/right/up/down, 2–3px wide)
+- [x] `update(game)`: add hitbox to staticsList each frame
+- [x] `canDir(direction, game)` — test if push direction is clear (no statics/enemies)
+- [x] `createPushBoxes()` — define 4 edge detection rects
+- [x] Push detection: player overlap with edge rect + `canDir()` → move crate (matches original Java behavior)
+- [x] `render()`: draw crate.png
 
 #### Princess.js (type 23)
 - [ ] 2-frame standing animation (800ms/frame)
@@ -407,10 +407,10 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 3 in progress.** Enemy base (3a), Dog (3b), Guard (3c), GuardPath (3g partial), Wizard (3d), Fireball (3e), KnightBoss (3f), Tracker (3g partial) all implemented. Next: the remaining interactive objects in 3g (Door, DoorButton, Key, KeyDoor, Exit, Crate, Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene).
+**Phase 3 in progress.** Enemy base (3a), Dog (3b), Guard (3c), GuardPath (3g partial), Wizard (3d), Fireball (3e), KnightBoss (3f), Tracker (3g partial), Door, DoorButton, Key, KeyDoor, Exit, and Crate all implemented. Next: the remaining interactive objects in 3g (Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene).
 
 ## Next Milestone
-Phase 3g: interactive objects — Door, DoorButton, Key, KeyDoor, Exit, Crate, Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene.
+Phase 3g: interactive objects — Princess, Torch, Window, KnightBossInitialActivate, KnightBossSpawn, FinalCutscene.
 
 ---
 
