@@ -58,16 +58,16 @@ Mirrors `TimerCounter.java`.
 
 ### 1d. SaveReader.js
 Mirrors `SaveReader.java`.
-- [ ] Level sequence: ['Level1','Level2','Level3','Level4','Level5','Level6','End']
-- [ ] `newGame()` → reset to Level1, write to localStorage
-- [ ] `loadGame()` → read current level from localStorage
-- [ ] `nextLevel()` → advance index, write to localStorage
-- [ ] `writeSaveCurrent(levelName)` → persist current level
-- [ ] Use localStorage key "stpsave" (replaces save.dat)
+- [x] Level sequence: ['Level1','Level2','Level3','Level4','Level5','Level6','End']
+- [x] `newGame()` → reset to Level1, write to localStorage
+- [x] `loadGame()` → read current level from localStorage
+- [x] `nextLevel()` → advance index, write to localStorage
+- [x] `writeSaveCurrent(levelName)` → persist current level
+- [x] Use localStorage key "stpsave" (replaces save.dat)
 
 ### 1e. ListContainer.js
 Mirrors `ListContainer.java`.
-- [ ] Simple container: `{ staticsList: [], enemyList: [], objectList: [] }`
+- [x] Simple container: `{ staticslist: [], enemylist: [], objectlist: [] }`
 
 ### 1f. Menu.js — title screen + level loader
 Mirrors `Menu.java`.
@@ -446,7 +446,7 @@ Mirrors `AnimationManager.java`.
 **Phase 1** — Boot & Scaffolding
 
 ## Next Milestone
-Complete Phase 1b–1f (SoundManager, TimerCounter, SaveReader, ListContainer, Menu).
+Complete Phase 1f (Menu.js), then begin Phase 2.
 
 ---
 
