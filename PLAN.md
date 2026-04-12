@@ -1,6 +1,6 @@
 # Save the Princess — HTML5 Port Development Plan
 
-**Last Updated**: 2026-04-11
+**Last Updated**: 2026-04-12
 
 ---
 
@@ -70,21 +70,28 @@ Mirrors `ListContainer.java`.
 - [x] Simple container: `{ staticslist: [], enemylist: [], objectlist: [] }`
 
 ### 1f. Menu.js — title screen + level loader
-Mirrors `Menu.java`.
-- [ ] Sub-states: `inMenuImg` (title), `inLoaderImg` (new/load/times)
-- [ ] `inMenuImg` state:
-  - [ ] Display menu.png fullscreen
-  - [ ] SPACE triggers title screen animation (TitleScreenAnimation)
-- [ ] `inLoaderImg` state (after title anim):
-  - [ ] Display loader.png with cursor (loadercursor.png)
-  - [ ] Cursor positions: 0=New Game, 1=Load Game, 2=Times, 3=Times display
-  - [ ] UP/DOWN arrow keys move cursor
-  - [ ] ENTER/SPACE selects
-  - [ ] Times display: show all 6 level best times, highlight green if beat dev record
-  - [ ] New Game → `save.newGame()` → start Level1
-  - [ ] Load Game → `save.loadGame()` → start saved level
-  - [ ] ESC goes back from loader to menu image
-- [ ] `menuchange` SFX on cursor move
+Mirrors `Menu.java`. **Module written but NOT wired up — see "Known Wiring Gaps" below.**
+- [x] Sub-states: `inmenuimg` (title), `inloaderimg` (new/load/times)
+- [x] `inmenuimg` state:
+  - [x] Display menu.png fullscreen (uses `menunew` key)
+  - [~] SPACE advances to loader — **title screen animation (TitleScreenAnimation) not yet hooked up; goes straight to loader**
+- [x] `inloaderimg` state:
+  - [x] Display loader.png with cursor (loadercursor.png)
+  - [x] Cursor positions: 0=New Game, 1=Load Game, 2=Times, 3=Times display
+  - [x] UP/DOWN arrow keys move cursor
+  - [x] ENTER/SPACE selects
+  - [x] Times display: show all 6 level best times, highlight green if beat dev record
+  - [x] New Game → `save.newGame()` → start Level1
+  - [x] Load Game → `save.loadGame()` → start saved level
+  - [x] ESC goes back from loader to menu image
+- [x] `menuchange` SFX on cursor move
+- [ ] **Integration (blockers — do these before Phase 2):**
+  - [ ] Convert `Main.js` to use ES module imports (currently `type="module"` in index.html but Main.js has zero `import` statements, so nothing is actually wired)
+  - [ ] Import `Menu` into `MenuScene` and instantiate it in `create()` / call `update()` in the scene loop; remove the "Phase 1f: Menu — TODO" placeholder text
+  - [ ] Add missing `import TimerCounter from './TimerCounter.js';` to `Menu.js` (line 15 `new TimerCounter(null)` will throw ReferenceError at runtime)
+  - [ ] Add missing preloads in `BootScene`: `space2start` and `timesmenu` image keys are referenced by `Menu.js` but not loaded
+  - [ ] Verify `loadercursor`, `loader` image keys are loaded in BootScene (spot-check while adding the above)
+  - [ ] Manually test menu flow via `python -m http.server 8000`: title → loader → new game / load / times / ESC back
 
 ---
 
@@ -443,10 +450,22 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 1** — Boot & Scaffolding
+**Phase 1f — Menu integration / wiring.** All Phase 1 modules (Main, SoundManager, TimerCounter, SaveReader, ListContainer, Menu) exist as standalone files, but `Main.js` does not yet `import` any of them, so at runtime only BootScene actually runs. The `MenuScene` class in `Main.js` is still a placeholder showing "Phase 1f: Menu — TODO".
 
 ## Next Milestone
-Complete Phase 1f (Menu.js), then begin Phase 2.
+Wire `Menu.js` into `MenuScene` (see the "Integration (blockers)" checklist under 1f). Once the menu flow runs end-to-end in the browser, begin Phase 2a (Level.js base class).
+
+---
+
+## Known Wiring Gaps (read before editing)
+
+These are issues discovered 2026-04-12 that are not obvious from reading individual files in isolation:
+
+1. **Main.js uses no ES module imports.** It's loaded via `<script type="module">` in `index.html`, but the file itself defines `BootScene`, `MenuScene`, `GameScene`, `AnimationScene` as plain classes with no `import` statements. Every other file in `src/` uses `export default`. Before wiring Phase 1f (or any later phase) you must add imports to Main.js — e.g. `import Menu from './Menu.js';`, `import SoundManager from './SoundManager.js';`, etc.
+2. **Menu.js has a missing import.** Line 15 does `new TimerCounter(null)` without importing `TimerCounter`. This will throw `ReferenceError` the moment `MenuScene` constructs a `Menu`. Fix: add `import TimerCounter from './TimerCounter.js';` at the top.
+3. **BootScene is missing two image preloads** used by Menu.js: `space2start` and `timesmenu`. Add them to `BootScene.preload()` alongside the existing `menunew` load. Verify the actual filenames against `img/menu/` — the original Java uses `space2start.png` and `timesmenu.png`.
+4. **Placeholder `MenuScene` class in Main.js** (around line 244) must be replaced with one that instantiates `Menu` and forwards `create()` / `update()` calls. The current placeholder just draws a debug string.
+5. **Title screen animation is not wired.** `Menu.java`'s real flow is menu-image → `TitleScreenAnimation` → loader. The current `Menu.js` skips the animation and goes directly to the loader. This is acceptable for Phase 1f (animations are Phase 4b) but leave a `// TODO Phase 4b` marker when wiring.
 
 ---
 
