@@ -21,22 +21,22 @@
 
 ### 1a. Main.js — Phaser 3 config + scene list
 Mirrors `STPGame.java` / `STPView.java`.
-- [ ] Create Phaser.Game config: 625×625, WebGL, backgroundColor #000
-- [ ] Register scenes: BootScene, MenuScene, GameScene, AnimationScene
-- [ ] BootScene: preload ALL assets (images, audio, tilemaps), then start MenuScene
-  - [ ] Load all guy sprites (standdown/up/left/right, walk variants)
-  - [ ] Load all guard sprites (8 directions × 2 walk frames + 4 stand)
-  - [ ] Load all dog sprites (4 directions × up-to-3 frames)
-  - [ ] Load all wizard sprites (8 directional shoot/stand frames)
-  - [ ] Load knight sprites (4 directions × up-to-3 frames)
-  - [ ] Load princess sprites (princess1.png, princess2.png from art/princess/)
-  - [ ] Load misc sprites (crate, bars, keydoor, key frames, torch frames, window frames, etc.)
-  - [ ] Load menu images (menu.png, loader.png, loadercursor.png, etc.)
-  - [ ] Load final/cutscene images (creditscreen, creditslist, firstend2, firstview, etc.)
-  - [ ] Load tileset image for tilemaps (tileset1.png)
-  - [ ] Load all audio: music (menu1, main1, main2, boss, wind, credits) + SFX
-  - [ ] Load all TMX tilemaps as Phaser tilemaps
-- [ ] Show simple progress bar during preload (mirrors original loading bar)
+- [x] Create Phaser.Game config: 625×625, WebGL, backgroundColor #000
+- [x] Register scenes: BootScene, MenuScene, GameScene, AnimationScene
+- [x] BootScene: preload ALL assets (images, audio, tilemaps), then start MenuScene
+  - [x] Load all guy sprites (standdown/up/left/right, walk variants)
+  - [x] Load all guard sprites (8 directions × 2 walk frames + 4 stand)
+  - [x] Load all dog sprites (4 directions × up-to-3 frames)
+  - [x] Load all wizard sprites (8 directional shoot/stand frames)
+  - [x] Load knight sprites (4 directions × up-to-3 frames)
+  - [x] Load princess sprites (princess1.png, princess2.png from art/princess/)
+  - [x] Load misc sprites (crate, bars, keydoor, key frames, torch frames, window frames, etc.)
+  - [x] Load menu images (menu.png, loader.png, loadercursor.png, etc.)
+  - [x] Load final/cutscene images (creditscreen, creditslist, firstend2, firstview, etc.)
+  - [x] Load tileset image for tilemaps (tileset1.png)
+  - [x] Load all audio: music (menu1, main1, boss, wind, credits) + SFX
+  - [x] Load all TMX tilemaps as raw XML (parsed in Level.js, Phase 2a)
+- [x] Show simple progress bar during preload (mirrors original loading bar)
 
 ### 1b. SoundManager.js
 Mirrors `SoundManager.java`.
@@ -449,10 +449,10 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 0** — setup and asset copy
+**Phase 1** — Boot & Scaffolding
 
 ## Next Milestone
-Complete Phase 0 (asset copy), then begin Phase 1a (Main.js + BootScene).
+Complete Phase 1b–1f (SoundManager, TimerCounter, SaveReader, ListContainer, Menu).
 
 ---
 
