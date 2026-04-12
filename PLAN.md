@@ -125,48 +125,22 @@ Mirrors `Level.java`.
 
 ### 2c. Player.js
 Mirrors `Player.java`.
-- [ ] Fields: `x, y`, `hitbox` (15×15 at offset y+10), `lastDirection` (1=down,2=right,3=left,4=up)
-- [ ] Fields: `hasKey: boolean`
-- [ ] `imageinit(scene)` — create 8 Phaser animations:
-  - Stand: standdown, standup, standleft, standright (1 frame each)
-  - Walk: walkdown, walkup, walkleft, walkright (2 frames each, ~100ms/frame)
-- [ ] `update(game)`:
-  - [ ] Poll arrow keys (or WASD)
-  - [ ] Move x/y by 1px per key, update hitbox
-  - [ ] Collision with staticsList: if hit, revert move
-  - [ ] Set `seeme = false` on first movement
-  - [ ] Select correct animation based on direction + moving/standing
-- [ ] `render()`:
-  - [ ] Draw sprite at (x, y)
-  - [ ] If `hasKey`, draw key indicator at (x+2, y-21)
+- [x] Fields: `x, y` (spawn+6, spawn-2), `hitbox` (15×15 at XCOMP=0, YCOMP=10), `lastdirection` (1=down,2=right,3=left,4=up)
+- [x] Fields: `haskey: boolean`
+- [x] `imageinit(scene)` — create 8 Phaser animations (stand: 1 frame; walk: 4 frames at 4fps mirroring Java's {walk,stand,walk2,stand} at 250ms)
+- [x] `update(game)`: arrow+WASD, 1px/frame, collision revert, `game.seeme=false` on move, animation switching
+- [x] `render()`: `sprite.setPosition()`, haskeySprite show/position
+- [x] `_staticCollision(list)`: AABB rect intersection
 
 ### 2d. STPView.js — main GameScene
-Mirrors `STPView.java` / `STPGame.java`.
-- [ ] `create()`:
-  - [ ] Instantiate level (from SaveReader), call `level.init()` and `level.createMasterList()`
-  - [ ] Create player at spawn position
-  - [ ] Set `locationX=0, locationY=0`
-  - [ ] Call `changeloc()` to load first screen's lists
-  - [ ] Start level music via SoundManager
-  - [ ] Init `timercounter`, start timer
-  - [ ] Set `seeme = true`, `seemeTimer = 26`
-- [ ] `changeloc()`:
-  - [ ] Load `staticsList`, `enemyList`, `objectList` from `level.masterList[locationX][locationY]`
-  - [ ] Re-init all enemies and objects for the new screen
-- [ ] `update(time, delta)`:
-  - [ ] `player.update(this)`
-  - [ ] For each enemy: `enemy.update(this)` (iterate copy of list for safe removal)
-  - [ ] For each object: `object.update(this)` (iterate copy of list for safe removal)
-  - [ ] Check player–enemy hitbox intersections → trigger death animation
-  - [ ] Check player–object hitbox → call `object.hit(this)`
-  - [ ] Tick `timercounter`
-  - [ ] Decrement `seemeTimer`; if ≤0 set `seeme=false`
-- [ ] `render()` (draw order):
-  1. [ ] Tilemap layer(s) for current screen
-  2. [ ] All objects (objectList) — render behind player
-  3. [ ] Player
-  4. [ ] All enemies (enemyList)
-  5. [ ] UI overlays (timer, seeme indicator, key indicator)
+Mirrors `STPGame.java`.
+- [x] `async loadlevel()`: `await level.init()`, createPlayer, imageinit, createMasterList, changeloc, play music, seeme=true/seemecounter=26, start timer, create UI sprites
+- [x] `changeloc()`: loads staticsList/enemyList/objectList from masterList, rebuilds tilemap
+- [x] `update(delta)`: player, enemy, object updates; hitbox collision checks; seeme blink counter; timer tick; _render()
+- [x] `_render()`: player.render(), enemy/object render(), seeme arrow (blink: visible when seemecounter<25), timer HUD text
+- [x] `_rebuildTilemap(mapX, mapY)`: destroys old Phaser Tilemap, builds new one from 2D tile-index array using `scene.make.tilemap()` + `addTilesetImage` + `createLayer`
+- [x] GameScene in Main.js: async create(), `await stpview.loadlevel()`, `isReady` guard, `stpview.update(delta)` each frame
+- Note: `animationManager` wired as null — death/crush/win triggers are no-ops until Phase 4
 
 ---
 
@@ -435,10 +409,10 @@ Mirrors `AnimationManager.java`.
 ---
 
 ## Current Phase
-**Phase 2a/2b complete.** Level.js base class and Level1–6 subclasses implemented. TMX parsing uses DecompressionStream (gzip). All enemy/other files have export stubs. `createLevel()` factory in Main.js. GameScene shows level name placeholder.
+**Phase 2 complete.** Player, Level, STPView all implemented. The game loop runs: TMX loads, tilemap renders, player moves with collision, timer ticks. Enemies/objects are stubs only — no AI, no interactions yet.
 
 ## Next Milestone
-Phase 2c (Player.js) then Phase 2d (STPView.js / GameScene).
+Phase 3: implement enemy AI and interactive objects, starting with 3a (Enemy.js base) then 3b (Dog.js).
 
 ---
 

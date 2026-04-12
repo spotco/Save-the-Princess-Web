@@ -4,6 +4,7 @@
 import SoundManager from './SoundManager.js';
 import SaveReader   from './SaveReader.js';
 import Menu         from './Menu.js';
+import STPView      from './STPView.js';
 import Level1       from './levels/Level1.js';
 import Level2       from './levels/Level2.js';
 import Level3       from './levels/Level3.js';
@@ -286,23 +287,37 @@ class MenuScene extends Phaser.Scene {
 }
 
 // GameScene — main game loop.
-// Delegates to STPView.js (Phase 2d). Level is selected via scene data { levelName }.
+// Delegates to STPView.js (mirrors STPGame.java).
+// Receives { levelName } via scene data from MenuScene.
 class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
+        this.stpview = null;
+        this.isReady = false;
     }
 
-    create() {
-        const levelName = this.scene.settings.data && this.scene.settings.data.levelName
-            ? this.scene.settings.data.levelName
-            : 'Level1';
-        // TODO Phase 2d: instantiate STPView with createLevel(this, levelName) and run game loop
-        this.add.text(10, 10, 'GameScene: ' + levelName + '\n[Phase 2d: STPView — TODO]', {
-            fontFamily: 'monospace', fontSize: '14px', color: '#ffffff'
-        });
+    async create() {
+        this.isReady = false;
+
+        const data      = this.scene.settings.data || {};
+        const levelName = data.levelName || 'Level1';
+
+        const sound = new SoundManager(this);
+        const save  = new SaveReader();
+        save.loadGame();
+        // Ensure the save reflects the level we're loading
+        // (MenuScene already called newGame() or loadGame() before transitioning)
+        const level = createLevel(this, levelName);
+
+        this.stpview = new STPView(this, level, sound, save);
+        await this.stpview.loadlevel();
+
+        this.isReady = true;
     }
 
     update(time, delta) {
+        if (!this.isReady) return;
+        this.stpview.update(delta);
     }
 }
 
