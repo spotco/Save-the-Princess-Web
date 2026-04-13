@@ -327,7 +327,7 @@ export default class STPView {
 
         if (currentLevelName === 'Level6') {
             if (this.animationManager) {
-                this.animationManager.startAnimation('finalTowerLedge', null);
+                this.animationManager.startAnimation('finalTowerLedge', { skipSaveTime: true });
             }
             return;
         }

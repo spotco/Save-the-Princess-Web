@@ -13,6 +13,8 @@ const REC_TIMES = {
 };
 
 const LS_KEY = 'stptimes';
+const NO_TIME_RECORDED = 999999;
+const NO_TIME_DISPLAY = '0:00:00';
 
 export default class TimerCounter {
     constructor(levelName) {
@@ -28,7 +30,7 @@ export default class TimerCounter {
         this.stats = raw ? JSON.parse(raw) : {};
         // Ensure every level has an entry
         for (const k of Object.keys(REC_TIMES)) {
-            if (!(k in this.stats)) this.stats[k] = 999999;
+            if (!(k in this.stats)) this.stats[k] = NO_TIME_RECORDED;
         }
     }
 
@@ -59,12 +61,15 @@ export default class TimerCounter {
 
     // Formatted best time for a level from localStorage
     gettime(name) {
-        const sto = this.stats[name] || 999999;
+        const sto = this.stats[name] || NO_TIME_RECORDED;
+        if (TimerCounter._isUnsetTime(sto)) {
+            return NO_TIME_DISPLAY;
+        }
         return TimerCounter._formatTime(sto);
     }
 
     gettimeraw(name) {
-        return this.stats[name] || 999999;
+        return this.stats[name] || NO_TIME_RECORDED;
     }
 
     // Persist if new time beats stored best (mirrors writetime())
@@ -77,7 +82,11 @@ export default class TimerCounter {
 
     // Developer record time in centiseconds for a level
     getRecTime(name) {
-        return REC_TIMES[name] || 999999;
+        return REC_TIMES[name] || NO_TIME_RECORDED;
+    }
+
+    static _isUnsetTime(sto) {
+        return typeof sto !== 'number' || !Number.isFinite(sto) || sto >= NO_TIME_RECORDED;
     }
 
     static _formatTime(sto) {

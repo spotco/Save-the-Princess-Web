@@ -7,6 +7,7 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
     constructor(manager, altArg) {
         super(manager, altArg);
         this.scene = manager.scene;
+        this.skipSaveTime = altArg !== null && altArg.skipSaveTime === true;
         this.playerx = 543;
         this.playery = 327;
         this.lastdir = false;
@@ -72,8 +73,10 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
         const display = this.manager.display;
         if (display && display.timercounter) {
             display.timercounter.stop();
-            display.timercounter.writetime(display.save.getCurrentLevel(), display.timercounter.abs);
             this.youTime = display.timercounter.getCurTime();
+            if (!this.skipSaveTime) {
+                display.timercounter.writetime(display.save.getCurrentLevel(), display.timercounter.abs);
+            }
             this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
         }
     }
