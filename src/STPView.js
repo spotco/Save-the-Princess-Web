@@ -323,6 +323,15 @@ export default class STPView {
     }
 
     _skipLevel() {
+        const currentLevelName = this.save.getCurrentLevel();
+
+        if (currentLevelName === 'Level6') {
+            if (this.animationManager) {
+                this.animationManager.startAnimation('finalTowerLedge', null);
+            }
+            return;
+        }
+
         if (this.timercounter) {
             this.timercounter.stop();
         }

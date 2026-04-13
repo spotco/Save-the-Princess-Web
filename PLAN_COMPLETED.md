@@ -211,3 +211,5 @@ Update 2026-04-12: Fixed `Level.createObjects()` to pass `this.scene` into inter
 Update 2026-04-12: Phase 5 audit confirmed keyboard controls plus the `seeme`, timer, and key overlays were already live. Added the remaining 5a-5c items in `STPView`: `ESC` pause, `H` hitbox toggle, and `N` level skip.
 
 Update 2026-04-12: Added boot-time trimmed tilemap textures for `tileset1`, `guard1set`, and `wizard1set`, and routed TMX tileset loading through those `_tilemap` keys. This removes Phaser's "Image tile area not tile size multiple" warning spam without changing gameplay assets.
+
+Update 2026-04-12: Corrected the debug `N` shortcut at the end of `Level6`. It now enters the existing final tower ledge ending sequence instead of skipping straight to `End`, and pressing `N` during the ledge or credit scroll ending scenes now returns directly to the main menu.

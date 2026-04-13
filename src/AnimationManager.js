@@ -18,6 +18,7 @@ export default class AnimationManager {
         this.currentType      = null;
         this.altArg           = null;
         this.spaceKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.nKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
     }
 
     startAnimation(type, altArg) {
@@ -38,6 +39,11 @@ export default class AnimationManager {
 
     update(game) {
         if (!this.inAnimation || this.currentAnimation === null) {
+            return;
+        }
+
+        if (this._shouldReturnToMenuOnN()) {
+            this._returnToMenuImmediately();
             return;
         }
 
@@ -164,6 +170,28 @@ export default class AnimationManager {
             this.display.save.nextLevel();
         }
         this.scene.scene.start('MenuScene', { playIntro: true });
+    }
+
+    _shouldReturnToMenuOnN() {
+        return (this.currentType === 'finalTowerLedge' || this.currentType === 'creditscroll') &&
+            Phaser.Input.Keyboard.JustDown(this.nKey);
+    }
+
+    _returnToMenuImmediately() {
+        if (this.currentAnimation && this.currentAnimation.destroy) {
+            this.currentAnimation.destroy();
+        }
+
+        this.inAnimation      = false;
+        this.currentAnimation = null;
+        this.currentType      = null;
+        this.altArg           = null;
+
+        if (this.display && this.display.sound) {
+            this.display.sound.stop();
+        }
+
+        this.scene.scene.start('MenuScene', { playIntro: false });
     }
 
     _getCurrentLevelName() {

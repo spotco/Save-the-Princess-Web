@@ -8,15 +8,15 @@ export default class SoundManager {
         this._currentId = null;
     }
 
-    // Stop current music and start looping new track by ID.
+    // Stop current music and start new track by ID.
     // Mirrors SoundManager.play(String id)
-    play(id) {
+    play(id, loop = true) {
         if (this.current) {
             this.current.stop();
             this.current = null;
         }
         this._currentId = id;
-        this.current = this.scene.sound.add(id, { loop: true });
+        this.current = this.scene.sound.add(id, { loop: loop });
         this.current.play();
     }
 

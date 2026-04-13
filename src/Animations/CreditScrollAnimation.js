@@ -15,7 +15,7 @@ export default class CreditScrollAnimation extends BasicAnimation {
 
         if (manager.display && manager.display.sound) {
             manager.display.sound.stop();
-            manager.display.sound.play('credits');
+            manager.display.sound.play('credits', false);
         }
 
         this._createSprites();
@@ -56,6 +56,7 @@ export default class CreditScrollAnimation extends BasicAnimation {
     render() {}
 
     destroy() {
+        this._destroySprite(this.blackBgSprite);
         this._destroySprite(this.bgStarsSprite);
         this._destroySprite(this.scrollSprite);
         this._destroySprite(this.fgSprite);
@@ -67,6 +68,9 @@ export default class CreditScrollAnimation extends BasicAnimation {
     }
 
     _createSprites() {
+        this.blackBgSprite = this.scene.add.rectangle(0, 0, 625, 625, 0x000000)
+            .setOrigin(0, 0).setDepth(99);
+
         this.bgStarsSprite = this.scene.add.image(0, 0, 'firstend2')
             .setOrigin(0, 0).setDepth(100);
 
