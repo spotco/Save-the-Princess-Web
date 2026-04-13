@@ -38,6 +38,11 @@ export default class Player {
         this.currentAnim = 'standdown';
     }
 
+    inithitbox() {
+        this.hitbox.x = this.x + Player.XCOMP;
+        this.hitbox.y = this.y + Player.YCOMP;
+    }
+
     // Create Phaser animations and sprite.  Call once from GameScene.create().
     // Mirrors Player.imageinit().
     imageinit(scene) {
@@ -111,46 +116,46 @@ export default class Player {
 
         if (k.right.isDown || k.d.isDown) {
             this.x++;
-            this.hitbox.x = this.x + Player.XCOMP;
+            this.inithitbox();
             this.currentAnim = 'walkright';
             iswalk = true;
             this.lastdirection = Player.DIR_RIGHT;
             if (this._staticCollision(game.staticsList)) {
                 this.x--;
-                this.hitbox.x = this.x + Player.XCOMP;
+                this.inithitbox();
             }
         }
         if (k.left.isDown || k.a.isDown) {
             this.x--;
-            this.hitbox.x = this.x + Player.XCOMP;
+            this.inithitbox();
             this.currentAnim = 'walkleft';
             iswalk = true;
             this.lastdirection = Player.DIR_LEFT;
             if (this._staticCollision(game.staticsList)) {
                 this.x++;
-                this.hitbox.x = this.x + Player.XCOMP;
+                this.inithitbox();
             }
         }
         if (k.up.isDown || k.w.isDown) {
             this.y--;
-            this.hitbox.y = this.y + Player.YCOMP;
+            this.inithitbox();
             this.currentAnim = 'walkup';
             iswalk = true;
             this.lastdirection = Player.DIR_UP;
             if (this._staticCollision(game.staticsList)) {
                 this.y++;
-                this.hitbox.y = this.y + Player.YCOMP;
+                this.inithitbox();
             }
         }
         if (k.down.isDown || k.s.isDown) {
             this.y++;
-            this.hitbox.y = this.y + Player.YCOMP;
+            this.inithitbox();
             this.currentAnim = 'walkdown';
             iswalk = true;
             this.lastdirection = Player.DIR_DOWN;
             if (this._staticCollision(game.staticsList)) {
                 this.y--;
-                this.hitbox.y = this.y + Player.YCOMP;
+                this.inithitbox();
             }
         }
 

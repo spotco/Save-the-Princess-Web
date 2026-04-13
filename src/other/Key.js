@@ -36,6 +36,7 @@ export default class Key {
 
     render() {
         const frame = Math.floor(this._animTimer / this._FRAME_DUR) % this._NUM_FRAMES;
+        this.sprite.setVisible(true);
         this.sprite.setTexture('key' + frame);
     }
 

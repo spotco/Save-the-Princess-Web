@@ -42,6 +42,7 @@ export default class Exit {
                 game.level.locationx++;
             }
             game.changeloc();
+            game.player.inithitbox();
         }
     }
 

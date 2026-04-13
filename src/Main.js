@@ -294,7 +294,7 @@ class MenuScene extends Phaser.Scene {
         this.soundManager.play('menu1');
 
         const data = this.scene.settings.data || {};
-        if (data.playIntro) {
+        if (data.playIntro !== false) {
             this.menu.startIntroAnimation();
         }
     }

@@ -80,8 +80,8 @@ export default class AnimationManager {
         } else if (completedType === 'creditscroll') {
             this._returnToTitle();
         } else if (completedType === 'titleScreenAnimation') {
-            if (this.display && this.display._switchToLoader) {
-                this.display._switchToLoader();
+            if (this.display && this.display.finishIntroAnimation) {
+                this.display.finishIntroAnimation();
             }
         }
     }

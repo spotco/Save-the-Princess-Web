@@ -37,6 +37,7 @@ export default class Princess {
 
     render() {
         const frame = Math.floor(this._animTimer / this._FRAME_DUR) % this._NUM_FRAMES;
+        this.sprite.setVisible(true);
         this.sprite.setTexture('princess' + (frame + 1));
     }
 

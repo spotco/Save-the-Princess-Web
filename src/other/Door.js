@@ -41,7 +41,7 @@ export default class Door {
     }
 
     render() {
-        // Visibility managed by openorclose and constructor
+        this.barsSprite.setVisible(this.isClosed);
     }
 
     hide() {

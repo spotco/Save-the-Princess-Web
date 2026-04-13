@@ -202,8 +202,8 @@ export default class Level {
     // --- TMX parsing helpers ---
 
     // Parse a TMX file from Phaser's XML cache and store the result in
-    // this.storedmap[x][y] = { tileProps, tiles, width, height, firstgid }.
-    // tileProps: Map<tileId, {propName: propValue}>
+    // this.storedmap[x][y] = { tileProps, tiles, width, height, tilesets }.
+    // tileProps: Map<gid, {propName: propValue}>
     // tiles: flat uint32 array of GIDs, row-major (index = y*width + x)
     async _parseTMXInto(cacheKey, x, y) {
         if (!this.storedmap[x]) this.storedmap[x] = [];
@@ -217,28 +217,72 @@ export default class Level {
         const width  = parseInt(mapEl.getAttribute('width'));
         const height = parseInt(mapEl.getAttribute('height'));
 
-        // firstgid: the offset added to tile IDs in the layer data
-        const tilesetEl = mapEl.querySelector('tileset');
-        const firstgid  = parseInt(tilesetEl.getAttribute('firstgid')) || 1;
-
-        // Build tileId → properties map
+        // Build gid → properties map across all referenced tilesets.
         const tileProps = {};
-        tilesetEl.querySelectorAll('tile').forEach(tile => {
-            const id = parseInt(tile.getAttribute('id'));
-            const props = {};
-            tile.querySelectorAll('property').forEach(prop => {
-                const name = prop.getAttribute('name');
-                if (name) props[name] = prop.getAttribute('value');
+        const tilesets = [];
+        const tilesetEls = Array.from(mapEl.querySelectorAll('tileset'));
+        for (const tilesetEl of tilesetEls) {
+            const firstgid = parseInt(tilesetEl.getAttribute('firstgid')) || 1;
+            const tilesetDef = await this._getTilesetDefinition(tilesetEl);
+
+            tilesets.push({
+                name:     tilesetDef.name,
+                imageKey: tilesetDef.imageKey,
+                firstgid: firstgid
             });
-            tileProps[id] = props;
-        });
+
+            tilesetDef.tileEls.forEach((tile) => {
+                const gid = firstgid + parseInt(tile.getAttribute('id'));
+                const props = {};
+                tile.querySelectorAll('property').forEach((prop) => {
+                    const name = prop.getAttribute('name');
+                    if (name) props[name] = prop.getAttribute('value');
+                });
+                tileProps[gid] = props;
+            });
+        }
 
         // Decode base64+gzip layer data to a flat uint32 GID array
         const dataEl  = mapEl.querySelector('layer data');
         const base64  = dataEl.textContent.trim();
         const tiles   = await this._decodeBase64Gzip(base64);
 
-        return { tileProps, tiles, width, height, firstgid };
+        return { tileProps, tiles, width, height, tilesets };
+    }
+
+    async _getTilesetDefinition(tilesetEl) {
+        const source = tilesetEl.getAttribute('source');
+        if (!source) {
+            const name = tilesetEl.getAttribute('name');
+            return {
+                name:     name,
+                imageKey: name,
+                tileEls:  Array.from(tilesetEl.querySelectorAll('tile'))
+            };
+        }
+
+        const tsxPath = this._resolveTSXPath(source);
+        const response = await fetch(tsxPath);
+        const tsxText = await response.text();
+        const tsxDoc = new DOMParser().parseFromString(tsxText, 'application/xml');
+        const tsxRoot = tsxDoc.documentElement;
+        const name = tsxRoot.getAttribute('name') || this._basenameWithoutExt(source);
+        const imageEl = tsxRoot.querySelector('image');
+        const imageSource = imageEl ? imageEl.getAttribute('source') : null;
+
+        return {
+            name:     name,
+            imageKey: this._basenameWithoutExt(imageSource || source),
+            tileEls:  Array.from(tsxRoot.querySelectorAll('tile'))
+        };
+    }
+
+    _resolveTSXPath(source) {
+        return 'img/' + source.replace(/^.*[\\/]/, '');
+    }
+
+    _basenameWithoutExt(path) {
+        return path.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '');
     }
 
     // Decompress base64-encoded gzip data and return a flat array of uint32 GIDs.
@@ -289,8 +333,7 @@ export default class Level {
         const map    = this.storedmap[mapX][mapY];
         const gid    = map.tiles[tileY * map.width + tileX];
         if (!gid) return defaultVal;  // GID 0 = empty tile
-        const tileId = gid - map.firstgid;
-        const props  = map.tileProps[tileId];
+        const props  = map.tileProps[gid];
         if (!props || props[propName] === undefined) return defaultVal;
         return props[propName];
     }

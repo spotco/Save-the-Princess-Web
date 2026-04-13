@@ -74,7 +74,7 @@ Mirrors `Menu.java`. **Module written but NOT wired up — see "Known Wiring Gap
 - [x] Sub-states: `inmenuimg` (title), `inloaderimg` (new/load/times)
 - [x] `inmenuimg` state:
   - [x] Display menu.png fullscreen (uses `menunew` key)
-  - [~] SPACE advances to loader — **title screen animation (TitleScreenAnimation) not yet hooked up; goes straight to loader**
+  - [x] Fresh boot auto-plays `TitleScreenAnimation`, then SPACE advances from the title menu to the loader
 - [x] `inloaderimg` state:
   - [x] Display loader.png with cursor (loadercursor.png)
   - [x] Cursor positions: 0=New Game, 1=Load Game, 2=Times, 3=Times display
@@ -416,8 +416,8 @@ Phase 5a: Controls — verify keyboard flow end-to-end and add remaining control
 
 ## Known Notes (read before editing)
 
-1. **Title screen animation is not wired.** `Menu.java`'s real flow is menu-image → `TitleScreenAnimation` → loader. The current `Menu.js` skips the animation and goes directly to the loader. This is intentional until Phase 4b. A `// TODO Phase 4b` comment marks the spot in `Menu.js`.
-2. **GameScene is still a placeholder.** `Menu._loadGame()` calls `this.scene.scene.start('GameScene', { levelName })`. `GameScene` will receive the level name via `this.scene.settings.data.levelName` in its `create()`. Phase 2d implements the real game loop.
+1. **Startup/menu flow now matches Java.** Fresh boot enters `TitleScreenAnimation`, returns to the static title menu, and only then does SPACE/ENTER advance to the loader.
+2. **GameScene scene data remains the level handoff path.** `Menu._loadGame()` calls `this.scene.scene.start('GameScene', { levelName })`. `GameScene` receives the level name via `this.scene.settings.data.levelName` in `create()`.
 
 ---
 

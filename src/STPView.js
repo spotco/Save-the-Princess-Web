@@ -34,6 +34,8 @@ export default class STPView {
     // Call once from GameScene.create() and await it.
     // Mirrors STPGame.loadlevel().
     async loadlevel() {
+        console.log('Loading level:', this.save.getCurrentLevel());
+
         await this.level.init();
 
         const spawn = this.level.createPlayer(0, 0);
@@ -41,6 +43,7 @@ export default class STPView {
         this.player.imageinit(this.scene);
 
         this.level.createMasterList();
+        this._hideAllScreenEntities();
 
         this.changeloc();  // load screen (0,0) lists + tilemap
 
@@ -61,6 +64,8 @@ export default class STPView {
         this.bestTimeText = this.scene.add.text(0, 13, '', {
             fontFamily: 'monospace', fontSize: '13px', color: '#ffff00'
         }).setDepth(20);
+
+        this._render();
     }
 
     // Load lists and rebuild tilemap for the current locationx/locationy.
@@ -127,6 +132,23 @@ export default class STPView {
 
     // --- Private helpers ---
 
+    _hideAllScreenEntities() {
+        if (!this.level.masterList) {
+            return;
+        }
+
+        for (const column of this.level.masterList) {
+            for (const cell of column) {
+                for (const e of cell.enemylist) {
+                    if (e.hide) e.hide();
+                }
+                for (const o of cell.objectlist) {
+                    if (o.hide) o.hide();
+                }
+            }
+        }
+    }
+
     // Update all Phaser display object positions.
     // In Phaser 3 the scene graph handles drawing; we just reposition each frame.
     // Mirrors STPGame.render() minus the Slick-specific draw calls.
@@ -168,13 +190,14 @@ export default class STPView {
 
         const map = this.level.storedmap[mapX][mapY];
 
-        // Build 2D array: -1 = empty, 0-based tile index into tileset1.png
+        // Build 2D array: -1 = empty, otherwise use TMX gid space minus 1 so
+        // multiple tilesets can render into the same generated tilemap layer.
         const tileData = [];
         for (let y = 0; y < map.height; y++) {
             const row = [];
             for (let x = 0; x < map.width; x++) {
                 const gid = map.tiles[y * map.width + x];
-                row.push(gid > 0 ? gid - map.firstgid : -1);
+                row.push(gid > 0 ? gid - 1 : -1);
             }
             tileData.push(row);
         }
@@ -186,9 +209,22 @@ export default class STPView {
             width:      map.width,
             height:     map.height
         });
-        // addTilesetImage(tilesetName, imageKey, tileW, tileH, margin, spacing)
-        const tileset = tilemap.addTilesetImage('tileset1', 'tileset1', 25, 25, 0, 0);
-        const layer   = tilemap.createLayer(0, tileset, 0, 0);
+        const tilesets = [];
+        for (const tilesetInfo of map.tilesets) {
+            const tileset = tilemap.addTilesetImage(
+                tilesetInfo.name,
+                tilesetInfo.imageKey,
+                25,
+                25,
+                0,
+                0,
+                tilesetInfo.firstgid - 1
+            );
+            if (tileset) {
+                tilesets.push(tileset);
+            }
+        }
+        const layer   = tilemap.createLayer(0, tilesets, 0, 0);
         layer.setDepth(0);
 
         this.currentTilemap = tilemap;

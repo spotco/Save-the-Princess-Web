@@ -65,13 +65,7 @@ export default class Menu {
 
             if (K(k.space) || K(k.enter)) {
                 this.sound.sfx('menuchange');
-                if (this.animationManager) {
-                    this.menuImg.setVisible(false);
-                    this.pressImg.setVisible(false);
-                    this.animationManager.startAnimation('titleScreenAnimation', null);
-                } else {
-                    this._switchToLoader();
-                }
+                this._switchToLoader();
             }
 
         } else if (this.inloaderimg) {
@@ -190,6 +184,8 @@ export default class Menu {
     startIntroAnimation() {
         this.inmenuimg   = true;
         this.inloaderimg = false;
+        this.counter     = 0;
+        this.displaypress = false;
         this.menuImg.setVisible(false);
         this.pressImg.setVisible(false);
         this.loaderImg.setVisible(false);
@@ -199,5 +195,17 @@ export default class Menu {
         if (this.animationManager) {
             this.animationManager.startAnimation('titleScreenAnimation', null);
         }
+    }
+
+    finishIntroAnimation() {
+        this.inmenuimg   = true;
+        this.inloaderimg = false;
+        this.counter     = 0;
+        this.displaypress = false;
+        this.loaderImg.setVisible(false);
+        this.cursorImg.setVisible(false);
+        this._setTimesVisible(false);
+        this.menuImg.setVisible(true);
+        this.pressImg.setVisible(false);
     }
 }
