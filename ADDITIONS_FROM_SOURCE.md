@@ -12,4 +12,11 @@ Only add items here when they are outside the original source behavior or featur
 
 ## Proposed Additions
 
+- [ ] Tile map level editor and save to file
+- [ ] Load level from file
+- [ ] Save point feature
+- [ ] Main menu with additional options
+- [ ] Sprint button
 - [ ] Touch screen / mouse controls
+- [ ] Investigate how save files work
+- [ ] Try AI gen some levels

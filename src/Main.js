@@ -376,18 +376,6 @@ class GameScene extends Phaser.Scene {
     }
 }
 
-// AnimationScene — full-screen cutscene overlay.
-// Placeholder: actual logic implemented in AnimationManager.js (Phase 4a).
-class AnimationScene extends Phaser.Scene {
-    constructor() {
-        super({ key: 'AnimationScene' });
-    }
-
-    create() {
-        // TODO Phase 4a: AnimationManager.java port
-    }
-}
-
 // Phaser 3 game config — mirrors STPView.main():
 //   container.setDisplayMode(625, 625, false)
 //   container.setTargetFrameRate(60)
@@ -397,5 +385,5 @@ new Phaser.Game({
     height: 625,
     backgroundColor: '#000000',
     fps: { target: 60, forceSetTimeOut: false },
-    scene: [BootScene, MenuScene, GameScene, AnimationScene]
+    scene: [BootScene, MenuScene, GameScene]
 });

@@ -158,7 +158,9 @@ export default class Menu {
     _loadGame() {
         const levelName = this.save.getCurrentLevel();
         if (levelName === 'End') {
-            // TODO Phase 4: credits sequence
+            // Credits already play through the in-game final animation path.
+            // A saved `End` state just returns to the title menu, matching the
+            // original menu fallback without replaying the ending.
             this.reset();
         } else {
             this.sound.stop();
