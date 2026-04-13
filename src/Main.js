@@ -274,7 +274,39 @@ class BootScene extends Phaser.Scene {
     }
 
     create() {
+        this._createTilemapTilesetTexture('tileset1');
+        this._createTilemapTilesetTexture('guard1set');
+        this._createTilemapTilesetTexture('wizard1set');
         this.scene.start('MenuScene');
+    }
+
+    _createTilemapTilesetTexture(textureKey) {
+        const sourceImage = this.textures.get(textureKey).getSourceImage();
+        const usableWidth = Math.floor(sourceImage.width / 25) * 25;
+        const usableHeight = Math.floor(sourceImage.height / 25) * 25;
+        const tilemapKey = textureKey + '_tilemap';
+
+        if (usableWidth === sourceImage.width && usableHeight === sourceImage.height) {
+            return;
+        }
+
+        if (this.textures.exists(tilemapKey)) {
+            this.textures.remove(tilemapKey);
+        }
+
+        const canvasTexture = this.textures.createCanvas(tilemapKey, usableWidth, usableHeight);
+        canvasTexture.context.drawImage(
+            sourceImage,
+            0,
+            0,
+            usableWidth,
+            usableHeight,
+            0,
+            0,
+            usableWidth,
+            usableHeight
+        );
+        canvasTexture.refresh();
     }
 }
 

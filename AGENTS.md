@@ -1,41 +1,39 @@
-# AGENTS.md — Save the Princess HTML5 / Phaser 3 Port
+# AGENTS.md - Save the Princess HTML5 / Phaser 3 Port
 
 ## Project Overview
-This is a **faithful port** of the original [Save the Princess](https://github.com/spotco/Save-the-Princess) Java game to HTML5 using **Phaser 3**.
+This is a faithful port of the original [Save the Princess](https://github.com/spotco/Save-the-Princess) Java game to HTML5 using Phaser 3.
 
-The JavaScript source is written to mirror the original Java code as closely as possible in **structure, naming conventions, class design, and style**.
+The JavaScript source is written to mirror the original Java code as closely as possible in structure, naming conventions, class design, and style.
 
-**Original repo**: https://github.com/spotco/Save-the-Princess  
-**Live demo**: https://spotco.github.io/Save-the-Princess-Web/
+Original repo: https://github.com/spotco/Save-the-Princess
+Live demo: https://spotco.github.io/Save-the-Princess-Web/
 
 ---
 
 ## Core Principles (Always Follow)
 
-- **Fidelity first**  
+- Fidelity first
   Preserve the original gameplay feel, mechanics, and visual/audio style.
-
-- **Java-mirroring style**  
-  Keep the JS code intentionally Java-like (descriptive class/variable/method names, structure, etc.).  
-  Do **not** modernize or refactor into idiomatic modern JS unless explicitly asked.
-
-- **Simplicity**  
+- Java-mirroring style
+  Keep the JS code intentionally Java-like (descriptive class/variable/method names, structure, etc.).
+  Do not modernize or refactor into idiomatic modern JS unless explicitly asked.
+- Simplicity
   No build step, no bundlers, no dependencies beyond Phaser 3 (loaded via CDN).
 
 ---
 
 ## Tech Stack
 
-- **Phaser 3** (via CDN)
-- Vanilla **JavaScript** (ES modules)
+- Phaser 3 (via CDN)
+- Vanilla JavaScript (ES modules)
 
 ### Assets
-- `img/` — Sprites and art assets (ported from `art/` in the original)
-- `snd/` — Audio files (copied from `snd/` in the original)
-- `data/` — Level map files (TMX format, copied from `data/` in the original)
+- `img/` - Sprites and art assets (ported from `art/` in the original)
+- `snd/` - Audio files (copied from `snd/` in the original)
+- `data/` - Level map files (TMX format, copied from `data/` in the original)
 
 ### Original source reference
-The original Java source lives at `E:/dev/Save-the-Princess/src/`.  
+The original Java source lives at `E:/dev/Save-the-Princess/src/`.
 Always refer to it when porting logic.
 
 ---
@@ -43,46 +41,48 @@ Always refer to it when porting logic.
 ## How to Run
 
 ```bash
-# Python (recommended)
 python -m http.server 8000
-# Then open: http://localhost:8000
 ```
 
-**Alternatives:** VS Code Live Server, `npx serve .`
+Then open `http://localhost:8000`.
 
-> **Important:** Phaser ES modules do **not** work via `file://`. Always use a local server.
+Alternatives: VS Code Live Server, `npx serve .`
+
+Important: Phaser ES modules do not work via `file://`. Always use a local server.
 
 ---
 
 ## File Structure
 
-```
+```text
 Save-the-Princess-Web/
-├── index.html          # Entry point — loads Phaser and Main.js
-├── src/                # JavaScript source (mirrors Java src structure)
-│   ├── Main.js         # Boot / scene config (mirrors STPGame.java)
-│   ├── STPView.js      # Main game scene
-│   ├── Menu.js
-│   ├── AnimationManager.js
-│   ├── SoundManager.js
-│   ├── TimerCounter.js
-│   ├── ListContainer.js
-│   ├── SaveReader.js
-│   ├── Player.js
-│   ├── levels/
-│   ├── enemy/
-│   ├── other/
-│   └── Animations/
-├── img/                # Sprites / art assets
-├── snd/                # Sound files
-├── data/               # Level TMX files
-├── AGENTS.md           # This file
-└── PLAN.md             # Development plan and progress tracking
+|- index.html                  # Entry point - loads Phaser and Main.js
+|- src/                        # JavaScript source (mirrors Java src structure)
+|  |- Main.js                  # Boot / scene config (mirrors STPGame.java)
+|  |- STPView.js               # Main game scene
+|  |- Menu.js
+|  |- AnimationManager.js
+|  |- SoundManager.js
+|  |- TimerCounter.js
+|  |- ListContainer.js
+|  |- SaveReader.js
+|  |- Player.js
+|  |- levels/
+|  |- enemy/
+|  |- other/
+|  '- Animations/
+|- img/                        # Sprites / art assets
+|- snd/                        # Sound files
+|- data/                       # Level TMX files
+|- AGENTS.md                   # This file
+|- PLAN.md                     # Active development plan only
+|- PLAN_COMPLETED.md           # Completed implementation notes
+'- ADDITIONS_FROM_SOURCE.md    # Non-Java feature backlog
 ```
 
 ---
 
-## Original Java Source → JS Mapping
+## Original Java Source -> JS Mapping
 
 | Original Java file | JS equivalent | Notes |
 |---|---|---|
@@ -118,28 +118,31 @@ Save-the-Princess-Web/
 - Use clear, descriptive variable and method names (Java style)
 - Keep comments helpful when porting or modifying logic
 - Prefer performance-friendly Phaser patterns
-- Do **not** introduce new dependencies
-- Do **not** change the no-build workflow
+- Do not introduce new dependencies
+- Do not change the no-build workflow
 - Save/load state via `localStorage` (replaces original file-based `save.dat`)
 
 ---
 
 ## Development Workflow
 
-1. Read `PLAN.md` before starting any non-trivial task — it tracks current phase, priorities, and remaining work.
-2. Create a clear, numbered plan before writing code.
-3. Work on one task at a time.
-4. After finishing a task (or at the end of a session), update `PLAN.md`:
-   - Mark completed items with `[x]`
-   - Move or adjust remaining TODOs as needed
-   - Update "Current Phase" and "Next Milestone"
+1. Read `PLAN.md` before starting any non-trivial task. It tracks active work only.
+2. Read `PLAN_COMPLETED.md` when you need completed phase details or prior implementation history.
+3. Read `ADDITIONS_FROM_SOURCE.md` when the task involves features that were not present in the original Java source.
+4. Create a clear, numbered plan before writing code.
+5. Work on one task at a time.
+6. After finishing a task, update the tracking docs:
+   - `PLAN.md` for active and upcoming work only
+   - `PLAN_COMPLETED.md` for finished implementation notes
+   - `ADDITIONS_FROM_SOURCE.md` for approved non-source features
 
-Use checkbox format `[ ]` / `[x]` in `PLAN.md` for tracking.
+Use checkbox format `[ ]` / `[x]` in planning docs where applicable.
 
 ---
 
 ## When Making Changes
 
 - Always reference the corresponding original Java file for logic fidelity
-- Test using a local server — Phaser ES modules do **not** work via `file://`
-- Maintain the goal: **"Feels like the original Java version"**
+- Test using a local server - Phaser ES modules do not work via `file://`
+- Maintain the goal: "Feels like the original Java version"
+- Keep non-source additions clearly separated from the faithful port by tracking them in `ADDITIONS_FROM_SOURCE.md`

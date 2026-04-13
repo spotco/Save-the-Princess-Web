@@ -22,12 +22,17 @@ export default class STPView {
         this.seemecounter = 26;   // mirrors STPGame.loadlevel() initial value
         this.timercounter = null;
         this.animationManager = new AnimationManager(this.scene, this);
+        this.isPaused     = false;
+        this.displayHitboxes = false;
 
         // Phaser display refs
         this.currentTilemap   = null;
         this.seemeSprite      = null;
         this.timerText        = null;
         this.bestTimeText     = null;
+        this.pauseText        = null;
+        this.debugGraphics    = null;
+        this.keys             = null;
     }
 
     // async: parses level TMX, builds masterList, creates player.
@@ -64,6 +69,15 @@ export default class STPView {
         this.bestTimeText = this.scene.add.text(0, 13, '', {
             fontFamily: 'monospace', fontSize: '13px', color: '#ffff00'
         }).setDepth(20);
+        this.pauseText = this.scene.add.text(312, 312, 'PAUSED', {
+            fontFamily: 'monospace', fontSize: '20px', color: '#ffff00'
+        }).setOrigin(0.5, 0.5).setDepth(30).setVisible(false);
+        this.debugGraphics = this.scene.add.graphics().setDepth(25);
+        this.keys = this.scene.input.keyboard.addKeys({
+            esc:   Phaser.Input.Keyboard.KeyCodes.ESC,
+            h:     Phaser.Input.Keyboard.KeyCodes.H,
+            n:     Phaser.Input.Keyboard.KeyCodes.N
+        });
 
         this._render();
     }
@@ -88,6 +102,15 @@ export default class STPView {
         if (this.animationManager && this.animationManager.inAnimation) {
             this.animationManager.update(this);
             this.animationManager.render();
+            return;
+        }
+
+        if (this._handleControlHotkeys()) {
+            return;
+        }
+
+        if (this.isPaused) {
+            this._render();
             return;
         }
 
@@ -178,6 +201,12 @@ export default class STPView {
                 this.timercounter.gettime(this.save.getCurrentLevel())
             );
         }
+
+        if (this.pauseText) {
+            this.pauseText.setVisible(this.isPaused);
+        }
+
+        this._renderHitboxes();
     }
 
     // Destroy any existing Phaser tilemap and build a new one for screen (mapX, mapY).
@@ -228,6 +257,87 @@ export default class STPView {
         layer.setDepth(0);
 
         this.currentTilemap = tilemap;
+    }
+
+    _handleControlHotkeys() {
+        if (!this.keys) {
+            return false;
+        }
+
+        const K = Phaser.Input.Keyboard.JustDown;
+
+        if (K(this.keys.esc)) {
+            this.isPaused = !this.isPaused;
+        }
+        if (K(this.keys.h)) {
+            this.displayHitboxes = !this.displayHitboxes;
+            if (!this.displayHitboxes && this.debugGraphics) {
+                this.debugGraphics.clear();
+            }
+        }
+        if (K(this.keys.n)) {
+            this._skipLevel();
+            return true;
+        }
+
+        return false;
+    }
+
+    _renderHitboxes() {
+        if (!this.debugGraphics) {
+            return;
+        }
+
+        this.debugGraphics.clear();
+
+        if (!this.displayHitboxes) {
+            return;
+        }
+
+        this.debugGraphics.lineStyle(1, 0xffffff, 1);
+        for (const rect of this.staticsList) {
+            this.debugGraphics.strokeRect(rect.x, rect.y, rect.width, rect.height);
+        }
+
+        this.debugGraphics.lineStyle(1, 0xff0000, 1);
+        for (const e of this.enemyList) {
+            if (e.hitbox) {
+                this.debugGraphics.strokeRect(e.hitbox.x, e.hitbox.y, e.hitbox.width, e.hitbox.height);
+            }
+        }
+
+        this.debugGraphics.lineStyle(1, 0xffff00, 1);
+        for (const o of this.objectList) {
+            if (o.hitbox) {
+                this.debugGraphics.strokeRect(o.hitbox.x, o.hitbox.y, o.hitbox.width, o.hitbox.height);
+            }
+        }
+
+        this.debugGraphics.lineStyle(1, 0x0000ff, 1);
+        this.debugGraphics.strokeRect(
+            this.player.hitbox.x,
+            this.player.hitbox.y,
+            this.player.hitbox.width,
+            this.player.hitbox.height
+        );
+    }
+
+    _skipLevel() {
+        if (this.timercounter) {
+            this.timercounter.stop();
+        }
+        if (this.sound) {
+            this.sound.stop();
+        }
+
+        this.save.nextLevel();
+
+        const nextLevelName = this.save.getCurrentLevel();
+        if (nextLevelName === 'End') {
+            this.scene.scene.start('MenuScene');
+        } else {
+            this.scene.scene.start('GameScene', { levelName: nextLevelName });
+        }
     }
 }
 

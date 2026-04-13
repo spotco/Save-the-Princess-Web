@@ -256,7 +256,7 @@ export default class Level {
             const name = tilesetEl.getAttribute('name');
             return {
                 name:     name,
-                imageKey: name,
+                imageKey: this._getTilemapImageKey(name),
                 tileEls:  Array.from(tilesetEl.querySelectorAll('tile'))
             };
         }
@@ -272,9 +272,16 @@ export default class Level {
 
         return {
             name:     name,
-            imageKey: this._basenameWithoutExt(imageSource || source),
+            imageKey: this._getTilemapImageKey(this._basenameWithoutExt(imageSource || source)),
             tileEls:  Array.from(tsxRoot.querySelectorAll('tile'))
         };
+    }
+
+    _getTilemapImageKey(imageKey) {
+        if (imageKey === 'tileset1' || imageKey === 'guard1set' || imageKey === 'wizard1set') {
+            return imageKey + '_tilemap';
+        }
+        return imageKey;
     }
 
     _resolveTSXPath(source) {
