@@ -12,11 +12,24 @@ Live demo: https://spotco.github.io/Save-the-Princess-Web/
 
 ## Core Principles (Always Follow)
 
-- Fidelity first
-  Preserve the original gameplay feel, mechanics, and visual/audio style.
-- Java-mirroring style
+- Fidelity first for ported code
+  Preserve the original gameplay feel, mechanics, and visual/audio style
+  for everything that corresponds to the Java source.
+- Java-recognizable style
   Keep the JS code intentionally Java-like (descriptive class/variable/method names, structure, etc.).
   Do not modernize or refactor into idiomatic modern JS unless explicitly asked.
+- New features are allowed
+  The project is past the faithful-port phase. Adding new features
+  (editor, new menus, new UI, etc.) is fine. When you add new code, keep
+  it structured and named so that it still *looks* like it belongs next
+  to the Java-mirroring code — classes with descriptive names, explicit
+  methods, no clever idiomatic-JS tricks.
+- Prefer Phaser text over baked-in text images
+  For new UI (and for refactors of existing menus), render labels with
+  `scene.add.text()` rather than bitmap art. Lay the code out so it is
+  obvious which button maps to which text — e.g., an entries array where
+  each row is `{ label, action }`, not a lookup by numeric index spread
+  across multiple methods.
 - Simplicity
   No build step, no bundlers, no dependencies beyond Phaser 3 (loaded via CDN).
 
