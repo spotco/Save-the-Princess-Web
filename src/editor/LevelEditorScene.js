@@ -72,6 +72,8 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.statusText         = null;
         this.fileInput          = null;
         this.rectDragStart      = null;
+        this.showPointers       = true;
+        this.pointerToggleButton = null;
 
         // UI object collections — populated by _build* methods
         this.tileImages    = [];   // [ty][tx] → Phaser.Image
@@ -112,12 +114,14 @@ export default class LevelEditorScene extends Phaser.Scene {
     // Frame key = integer localId (0–24); tile is at col*25, row*25 in the 128×128 image.
     _addTilesetFrames() {
         for (const name of TILESETS) {
-            const tex = this.textures.get(name);
-            for (let row = 0; row < 5; row++) {
-                for (let col = 0; col < 5; col++) {
-                    const localId = row * 5 + col;
-                    if (!tex.has(localId)) {
-                        tex.add(localId, 0, col * 25, row * 25, 25, 25);
+            for (const texKey of [name, this._pointerTextureKey(name)]) {
+                const tex = this.textures.get(texKey);
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const localId = row * 5 + col;
+                        if (!tex.has(localId)) {
+                            tex.add(localId, 0, col * 25, row * 25, 25, 25);
+                        }
                     }
                 }
             }
@@ -219,7 +223,7 @@ export default class LevelEditorScene extends Phaser.Scene {
                     const localId = row * 5 + col;
                     const bx      = PAL_X + col * PAL_TILE;
                     const by      = py  + row * PAL_TILE;
-                    const img     = this.add.image(bx, by, tilesetName, localId)
+                    const img     = this.add.image(bx, by, this._editorTextureKey(tilesetName), localId)
                                         .setOrigin(0, 0)
                                         .setDisplaySize(PAL_TILE, PAL_TILE)
                                         .setInteractive({ useHandCursor: true });
@@ -235,19 +239,16 @@ export default class LevelEditorScene extends Phaser.Scene {
 
         this.paletteContentH = py - TOP_H;
 
-        const paletteHitZone = this.add.rectangle(PAL_X, TOP_H, PAL_W, 625 - TOP_H, 0, 0)
-                                  .setOrigin(0, 0)
-                                  .setInteractive();
-        paletteHitZone.on('pointerdown', (ptr) => {
+        this.input.on('pointerdown', (ptr) => {
+            if (!this._isPointerInPalette(ptr)) return;
             this.paletteDragState = {
                 startY: ptr.y,
                 startScrollY: this.paletteScrollY,
                 dragged: false
             };
         });
-        paletteHitZone.on('pointermove', (ptr) => this._handlePalettePointerMove(ptr));
-        paletteHitZone.on('pointerup',   () => this._endPaletteDrag());
-        paletteHitZone.on('pointerout',  () => this._endPaletteDrag());
+        this.input.on('pointermove', (ptr) => this._handlePalettePointerMove(ptr));
+        this.input.on('pointerup',   () => this._endPaletteDrag());
         this.input.on('wheel', (ptr, gos, dx, dy) => {
             if (ptr.x >= PAL_X && ptr.x < 625 && ptr.y >= TOP_H && ptr.y < 625) {
                 this._setPaletteScrollY(this.paletteScrollY + dy);
@@ -314,17 +315,22 @@ export default class LevelEditorScene extends Phaser.Scene {
             { label: 'LOAD', fn: () => this._actionLoad() },
             { label: 'IMPORT', fn: () => this._actionImportExisting() },
             { label: 'NEW',  fn: () => this._actionNew()  },
+            { label: 'PTR:ON', fn: () => this._togglePointers() },
             { label: 'MENU', fn: () => this._actionBack() },
         ];
-        const aBtnW = 99, aBtnGap = 1, aRow = BOT_Y + 46;
+        const aBtnW = 82, aBtnGap = 1, aRow = BOT_Y + 46;
         actDefs.forEach(({ label, fn }, i) => {
-            this._makeButton(i * (aBtnW + aBtnGap), aRow, aBtnW, 26, label, 7, fn);
+            const btn = this._makeButton(i * (aBtnW + aBtnGap), aRow, aBtnW, 26, label, 7, fn);
+            if (label === 'PTR:ON') {
+                this.pointerToggleButton = btn;
+            }
         });
 
         this.statusText = this.add.text(6, BOT_Y + 78, '', ts(6, C_YELLOW)).setOrigin(0, 0);
         this._setStatus('Ready.');
 
         this._updateToolButtonHighlight();
+        this._updatePointerToggleButton();
     }
 
     // A green outline box that follows the pointer tile on the map canvas.
@@ -351,6 +357,7 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-F', () => this._selectTool('fill'));
         this.input.keyboard.on('keydown-R', () => this._selectTool('rect'));
         this.input.keyboard.on('keydown-I', () => this._selectTool('pick'));
+        this.input.keyboard.on('keydown-P', () => this._togglePointers());
 
         this.input.keyboard.on('keydown-S', (event) => {
             if (event.ctrlKey) {
@@ -491,7 +498,7 @@ export default class LevelEditorScene extends Phaser.Scene {
             img.setTexture('editor_empty').setDisplaySize(TILE_SZ, TILE_SZ);
             return;
         }
-        img.setTexture(tsData.name, gid - tsData.firstgid).setDisplaySize(TILE_SZ, TILE_SZ);
+        img.setTexture(this._editorTextureKey(tsData.name), gid - tsData.firstgid).setDisplaySize(TILE_SZ, TILE_SZ);
     }
 
     // Return the tileset entry whose firstgid range contains the given GID.
@@ -527,8 +534,18 @@ export default class LevelEditorScene extends Phaser.Scene {
         this._redrawPaletteSelection();
     }
 
+    _refreshPaletteTextures() {
+        this.paletteEntries.forEach((entry) => {
+            entry.img.setTexture(this._editorTextureKey(entry.tilesetName), entry.localId);
+        });
+    }
+
     _handlePalettePointerMove(ptr) {
         if (!this.paletteDragState) return;
+        if (!ptr.isDown) {
+            this._endPaletteDrag();
+            return;
+        }
         const dy = ptr.y - this.paletteDragState.startY;
         if (Math.abs(dy) >= 3) this.paletteDragState.dragged = true;
         this._setPaletteScrollY(this.paletteDragState.startScrollY - dy);
@@ -536,6 +553,10 @@ export default class LevelEditorScene extends Phaser.Scene {
 
     _endPaletteDrag() {
         this.paletteDragState = null;
+    }
+
+    _isPointerInPalette(ptr) {
+        return ptr.x >= PAL_X && ptr.x < 625 && ptr.y >= TOP_H && ptr.y < 625;
     }
 
     _redrawPaletteSelection() {
@@ -764,6 +785,14 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.scene.start('MenuScene', { playIntro: false });
     }
 
+    _togglePointers() {
+        this.showPointers = !this.showPointers;
+        this._refreshPaletteTextures();
+        this._redrawTileCanvas();
+        this._updatePointerToggleButton();
+        this._setStatus(this.showPointers ? 'Pointer tiles enabled.' : 'Pointer tiles hidden.');
+    }
+
     // -------------------------------------------------------------------------
     // Button factory
     // -------------------------------------------------------------------------
@@ -907,6 +936,23 @@ export default class LevelEditorScene extends Phaser.Scene {
         if (this.statusText) {
             this.statusText.setText(message);
         }
+    }
+
+    _updatePointerToggleButton() {
+        if (!this.pointerToggleButton) return;
+        const active = this.showPointers;
+        this.pointerToggleButton.txt.setText(active ? 'PTR:ON' : 'PTR:OFF');
+        this.pointerToggleButton.bg._baseColor = active ? C_BTN_ACT : C_BTN;
+        this.pointerToggleButton.bg.setFillStyle(this.pointerToggleButton.bg._baseColor);
+        this.pointerToggleButton.txt.setColor(active ? C_YELLOW : C_TEXT);
+    }
+
+    _pointerTextureKey(tilesetName) {
+        return tilesetName + '_pointers';
+    }
+
+    _editorTextureKey(tilesetName) {
+        return this.showPointers ? this._pointerTextureKey(tilesetName) : tilesetName;
     }
 
     // Create a rectangle-backed button; returns { bg, txt } for later style updates.

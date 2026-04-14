@@ -196,6 +196,10 @@ class BootScene extends Phaser.Scene {
         this.load.image('tileset1',   'img/tileset1.png');
         this.load.image('guard1set',  'img/guard1set.png');
         this.load.image('wizard1set', 'img/wizard1set.png');
+        // Editor-only pointer-marked tilesets. Gameplay scenes never render these.
+        this.load.image('tileset1_pointers',   'img/pointers/tileset1.png');
+        this.load.image('guard1set_pointers',  'img/pointers/guard1set.png');
+        this.load.image('wizard1set_pointers', 'img/pointers/wizard1set.png');
 
         // --- Final / cutscene images ---
         this.load.image('creditscreen',     'img/final/creditscreen.png');

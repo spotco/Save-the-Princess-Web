@@ -172,6 +172,31 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
         default-level / TMX import flow chosen for Phase 5.
   - [ ] Add a clearer status / error surface if the file load or import fails.
 
+### Phase 3.5 — Editor pointer-marker overlay
+- [x] Add an editor-only pointer overlay mode that visualizes the original
+      marker tiles from the historical `pointers` tileset on top of the
+      current screen without changing gameplay tile data.
+- [x] Default state: pointer markers visible whenever `LevelEditorScene`
+      opens. This default applies only inside the editor and must never
+      affect `GameScene` rendering.
+- [x] Add an editor toggle control for pointer-marker visibility:
+  - [x] UI button in the editor chrome (`PTR:ON` / `PTR:OFF`)
+  - [x] Keyboard shortcut `P`
+- [x] Rendering approach:
+  - [x] Load / register the `pointers` marker art for editor use only.
+  - [x] Use the original pointer-marked tileset variants in
+        `LevelEditorScene` for the map canvas and palette when enabled.
+  - [x] Redraw pointer-marked tiles when switching screens, editing tiles,
+        loading levels, or toggling pointer visibility.
+- [x] Scope rules:
+  - [x] Pointer markers are a visualization aid only; they do not modify
+        saved `.stplevel.json` structure beyond existing tile property data.
+  - [x] Pointer markers must not appear in normal gameplay scenes.
+- [x] Initial marker coverage:
+  - [x] Coverage matches the original pointer-marked `tileset1`,
+        `guard1set`, and `wizard1set` art used by the Java workflow.
+  - [x] No separate synthetic marker rendering layer is needed in v1.
+
 ### Phase 4 — Editing operations
 - [x] **Paint**: left-click sets tile to selected GID.
 - [x] **Erase**: sets tile to 0 (empty).
