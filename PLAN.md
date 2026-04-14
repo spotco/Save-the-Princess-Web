@@ -1,6 +1,6 @@
 # Save the Princess - Active Development Plan
 
-**Last Updated**: 2026-04-13 (added mouse/touch phases)
+**Last Updated**: 2026-04-13 (editor skeleton continued after partial run)
 
 ---
 
@@ -148,34 +148,36 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
       reads TMX files. Legacy `.tmx` files kept in `data/` as reference.
 
 ### Phase 3 — Editor scene skeleton
-- [ ] Create `src/editor/LevelEditorScene.js`, registered in `Main.js`
+- [x] Create `src/editor/LevelEditorScene.js`, registered in `Main.js`
       alongside `GameScene` / `MenuScene`.
-- [ ] Layout (625×625 canvas, same as game):
-  - Left: tile canvas, 25×25 tiles, each drawn from `tileset1.png`.
-  - Right: tile palette (scrollable) listing every tile id from
-    `tileset1.png`, highlighting the selected id.
-  - Top: screen tab bar `(0,0) (1,0) …` for multi-screen levels, plus
-    buttons `+col`, `+row`, `-col`, `-row` to resize the screen grid.
-  - Bottom: action bar — Paint / Erase / Fill / Rect / Picker, plus
-    `Save`, `Load`, `Import TMX`, `New`, `Back to Menu`.
-- [ ] Rendering: draw the current screen's GID grid using
-      `scene.add.image()` per tile, or a `Phaser.GameObjects.Blitter`
-      for perf. Redraw on edit.
-- [ ] Input: Phaser pointer events (unified mouse + touch) for all editor
-      actions — paint, erase, fill, rect, picker, palette tap, tab clicks,
-      action-bar buttons. Keyboard shortcuts `B/E/F/R/I` for tools; arrow
-      keys pan between screens; `Ctrl+S` saves. Touch-specific notes:
+- [x] Layout (625×625 canvas, same as game):
+  - [x] Left: tile canvas, 25×25 tiles, drawn from the bundled tilesets.
+  - [x] Right: tile palette with selection highlight and drag / wheel scroll.
+  - [x] Top: screen tab bar `(0,0) (1,0) …` plus working
+        `+col`, `+row`, `-col`, `-row` grid resize buttons.
+  - [x] Bottom: action bar with Paint / Erase / Fill / Rect / Picker, plus
+        `Save`, `Load`, `Import`, `New`, `Menu`.
+- [x] Rendering: draw the current screen's GID grid using
+      `scene.add.image()` per tile and redraw on edit.
+- [x] Input: Phaser pointer events (unified mouse + touch) for the current editor
+      shell — paint, erase, picker, palette tap, palette drag-scroll, tab clicks,
+      resize buttons, and action-bar buttons. Keyboard shortcuts `B/E/F/R/I` for tools;
+      arrow keys pan between screens; `Ctrl+S` saves. Touch-specific notes:
   - Drag on the tile canvas paints/erases continuously (same as mouse drag).
   - Tap palette tile to select it; palette scrolls with swipe (pointer drag
     within the palette column).
   - No pinch-zoom in v1 — the canvas is fixed 625×625; stretch goal only.
+- [ ] Remaining Phase 3 cleanup:
+  - [ ] Replace the current bundled-level import modal with the planned
+        default-level / TMX import flow chosen for Phase 5.
+  - [ ] Add a clearer status / error surface if the file load or import fails.
 
 ### Phase 4 — Editing operations
-- [ ] **Paint**: left-click sets tile to selected GID.
-- [ ] **Erase**: sets tile to 0 (empty).
-- [ ] **Fill**: flood-fill by current GID.
-- [ ] **Rect**: drag to set a rectangle region.
-- [ ] **Picker**: right-click or `I` copies the GID under cursor to the
+- [x] **Paint**: left-click sets tile to selected GID.
+- [x] **Erase**: sets tile to 0 (empty).
+- [x] **Fill**: flood-fill by current GID.
+- [x] **Rect**: drag to set a rectangle region.
+- [x] **Picker**: right-click or `I` copies the GID under cursor to the
       current selection.
 - [ ] **Property inspector**: when the current selected GID has tile
       properties in `tileProps`, show them in a side panel. Allow

@@ -1,17 +1,18 @@
 // Main.js — Boot, config, and scene management
 // Mirrors the role of STPGame.java / STPView.java in the original
 
-import SoundManager from './SoundManager.js';
-import SaveReader   from './SaveReader.js';
-import Menu         from './Menu.js';
-import STPView      from './STPView.js';
-import AnimationManager from './AnimationManager.js';
-import Level1       from './levels/Level1.js';
-import Level2       from './levels/Level2.js';
-import Level3       from './levels/Level3.js';
-import Level4       from './levels/Level4.js';
-import Level5       from './levels/Level5.js';
-import Level6       from './levels/Level6.js';
+import SoundManager      from './SoundManager.js';
+import SaveReader        from './SaveReader.js';
+import Menu              from './Menu.js';
+import STPView           from './STPView.js';
+import AnimationManager  from './AnimationManager.js';
+import Level1            from './levels/Level1.js';
+import Level2            from './levels/Level2.js';
+import Level3            from './levels/Level3.js';
+import Level4            from './levels/Level4.js';
+import Level5            from './levels/Level5.js';
+import Level6            from './levels/Level6.js';
+import LevelEditorScene  from './editor/LevelEditorScene.js';
 
 // Factory: instantiate the correct Level subclass by name.
 // Mirrors the switch in STPView.java that selects the level class.
@@ -392,36 +393,6 @@ class GameScene extends Phaser.Scene {
     update(time, delta) {
         if (!this.isReady) return;
         this.stpview.update(delta);
-    }
-}
-
-// LevelEditorScene — in-browser tile map editor.
-// Stub: shows a placeholder until the editor is implemented (Phase 3+).
-class LevelEditorScene extends Phaser.Scene {
-    constructor() {
-        super({ key: 'LevelEditorScene' });
-    }
-
-    create() {
-        const res = window.devicePixelRatio || 1;
-        this.add.rectangle(0, 0, 625, 625, 0x111111).setOrigin(0, 0);
-
-        this.add.text(312, 200, 'LEVEL EDITOR', {
-            fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffff00', resolution: res,
-        }).setOrigin(0.5, 0);
-
-        this.add.text(312, 260, 'coming soon', {
-            fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa', resolution: res,
-        }).setOrigin(0.5, 0);
-
-        const backLabel = this.add.text(312, 340, 'TAP or ESC - back to menu', {
-            fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888888', resolution: res,
-        }).setOrigin(0.5, 0);
-
-        const goBack = () => { this.scene.start('MenuScene', { playIntro: false }); };
-        this.input.keyboard.once('keydown-ESC', goBack);
-        // Tap / click anywhere returns to the menu (pointer fires for both mouse and touch).
-        this.input.once('pointerdown', goBack);
     }
 }
 
