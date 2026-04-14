@@ -9,14 +9,7 @@ export default class Level6 extends Level {
     name() { return '1v1 me bicth anytiem'; }
 
     async init() {
-        this.mapsong   = 'main1';
-        this.storedmap = [[], []];
-        await Promise.all([
-            this._parseTMXInto('level6_0_0', 0, 0),
-            this._parseTMXInto('level6_1_0', 1, 0),
-            this._parseTMXInto('level6_0_1', 0, 1),
-            this._parseTMXInto('level6_1_1', 1, 1),
-        ]);
+        await this._loadStpLevelInto('data/stplevels/level6.stplevel.json');
         this.locationx = 0;
         this.locationy = 0;
     }

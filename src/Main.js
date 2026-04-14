@@ -229,21 +229,8 @@ class BootScene extends Phaser.Scene {
         this.load.audio('fireball',      'snd/fireball.wav');
         this.load.audio('standandfight', 'snd/standandfight.wav');
 
-        // --- Level map data (TMX = XML; parsed manually in Level.js) ---
-        this.load.xml('level1',     'data/level1.tmx');
-        this.load.xml('level2',     'data/level2.tmx');
-        this.load.xml('level3',     'data/level3.tmx');
-        this.load.xml('level4_0_0', 'data/level4(0-0).tmx');
-        this.load.xml('level4_0_1', 'data/level4(0-1).tmx');
-        this.load.xml('level4_1_0', 'data/level4(1-0).tmx');
-        this.load.xml('level4_1_1', 'data/level4(1-1).tmx');
-        this.load.xml('level5_0_0', 'data/level5(0-0).tmx');
-        this.load.xml('level5_0_1', 'data/level5(0-1).tmx');
-        this.load.xml('level5_0_2', 'data/level5(0-2).tmx');
-        this.load.xml('level6_0_0', 'data/level6(0-0).tmx');
-        this.load.xml('level6_0_1', 'data/level6(0-1).tmx');
-        this.load.xml('level6_1_0', 'data/level6(1-0).tmx');
-        this.load.xml('level6_1_1', 'data/level6(1-1).tmx');
+        // Level data is now loaded as .stplevel.json via fetch() in Level._loadStpLevelInto().
+        // TMX files are no longer read at boot — the runtime uses data/stplevels/*.stplevel.json.
     }
 
     // Mirrors loadbarrender() in STPView.java

@@ -8,14 +8,7 @@ export default class Level4 extends Level {
     name() { return 'maximum security'; }
 
     async init() {
-        this.mapsong   = 'main1';
-        this.storedmap = [[], []];
-        await Promise.all([
-            this._parseTMXInto('level4_0_0', 0, 0),
-            this._parseTMXInto('level4_1_0', 1, 0),
-            this._parseTMXInto('level4_0_1', 0, 1),
-            this._parseTMXInto('level4_1_1', 1, 1),
-        ]);
+        await this._loadStpLevelInto('data/stplevels/level4.stplevel.json');
         this.locationx = 0;
         this.locationy = 0;
     }

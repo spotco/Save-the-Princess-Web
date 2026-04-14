@@ -8,9 +8,7 @@ export default class Level1 extends Level {
     name() { return 'why are there so many dogs'; }
 
     async init() {
-        this.mapsong   = 'main1';
-        this.storedmap = [[]];
-        await this._parseTMXInto('level1', 0, 0);
+        await this._loadStpLevelInto('data/stplevels/level1.stplevel.json');
         this.locationx = 0;
         this.locationy = 0;
     }

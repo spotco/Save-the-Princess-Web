@@ -8,9 +8,7 @@ export default class Level2 extends Level {
     name() { return 'buttons and doors'; }
 
     async init() {
-        this.mapsong   = 'main1';
-        this.storedmap = [[]];
-        await this._parseTMXInto('level2', 0, 0);
+        await this._loadStpLevelInto('data/stplevels/level2.stplevel.json');
         this.locationx = 0;
         this.locationy = 0;
     }

@@ -129,29 +129,23 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
 - [x] No separate touch-only code path — one handler covers both.
 - [x] Decorative loaderPanel graphics object has no `setInteractive()` call.
 
-### Phase 2 — Level file format + import/export library
-- [ ] Create `src/editor/StpLevelFormat.js`. Pure functions, no Phaser:
-  - `fromTmxCacheKeys(name, mapsong, screensX, screensY, cacheKeys)` →
-    reads parsed TMX from the Phaser XML cache (same path `Level.js`
-    uses) and builds a `.stplevel.json` object.
-  - `toJsonString(level)` / `fromJsonString(text)`.
-  - `validate(level)` — throws on malformed input.
-- [ ] Factor TMX parsing out of `Level._parseTMXInto()` into a shared
-      helper in `src/editor/TmxParser.js` so both `Level` and the format
-      library can use it without duplication. Keep the old method as a
-      thin wrapper so `Level.js` keeps its current API (style-neutral).
-- [ ] Use the format library to generate
-      `data/stplevels/level1.stplevel.json` … `level6.stplevel.json`
-      from the existing TMX. This is a one-time migration — commit the
-      generated files. An editor UI button can still re-run the
-      conversion in-browser for debugging.
-- [ ] Update `Level1..Level6` `init()` methods to `fetch()` their
-      `.stplevel.json` file and populate `this.storedmap` via a shared
-      helper in the base `Level` class (`_loadStpLevelInto(path, x, y)`).
-      Keep class names, method names, and the overall Java-mirroring
-      shape of `Level.js` intact — only the data source changes.
-- [ ] Leave the legacy TMX files in `data/` as historical reference;
-      the runtime no longer reads them.
+### Phase 2 — Level file format + import/export library ✓ DONE
+- [x] `src/editor/TmxParser.js` — static class; extracted from Level.js.
+      `parseTMX(scene, cacheKey)` is the public entry point. Level.js
+      `_parseTMXInto` is now a thin wrapper calling it.
+- [x] `src/editor/StpLevelFormat.js` — pure functions:
+      `fromStoredMap`, `fromTmxCacheKeys`, `toJsonString`,
+      `fromJsonString`, `validate`, `toStoredMap`.
+- [x] `migrate_tmx.py` (Python, no external deps) generated
+      `data/stplevels/level1–6.stplevel.json` from the original TMX files.
+      Per-screen tilesets are stored because different screens in the
+      same level use different firstgid mappings.
+- [x] `Level._loadStpLevelInto(path)` added to the base class; sets
+      `this.storedmap` and `this.mapsong` from a fetched stplevel file.
+- [x] `Level1–Level6.init()` updated to call `_loadStpLevelInto`.
+      Class names, `createMasterList`, and the overall Java shape unchanged.
+- [x] TMX `load.xml` calls removed from BootScene; runtime no longer
+      reads TMX files. Legacy `.tmx` files kept in `data/` as reference.
 
 ### Phase 3 — Editor scene skeleton
 - [ ] Create `src/editor/LevelEditorScene.js`, registered in `Main.js`

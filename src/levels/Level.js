@@ -1,6 +1,8 @@
 // Level.js — base level class
 // Mirrors Level.java
 
+import StpLevelFormat            from '../editor/StpLevelFormat.js';
+import TmxParser                 from '../editor/TmxParser.js';
 import ListContainer             from '../ListContainer.js';
 import Dog                       from '../enemy/Dog.js';
 import Guard                     from '../enemy/Guard.js';
@@ -199,139 +201,23 @@ export default class Level {
         return stolist;
     }
 
-    // --- TMX parsing helpers ---
+    // --- Map loading helpers ---
 
-    // Parse a TMX file from Phaser's XML cache and store the result in
-    // this.storedmap[x][y] = { tileProps, tiles, width, height, tilesets }.
-    // tileProps: Map<gid, {propName: propValue}>
-    // tiles: flat uint32 array of GIDs, row-major (index = y*width + x)
+    // Thin wrapper: parse a TMX from Phaser's XML cache into storedmap[x][y].
+    // Delegates all parsing to TmxParser so there is a single implementation.
     async _parseTMXInto(cacheKey, x, y) {
         if (!this.storedmap[x]) this.storedmap[x] = [];
-        this.storedmap[x][y] = await this._parseTMX(cacheKey);
+        this.storedmap[x][y] = await TmxParser.parseTMX(this.scene, cacheKey);
     }
 
-    async _parseTMX(cacheKey) {
-        const xml  = this.scene.cache.xml.get(cacheKey);
-        const mapEl = xml.documentElement;
-
-        const width  = parseInt(mapEl.getAttribute('width'));
-        const height = parseInt(mapEl.getAttribute('height'));
-
-        // Build gid → properties map across all referenced tilesets.
-        const tileProps = {};
-        const tilesets = [];
-        const tilesetEls = Array.from(mapEl.querySelectorAll('tileset'));
-        for (const tilesetEl of tilesetEls) {
-            const firstgid = parseInt(tilesetEl.getAttribute('firstgid')) || 1;
-            const tilesetDef = await this._getTilesetDefinition(tilesetEl);
-
-            tilesets.push({
-                name:     tilesetDef.name,
-                imageKey: tilesetDef.imageKey,
-                firstgid: firstgid
-            });
-
-            tilesetDef.tileEls.forEach((tile) => {
-                const gid = firstgid + parseInt(tile.getAttribute('id'));
-                const props = {};
-                tile.querySelectorAll('property').forEach((prop) => {
-                    const name = prop.getAttribute('name');
-                    if (name) props[name] = prop.getAttribute('value');
-                });
-                tileProps[gid] = props;
-            });
-        }
-
-        // Decode base64+gzip layer data to a flat uint32 GID array
-        const dataEl  = mapEl.querySelector('layer data');
-        const base64  = dataEl.textContent.trim();
-        const tiles   = await this._decodeBase64Gzip(base64);
-
-        return { tileProps, tiles, width, height, tilesets };
-    }
-
-    async _getTilesetDefinition(tilesetEl) {
-        const source = tilesetEl.getAttribute('source');
-        if (!source) {
-            const name = tilesetEl.getAttribute('name');
-            return {
-                name:     name,
-                imageKey: this._getTilemapImageKey(name),
-                tileEls:  Array.from(tilesetEl.querySelectorAll('tile'))
-            };
-        }
-
-        const tsxPath = this._resolveTSXPath(source);
-        const response = await fetch(tsxPath);
-        const tsxText = await response.text();
-        const tsxDoc = new DOMParser().parseFromString(tsxText, 'application/xml');
-        const tsxRoot = tsxDoc.documentElement;
-        const name = tsxRoot.getAttribute('name') || this._basenameWithoutExt(source);
-        const imageEl = tsxRoot.querySelector('image');
-        const imageSource = imageEl ? imageEl.getAttribute('source') : null;
-
-        return {
-            name:     name,
-            imageKey: this._getTilemapImageKey(this._basenameWithoutExt(imageSource || source)),
-            tileEls:  Array.from(tsxRoot.querySelectorAll('tile'))
-        };
-    }
-
-    _getTilemapImageKey(imageKey) {
-        if (imageKey === 'tileset1' || imageKey === 'guard1set' || imageKey === 'wizard1set') {
-            return imageKey + '_tilemap';
-        }
-        return imageKey;
-    }
-
-    _resolveTSXPath(source) {
-        return 'img/' + source.replace(/^.*[\\/]/, '');
-    }
-
-    _basenameWithoutExt(path) {
-        return path.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '');
-    }
-
-    // Decompress base64-encoded gzip data and return a flat array of uint32 GIDs.
-    async _decodeBase64Gzip(base64) {
-        // Decode base64 → raw bytes
-        const binary = atob(base64);
-        const bytes  = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-
-        // Decompress gzip using the Web Streams DecompressionStream API
-        const ds     = new DecompressionStream('gzip');
-        const writer = ds.writable.getWriter();
-        const reader = ds.readable.getReader();
-        writer.write(bytes);
-        writer.close();
-
-        const chunks = [];
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-        }
-
-        // Concatenate chunks
-        const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
-        const result   = new Uint8Array(totalLen);
-        let offset = 0;
-        for (const chunk of chunks) {
-            result.set(chunk, offset);
-            offset += chunk.length;
-        }
-
-        // Interpret as little-endian uint32 GIDs
-        const view  = new DataView(result.buffer);
-        const count = result.length / 4;
-        const gids  = new Array(count);
-        for (let i = 0; i < count; i++) {
-            gids[i] = view.getUint32(i * 4, true);
-        }
-        return gids;
+    // Load a .stplevel.json file via fetch and populate this.storedmap and
+    // this.mapsong.  Replaces the TMX-based init() path in Level1–Level6.
+    async _loadStpLevelInto(path) {
+        const response = await fetch(path);
+        const text     = await response.text();
+        const data     = StpLevelFormat.fromJsonString(text);
+        this.mapsong   = data.mapsong;
+        this.storedmap = StpLevelFormat.toStoredMap(data);
     }
 
     // Look up a tile property at grid position (tileX, tileY) in storedmap[mapX][mapY].
