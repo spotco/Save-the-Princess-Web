@@ -427,13 +427,14 @@ class LevelEditorScene extends Phaser.Scene {
             fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa', resolution: res,
         }).setOrigin(0.5, 0);
 
-        this.add.text(312, 340, 'ESC - back to menu', {
+        const backLabel = this.add.text(312, 340, 'TAP or ESC - back to menu', {
             fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888888', resolution: res,
         }).setOrigin(0.5, 0);
 
-        this.input.keyboard.once('keydown-ESC', () => {
-            this.scene.start('MenuScene', { playIntro: false });
-        });
+        const goBack = () => { this.scene.start('MenuScene', { playIntro: false }); };
+        this.input.keyboard.once('keydown-ESC', goBack);
+        // Tap / click anywhere returns to the menu (pointer fires for both mouse and touch).
+        this.input.once('pointerdown', goBack);
     }
 }
 

@@ -60,6 +60,14 @@ export default class Menu {
 
         // --- Menu (title) image ---
         this.menuImg  = s.add.image(0, 0, 'menunew').setOrigin(0, 0).setDisplaySize(625, 625);
+        // Tap / click anywhere on the title screen advances to the loader.
+        this.menuImg.setInteractive();
+        this.menuImg.on('pointerdown', () => {
+            if (this.inmenuimg) {
+                this.sound.sfx('menuchange');
+                this._switchToLoader();
+            }
+        });
 
         // "PRESS SPACE TO START" blink prompt — Phaser text, replaces space2start.png.
         this.pressText = s.add.text(ENTRY_CENTER_X, 370, 'PRESS SPACE TO START', {
@@ -100,6 +108,8 @@ export default class Menu {
         this.visibleCount = this.entries.length;
 
         // Create a Phaser text object for every entry, evenly spaced.
+        // Each text object is interactive: pointerover selects it (mouse hover),
+        // pointerdown fires its action (mouse click or finger tap).
         this.entries.forEach((entry, i) => {
             entry.textObj = s.add.text(
                 ENTRY_CENTER_X,
@@ -108,6 +118,30 @@ export default class Menu {
                 ENTRY_LABEL_STYLE
             ).setOrigin(0, 0).setVisible(false);
             this._centerTextOnPixel(entry.textObj, ENTRY_CENTER_X, ENTRY_START_Y + i * ENTRY_SPACING);
+
+            entry.textObj.setInteractive({ useHandCursor: true });
+
+            // Hover: select this entry if it isn't already selected.
+            entry.textObj.on('pointerover', () => {
+                if (!this.inloaderimg || this.inTimesScreen) return;
+                if (this.loaderImgMenuStatus !== i) {
+                    this.loaderImgMenuStatus = i;
+                    this._scrollToSelected();
+                    this._updateCursorPos();
+                    this.sound.sfx('menuchange');
+                }
+            });
+
+            // Click / tap: select then activate.
+            entry.textObj.on('pointerdown', () => {
+                if (!this.inloaderimg || this.inTimesScreen) return;
+                if (this.loaderImgMenuStatus !== i) {
+                    this.loaderImgMenuStatus = i;
+                    this._updateCursorPos();
+                }
+                this.sound.sfx('menuchange');
+                entry.action();
+            });
         });
 
         // Cursor arrow — X is fixed, Y tracks the selected entry.
@@ -118,6 +152,14 @@ export default class Menu {
         // --- Times screen ---
         this.timesmenuImg = s.add.image(0, 0, 'timesmenu').setOrigin(0, 0);
         this.timesmenuImg.setVisible(false);
+        // Tap / click anywhere on the times screen dismisses it.
+        this.timesmenuImg.setInteractive();
+        this.timesmenuImg.on('pointerdown', () => {
+            if (this.inTimesScreen) {
+                this.sound.sfx('menuchange');
+                this._dismissTimesScreen();
+            }
+        });
 
         const timeY = [135, 165, 194, 220, 250, 279];
         this.timesTexts = timeY.map(y =>
@@ -157,12 +199,7 @@ export default class Menu {
             if (this.inTimesScreen) {
                 if (K(k.esc) || K(k.space) || K(k.enter)) {
                     this.sound.sfx('menuchange');
-                    this._setTimesVisible(false);
-                    this.inTimesScreen = false;
-                    this.loaderPanel.setVisible(true);
-                    this.loaderTitleText.setVisible(true);
-                    this._setEntriesVisible(true);
-                    this.cursorImg.setVisible(true);
+                    this._dismissTimesScreen();
                 }
                 return;
             }
@@ -219,6 +256,15 @@ export default class Menu {
     }
 
     // --- Screen transitions ---
+
+    _dismissTimesScreen() {
+        this._setTimesVisible(false);
+        this.inTimesScreen = false;
+        this.loaderPanel.setVisible(true);
+        this.loaderTitleText.setVisible(true);
+        this._setEntriesVisible(true);
+        this.cursorImg.setVisible(true);
+    }
 
     _switchToLoader() {
         this.inmenuimg   = false;

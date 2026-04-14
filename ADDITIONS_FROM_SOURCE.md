@@ -18,6 +18,6 @@ Only add items here when they are outside the original source behavior or featur
 - [~] Migrate default Level 1–6 data from TMX to `.stplevel.json` *(in progress — runtime reads the new JSON files; TMX kept only as historical reference; see `PLAN.md`)*
 - [ ] Save point feature
 - [ ] Sprint button
-- [ ] Touch screen / mouse controls
+- [~] Touch screen / mouse controls *(in progress — Phase 1.5 for menus, Phase 3 for editor, Phase 6.5 for in-game virtual D-pad; see `PLAN.md`)*
 - [ ] Investigate how save files work
 - [ ] Try AI gen some levels

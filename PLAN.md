@@ -1,15 +1,15 @@
 # Save the Princess - Active Development Plan
 
-**Last Updated**: 2026-04-13
+**Last Updated**: 2026-04-13 (added mouse/touch phases)
 
 ---
 
 ## Active Focus
 
-Build an in-browser **Level Editor** addition. This is a non-source feature
+Build an in-browser **Level Editor** addition and add **mouse/touch support**
+throughout — menus, gameplay, and the editor. Both are non-source features
 tracked in `ADDITIONS_FROM_SOURCE.md`. The Java-faithful port itself is
-complete — editor code must live beside the port without altering gameplay
-behavior.
+complete — new code must live beside the port without altering gameplay behavior.
 
 For completed port details, see `PLAN_COMPLETED.md`.
 For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
@@ -114,6 +114,21 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
 - [x] `inTimesScreen` boolean sub-state replaces the old index-3 hack;
       ESC from loader now always returns to title menu cleanly.
 
+### Phase 1.5 — Menu pointer / touch support ✓ DONE
+- [x] Make every interactive element in `Menu.js` respond to pointer input
+      (mouse click and finger tap — Phaser treats them identically via its
+      pointer event system):
+  - [x] Title screen: `menuImg.setInteractive()` + `pointerdown` advances to loader.
+  - [x] Loader entries: `setInteractive({ useHandCursor: true })` on each
+        `entry.textObj`; `pointerover` hover-selects (sound only on change);
+        `pointerdown` fires `entry.action()`.
+  - [x] Times sub-screen: `timesmenuImg.setInteractive()` + `pointerdown`
+        calls `_dismissTimesScreen()` (shared with keyboard path).
+  - [x] `LevelEditorScene` stub: `input.once('pointerdown')` + ESC both call
+        the same `goBack` closure.
+- [x] No separate touch-only code path — one handler covers both.
+- [x] Decorative loaderPanel graphics object has no `setInteractive()` call.
+
 ### Phase 2 — Level file format + import/export library
 - [ ] Create `src/editor/StpLevelFormat.js`. Pure functions, no Phaser:
   - `fromTmxCacheKeys(name, mapsong, screensX, screensY, cacheKeys)` →
@@ -152,8 +167,14 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
 - [ ] Rendering: draw the current screen's GID grid using
       `scene.add.image()` per tile, or a `Phaser.GameObjects.Blitter`
       for perf. Redraw on edit.
-- [ ] Input: mouse for paint/erase/etc.; keyboard shortcuts `B/E/F/R/I`
-      for the tools; arrow keys pan between screens; `Ctrl+S` saves.
+- [ ] Input: Phaser pointer events (unified mouse + touch) for all editor
+      actions — paint, erase, fill, rect, picker, palette tap, tab clicks,
+      action-bar buttons. Keyboard shortcuts `B/E/F/R/I` for tools; arrow
+      keys pan between screens; `Ctrl+S` saves. Touch-specific notes:
+  - Drag on the tile canvas paints/erases continuously (same as mouse drag).
+  - Tap palette tile to select it; palette scrolls with swipe (pointer drag
+    within the palette column).
+  - No pinch-zoom in v1 — the canvas is fixed 625×625; stretch goal only.
 
 ### Phase 4 — Editing operations
 - [ ] **Paint**: left-click sets tile to selected GID.
@@ -198,6 +219,36 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
 - [ ] Do NOT touch the existing `Level1..6` classes — they remain the
       Java-faithful reference path.
 
+### Phase 6.5 — In-game virtual controls (touch / mouse)
+Touch devices and users who prefer not to use a keyboard need on-screen
+controls. This phase adds a virtual D-pad overlay that maps to the same
+key flags `STPView` already polls, so zero gameplay logic changes.
+
+- [ ] **Detection**: show the overlay when `'ontouchstart' in window` OR
+      when the game URL has `?controls=virtual`. Always hidden on desktop
+      unless forced. Store the preference in `localStorage` so it persists.
+- [ ] **Overlay layout** (drawn on top of the game canvas, outside Phaser):
+  - Left side: D-pad (four arrow buttons in a cross — up/down/left/right).
+  - Right side: two action buttons — Jump (maps to `space` / `up`) and
+    Attack (maps to `z` / the attack key).
+  - Semi-transparent so the game tiles beneath remain readable.
+  - Fixed position; does not scroll with the level.
+- [ ] **Implementation approach**: inject a `<div>` overlay over the Phaser
+      `<canvas>`. Each virtual button fires `keydown`/`keyup` synthetic
+      events (or sets a shared `VirtualInput` flags object that `STPView`
+      reads alongside `Phaser.Input.Keyboard`). Synthetic keyboard events
+      keep `STPView` / `Player` untouched.
+- [ ] **Multi-touch**: pressing D-pad left and Jump simultaneously must work.
+      Use `touchstart` / `touchend` per-button element so each button
+      tracks its own touch point independently.
+- [ ] **Mouse fallback**: the same overlay buttons respond to `mousedown` /
+      `mouseup` so desktop users can click them if desired.
+- [ ] **Hide in editor**: the overlay must not appear while `LevelEditorScene`
+      is active — pointer events there belong to the editor canvas, not
+      virtual controls.
+- [ ] Add a small toggle button (gamepad icon or "⌨" / "🕹" label) in a
+      corner of the game canvas to show/hide the overlay at any time.
+
 ### Phase 7 — Polish / stretch (optional, do not start without user ok)
 - [ ] Undo / redo stack.
 - [ ] Multi-tile brush / stamp.
@@ -221,7 +272,10 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
   to JSON, convert to a plain object and convert back on load.
 - `Level.js` files are style-referenced when editing — inspect nearby
   methods first per `AGENTS.md` rules.
-- No new dependencies. JSON + Blob + File API are all built-in.
+- No new dependencies. JSON + Blob + File API are all built-in. Virtual
+  controls use the DOM overlay approach (a `<div>` over the canvas) rather
+  than adding Phaser UI objects to every scene — this keeps gameplay scenes
+  untouched and makes show/hide trivial across scene transitions.
 
 ---
 
