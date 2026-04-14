@@ -89,29 +89,30 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
 
 ## Implementation Phases
 
-### Phase 1 — Menu list refactor (Phaser text only)
-- [ ] Refactor `Menu.js` loader state to be driven by a single
+### Phase 1 — Menu list refactor (Phaser text only) ✓ DONE
+- [x] Refactor `Menu.js` loader state to be driven by a single
       `this.entries` array: each row is
-      `{ label: 'NEW GAME', action: () => this._startNewGame() }`. Keep
+      `{ label: 'NEW GAME', action: () => this._actionNewGame() }`. Keep
       `loaderImgMenuStatus` as the selected index (don't rename it —
       style-neutral edit).
-- [ ] Add a scroll window (`visibleStart`, `visibleCount`) so more entries
+- [x] Add a scroll window (`visibleStart`, `visibleCount`) so more entries
       than fit on screen would scroll. For now `visibleCount` covers all
       entries; keep the mechanism in place.
-- [ ] Render every label with `scene.add.text()`. No more
+- [x] Render every label with `scene.add.text()`. No more
       `space2start.png`; the `PRESS SPACE TO START` prompt is also a
       Phaser text object that blinks via its `visible` flag. The loader
       background image stays, but any text baked into it is covered /
       replaced by the Phaser text layer so the code is the source of
       truth for what each button says.
-- [ ] The cursor graphic (`loadercursor`) still follows the selected
+- [x] The cursor graphic (`loadercursor`) still follows the selected
       entry, with its Y computed from the entry's text Y — not a hard
       coded table.
-- [ ] Wire the `LEVEL EDITOR` entry's action to
+- [x] Wire the `LEVEL EDITOR` entry's action to
       `scene.scene.start('LevelEditorScene')`.
-- [ ] Verify that ESC still returns from loader to title, and that the
-      times sub-screen still works — it becomes a sub-state entered by
-      the Times entry's action, not an index in the main list.
+- [x] `LevelEditorScene` stub registered in `Main.js`; shows placeholder
+      with ESC-to-menu. Full implementation in Phase 3.
+- [x] `inTimesScreen` boolean sub-state replaces the old index-3 hack;
+      ESC from loader now always returns to title menu cleanly.
 
 ### Phase 2 — Level file format + import/export library
 - [ ] Create `src/editor/StpLevelFormat.js`. Pure functions, no Phaser:

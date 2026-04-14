@@ -277,7 +277,29 @@ class BootScene extends Phaser.Scene {
         this._createTilemapTilesetTexture('tileset1');
         this._createTilemapTilesetTexture('guard1set');
         this._createTilemapTilesetTexture('wizard1set');
-        this.scene.start('MenuScene');
+        this._waitForMenuFont().then(() => {
+            this.scene.start('MenuScene');
+        });
+    }
+
+    async _waitForMenuFont() {
+        if (!document.fonts || !document.fonts.load) {
+            return;
+        }
+
+        // document.fonts.ready can resolve before a specific webfont has been
+        // laid out for the exact sizes the menu uses.  Load the family
+        // explicitly so the first MenuScene render does not measure against a
+        // fallback font.
+        await document.fonts.ready;
+        await Promise.all([
+            document.fonts.load('8px "Press Start 2P"'),
+            document.fonts.load('9px "Press Start 2P"'),
+            document.fonts.load('10px "Press Start 2P"'),
+            document.fonts.load('11px "Press Start 2P"'),
+            document.fonts.load('16px "Press Start 2P"'),
+            document.fonts.load('20px "Press Start 2P"')
+        ]);
     }
 
     _createTilemapTilesetTexture(textureKey) {
@@ -323,6 +345,16 @@ class MenuScene extends Phaser.Scene {
         this.menu         = new Menu(this, this.soundManager, this.saveReader);
         this.menu.animationManager = new AnimationManager(this, this.menu);
         this.menu.create();
+        this.menu.refreshTextLayout();
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                if (this.menu) {
+                    this.menu.refreshTextLayout();
+                }
+            });
+        }
+
         this.soundManager.play('menu1');
 
         const data = this.scene.settings.data || {};
@@ -376,14 +408,44 @@ class GameScene extends Phaser.Scene {
     }
 }
 
+// LevelEditorScene — in-browser tile map editor.
+// Stub: shows a placeholder until the editor is implemented (Phase 3+).
+class LevelEditorScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'LevelEditorScene' });
+    }
+
+    create() {
+        const res = window.devicePixelRatio || 1;
+        this.add.rectangle(0, 0, 625, 625, 0x111111).setOrigin(0, 0);
+
+        this.add.text(312, 200, 'LEVEL EDITOR', {
+            fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffff00', resolution: res,
+        }).setOrigin(0.5, 0);
+
+        this.add.text(312, 260, 'coming soon', {
+            fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa', resolution: res,
+        }).setOrigin(0.5, 0);
+
+        this.add.text(312, 340, 'ESC - back to menu', {
+            fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888888', resolution: res,
+        }).setOrigin(0.5, 0);
+
+        this.input.keyboard.once('keydown-ESC', () => {
+            this.scene.start('MenuScene', { playIntro: false });
+        });
+    }
+}
+
 // Phaser 3 game config — mirrors STPView.main():
 //   container.setDisplayMode(625, 625, false)
 //   container.setTargetFrameRate(60)
 new Phaser.Game({
-    type: Phaser.WEBGL,
-    width: 625,
-    height: 625,
+    type:            Phaser.WEBGL,
+    width:           625,
+    height:          625,
     backgroundColor: '#000000',
-    fps: { target: 60, forceSetTimeOut: false },
-    scene: [BootScene, MenuScene, GameScene]
+    pixelArt:        true,   // disables antialiasing + enables roundPixels; keeps pixel fonts crisp
+    fps:             { target: 60, forceSetTimeOut: false },
+    scene:           [BootScene, MenuScene, GameScene, LevelEditorScene]
 });
