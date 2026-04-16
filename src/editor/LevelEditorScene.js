@@ -32,6 +32,57 @@ const CANONICAL_TILESETS = [
 const TILESETS        = CANONICAL_TILESETS.map(t => t.name);
 const TILESET_LABELS  = { tileset1: 'TILES', guard1set: 'GUARDS', wizard1set: 'WIZARDS' };
 
+// Per-tile pointer labels shown as a Phaser text overlay when showPointers=true.
+// Keys are localId (0-based within each tileset sheet).
+// Color matches semantic category: orange=dog, red=guard spawn, orange=guard point,
+// cyan=door, yellow=exit, gold=key, green=player, pink=princess, tan=crate,
+// purple=wizard, red=boss, blue=tracker.
+const POINTER_LABELS = {
+    tileset1: {
+        3:  { text: '\u2190D', color: '#ff8800' },   // dog left
+        7:  { text: 'D\u2192', color: '#ff8800' },   // dog right
+        10: { text: 'D\u2193', color: '#ff8800' },   // dog down
+        11: { text: 'D\u2191', color: '#ff8800' },   // dog up
+        16: { text: 'PR',      color: '#ff88ff' },   // princess
+        20: { text: 'PL',      color: '#88ff00' },   // player spawn
+        22: { text: 'CR',      color: '#ccaa77' },   // crate spawn
+    },
+    guard1set: {
+        0:  { text: 'G\u2192', color: '#ff4444' },   // guardspawn right
+        1:  { text: 'G\u2191', color: '#ff4444' },   // guardspawn up
+        2:  { text: 'P\u2192', color: '#ff8800' },   // guardpoint right
+        3:  { text: '\u2190P', color: '#ff8800' },   // guardpoint left
+        4:  { text: 'DC',      color: '#44ffff' },   // door closed
+        5:  { text: 'G\u2193', color: '#ff4444' },   // guardspawn down
+        6:  { text: '\u2190G', color: '#ff4444' },   // guardspawn left
+        7:  { text: 'P\u2193', color: '#ff8800' },   // guardpoint down
+        8:  { text: 'P\u2191', color: '#ff8800' },   // guardpoint up
+        9:  { text: 'DO',      color: '#44ffff' },   // door open
+        10: { text: 'DB',      color: '#44ffff' },   // doorbutton
+        13: { text: 'E\u2192', color: '#ffff00' },   // exit right
+        14: { text: '\u2190E', color: '#ffff00' },   // exit left
+        15: { text: 'S\u2192', color: '#ff8800' },   // guardpoint+stop right
+        16: { text: '\u2190S', color: '#ff8800' },   // guardpoint+stop left
+        17: { text: 'KY',      color: '#ffdd00' },   // key
+        18: { text: 'E\u2191', color: '#ffff00' },   // exit up
+        20: { text: 'S\u2193', color: '#ff8800' },   // guardpoint+stop down
+        21: { text: 'S\u2191', color: '#ff8800' },   // guardpoint+stop up
+        22: { text: 'KD',      color: '#ffdd00' },   // keydoor
+        23: { text: 'E\u2193', color: '#ffff00' },   // exit down
+    },
+    wizard1set: {
+        0:  { text: 'W\u2191', color: '#cc88ff' },   // wizard up
+        4:  { text: 'KB',      color: '#ff4444' },   // knightboss
+        5:  { text: 'W\u2192', color: '#cc88ff' },   // wizard right
+        10: { text: 'W\u2193', color: '#cc88ff' },   // wizard down
+        15: { text: '\u2190W', color: '#cc88ff' },   // wizard left
+        16: { text: 'KS',      color: '#ff4444' },   // knightboss delay spawn
+        20: { text: 'TR',      color: '#4488ff' },   // tracker
+        21: { text: 'BA',      color: '#ff4444' },   // bossactivate
+        22: { text: 'BS',      color: '#ff4444' },   // bossactivatespawn
+    },
+};
+
 // ---------------------------------------------------------------------------
 // Colours
 // ---------------------------------------------------------------------------
@@ -83,9 +134,10 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.pointerToggleButton = null;
 
         // UI object collections — populated by _build* methods
-        this.tileImages    = [];   // [ty][tx] → Phaser.Image
-        this.paletteEntries = [];  // { tilesetName, localId, img, bx, by }
-        this.paletteLabels  = [];  // Phaser.Text labels for tileset sections
+        this.tileImages        = [];   // [ty][tx] → Phaser.Image
+        this.tilePointerLabels = [];   // [ty][tx] → Phaser.Text overlay (pointer annotations)
+        this.paletteEntries    = [];   // { tilesetName, localId, img, bx, by, labelTxt }
+        this.paletteLabels     = [];   // Phaser.Text labels for tileset sections
         this.screenTabs    = [];   // { bg, txt } for each screen tab
         this.toolButtons   = {};   // toolName → { bg, txt }
 
@@ -121,14 +173,12 @@ export default class LevelEditorScene extends Phaser.Scene {
     // Frame key = integer localId (0–24); tile is at col*25, row*25 in the 128×128 image.
     _addTilesetFrames() {
         for (const name of TILESETS) {
-            for (const texKey of [name, this._pointerTextureKey(name)]) {
-                const tex = this.textures.get(texKey);
-                for (let row = 0; row < 5; row++) {
-                    for (let col = 0; col < 5; col++) {
-                        const localId = row * 5 + col;
-                        if (!tex.has(localId)) {
-                            tex.add(localId, 0, col * 25, row * 25, 25, 25);
-                        }
+            const tex = this.textures.get(name);
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const localId = row * 5 + col;
+                    if (!tex.has(localId)) {
+                        tex.add(localId, 0, col * 25, row * 25, 25, 25);
                     }
                 }
             }
@@ -174,16 +224,25 @@ export default class LevelEditorScene extends Phaser.Scene {
         sep.strokePath();
     }
 
-    // One Image per tile cell (25 × 25 = 625 total) plus the pointer hit zone.
+    // One Image per tile cell (25 × 25 = 625 total) plus pointer label texts and hit zone.
     _buildTileCanvas() {
         for (let ty = 0; ty < 25; ty++) {
-            this.tileImages[ty] = [];
+            this.tileImages[ty]        = [];
+            this.tilePointerLabels[ty] = [];
             for (let tx = 0; tx < 25; tx++) {
                 this.tileImages[ty][tx] = this.add.image(
                     MAP_X + tx * TILE_SZ,
                     MAP_Y + ty * TILE_SZ,
                     'editor_empty'
                 ).setOrigin(0, 0).setDisplaySize(TILE_SZ, TILE_SZ);
+
+                this.tilePointerLabels[ty][tx] = this.add.text(
+                    MAP_X + tx * TILE_SZ + TILE_SZ / 2,
+                    MAP_Y + ty * TILE_SZ + TILE_SZ / 2,
+                    '',
+                    { fontFamily: 'monospace', fontStyle: 'bold', fontSize: '12px', color: '#ffffff',
+                      stroke: '#000000', strokeThickness: 3, resolution: RES }
+                ).setOrigin(0.5, 0.5).setVisible(false);
             }
         }
 
@@ -230,12 +289,23 @@ export default class LevelEditorScene extends Phaser.Scene {
                     const localId = row * 5 + col;
                     const bx      = PAL_X + col * PAL_TILE;
                     const by      = py  + row * PAL_TILE;
-                    const img     = this.add.image(bx, by, this._editorTextureKey(tilesetName), localId)
+                    const img     = this.add.image(bx, by, tilesetName, localId)
                                         .setOrigin(0, 0)
                                         .setDisplaySize(PAL_TILE, PAL_TILE)
                                         .setInteractive({ useHandCursor: true });
 
-                    const entry = { tilesetName, localId, img, bx, by };
+                    const pointerLabel = this._pointerLabelForTile(tilesetName, localId);
+                    const labelTxt = pointerLabel
+                        ? this.add.text(
+                            bx + PAL_TILE / 2,
+                            by + PAL_TILE / 2,
+                            pointerLabel.text,
+                            { fontFamily: 'monospace', fontStyle: 'bold', fontSize: '15px', color: pointerLabel.color,
+                              stroke: '#000000', strokeThickness: 3, resolution: RES }
+                          ).setOrigin(0.5, 0.5).setVisible(this.showPointers)
+                        : null;
+
+                    const entry = { tilesetName, localId, img, bx, by, labelTxt };
                     this.paletteEntries.push(entry);
 
                     img.on('pointerdown', () => this._selectPaletteEntry(tilesetName, localId));
@@ -268,7 +338,10 @@ export default class LevelEditorScene extends Phaser.Scene {
         palMaskG.fillRect(PAL_X, TOP_H, PAL_W, 625 - TOP_H);
         const palMask = palMaskG.createGeometryMask();
         this.paletteLabels.forEach((labelObj) => labelObj.setMask(palMask));
-        this.paletteEntries.forEach((entry) => entry.img.setMask(palMask));
+        this.paletteEntries.forEach((entry) => {
+            entry.img.setMask(palMask);
+            if (entry.labelTxt) entry.labelTxt.setMask(palMask);
+        });
         this.palSelBox.setMask(palMask);
         this._setPaletteScrollY(0);
         this._redrawPaletteSelection();
@@ -505,18 +578,32 @@ export default class LevelEditorScene extends Phaser.Scene {
 
     _redrawTile(tx, ty, screen) {
         if (!screen) screen = this._currentScreenData();
-        const gid = screen.tiles[ty * screen.width + tx];
-        const img = this.tileImages[ty][tx];
+        const gid      = screen.tiles[ty * screen.width + tx];
+        const img      = this.tileImages[ty][tx];
+        const labelTxt = this.tilePointerLabels[ty][tx];
         if (!gid) {
             img.setTexture('editor_empty').setDisplaySize(TILE_SZ, TILE_SZ);
+            labelTxt.setVisible(false);
             return;
         }
         const tsData = this._tilesetForGid(gid, screen.tilesets);
         if (!tsData) {
             img.setTexture('editor_empty').setDisplaySize(TILE_SZ, TILE_SZ);
+            labelTxt.setVisible(false);
             return;
         }
-        img.setTexture(this._editorTextureKey(tsData.name), gid - tsData.firstgid).setDisplaySize(TILE_SZ, TILE_SZ);
+        img.setTexture(tsData.name, gid - tsData.firstgid).setDisplaySize(TILE_SZ, TILE_SZ);
+
+        if (this.showPointers) {
+            const label = this._pointerLabelForTile(tsData.name, gid - tsData.firstgid);
+            if (label) {
+                labelTxt.setText(label.text).setColor(label.color).setVisible(true);
+            } else {
+                labelTxt.setVisible(false);
+            }
+        } else {
+            labelTxt.setVisible(false);
+        }
     }
 
     // Return the tileset entry whose firstgid range contains the given GID.
@@ -548,13 +635,14 @@ export default class LevelEditorScene extends Phaser.Scene {
         });
         this.paletteEntries.forEach((entry) => {
             entry.img.setY(entry.by - clamped);
+            if (entry.labelTxt) entry.labelTxt.setY(entry.by + PAL_TILE / 2 - clamped);
         });
         this._redrawPaletteSelection();
     }
 
-    _refreshPaletteTextures() {
+    _updatePalettePointerLabels() {
         this.paletteEntries.forEach((entry) => {
-            entry.img.setTexture(this._editorTextureKey(entry.tilesetName), entry.localId);
+            if (entry.labelTxt) entry.labelTxt.setVisible(this.showPointers);
         });
     }
 
@@ -805,10 +893,10 @@ export default class LevelEditorScene extends Phaser.Scene {
 
     _togglePointers() {
         this.showPointers = !this.showPointers;
-        this._refreshPaletteTextures();
         this._redrawTileCanvas();
+        this._updatePalettePointerLabels();
         this._updatePointerToggleButton();
-        this._setStatus(this.showPointers ? 'Pointer tiles enabled.' : 'Pointer tiles hidden.');
+        this._setStatus(this.showPointers ? 'Pointer labels enabled.' : 'Pointer labels hidden.');
     }
 
     // -------------------------------------------------------------------------
@@ -965,12 +1053,15 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.pointerToggleButton.txt.setColor(active ? C_YELLOW : C_TEXT);
     }
 
-    _pointerTextureKey(tilesetName) {
-        return tilesetName + '_pointers';
+    // Look up the pointer label definition for a given tileset tile.
+    // Returns { text, color } or null if this tile has no annotation.
+    _pointerLabelForTile(tilesetName, localId) {
+        const setLabels = POINTER_LABELS[tilesetName];
+        return setLabels ? (setLabels[localId] || null) : null;
     }
 
     _editorTextureKey(tilesetName) {
-        return this.showPointers ? this._pointerTextureKey(tilesetName) : tilesetName;
+        return tilesetName;
     }
 
     // Create a rectangle-backed button; returns { bg, txt } for later style updates.
