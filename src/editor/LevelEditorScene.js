@@ -21,9 +21,16 @@ const PAL_COLS = PAL_W / PAL_TILE;   // 5
 const PAL_LABEL_H = 14;
 const PAL_GAP     = 8;
 
-// Tilesets listed in palette order
-const TILESETS = ['tileset1', 'guard1set', 'wizard1set'];
-const TILESET_LABELS = { tileset1: 'TILES', guard1set: 'GUARDS', wizard1set: 'WIZARDS' };
+// Tilesets listed in palette order, with canonical firstgid assignments.
+// All screens are normalized to include all three entries so any tileset
+// can be painted on any screen regardless of what was stored in the file.
+const CANONICAL_TILESETS = [
+    { name: 'tileset1',   firstgid: 1  },
+    { name: 'guard1set',  firstgid: 26 },
+    { name: 'wizard1set', firstgid: 51 },
+];
+const TILESETS        = CANONICAL_TILESETS.map(t => t.name);
+const TILESET_LABELS  = { tileset1: 'TILES', guard1set: 'GUARDS', wizard1set: 'WIZARDS' };
 
 // ---------------------------------------------------------------------------
 // Colours
@@ -411,9 +418,20 @@ export default class LevelEditorScene extends Phaser.Scene {
 
     _onLevelLoaded() {
         this.currentScreen = { sx: 0, sy: 0 };
+        this.levelData.screens.forEach(s => this._normalizeScreenTilesets(s));
         this._rebuildScreenTabs();
         this._redrawTileCanvas();
         this._setStatus(`Loaded ${this.levelData.name || 'untitled'}.`);
+    }
+
+    // Ensure every screen has all three canonical tilesets so that any tileset
+    // can be painted on any screen, regardless of what the saved file contained.
+    _normalizeScreenTilesets(screen) {
+        for (const canonical of CANONICAL_TILESETS) {
+            if (!screen.tilesets.find(t => t.name === canonical.name)) {
+                screen.tilesets.push({ name: canonical.name, firstgid: canonical.firstgid });
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
