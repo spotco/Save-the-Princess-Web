@@ -432,7 +432,11 @@ export default class STPView {
         if (this.sound)        this.sound.stop();
 
         if (this.isEditorPlay) {
-            this.scene.scene.start('LevelEditorScene', { levelData: this.customLevelData });
+            this.scene.scene.start('LevelEditorScene', {
+                levelData:       this.customLevelData,
+                editorUndoStack: this.editorUndoStack,
+                editorRedoStack: this.editorRedoStack,
+            });
         } else {
             this.scene.scene.start('MenuScene');
         }

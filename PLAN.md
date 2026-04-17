@@ -167,10 +167,10 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
   - Tap palette tile to select it; palette scrolls with swipe (pointer drag
     within the palette column).
   - No pinch-zoom in v1 — the canvas is fixed 625×625; stretch goal only.
-- [ ] Remaining Phase 3 cleanup:
-  - [ ] Replace the current bundled-level import modal with the planned
+- [x] Remaining Phase 3 cleanup:
+  - [x] Replace the current bundled-level import modal with the planned
         default-level / TMX import flow chosen for Phase 5.
-  - [ ] Add a clearer status / error surface if the file load or import fails.
+  - [x] Add a clearer status / error surface if the file load or import fails.
 
 ### Phase 3.5 — Editor pointer-marker overlay
 - [x] Add an editor-only pointer overlay mode that visualizes the original
@@ -257,8 +257,6 @@ key flags `STPView` already polls, so zero gameplay logic changes.
       unless forced. Store the preference in `localStorage` so it persists.
 - [ ] **Overlay layout** (drawn on top of the game canvas, outside Phaser):
   - Left side: D-pad (four arrow buttons in a cross — up/down/left/right).
-  - Right side: two action buttons — Jump (maps to `space` / `up`) and
-    Attack (maps to `z` / the attack key).
   - Semi-transparent so the game tiles beneath remain readable.
   - Fixed position; does not scroll with the level.
 - [ ] **Implementation approach**: inject a `<div>` overlay over the Phaser
@@ -278,13 +276,7 @@ key flags `STPView` already polls, so zero gameplay logic changes.
       corner of the game canvas to show/hide the overlay at any time.
 
 ### Phase 7 — Polish / stretch (optional, do not start without user ok)
-- [ ] Undo / redo stack.
-- [ ] Multi-tile brush / stamp.
-- [ ] Show property overlays (tiny icons) on tiles that have non-wall
-      properties so the editor view matches gameplay intent.
-- [ ] Editor button to "Open default Level N" — loads the bundled
-      `.stplevel.json` directly so users can edit the shipped levels
-      without a file-picker.
+- [x] Undo / redo stack.
 
 ---
 

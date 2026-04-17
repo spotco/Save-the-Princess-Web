@@ -397,8 +397,10 @@ class GameScene extends Phaser.Scene {
         }
 
         this.stpview = new STPView(this, level, sound, save);
-        this.stpview.isEditorPlay    = !!customData;
-        this.stpview.customLevelData = customData;
+        this.stpview.isEditorPlay       = !!customData;
+        this.stpview.customLevelData    = customData;
+        this.stpview.editorUndoStack    = data.editorUndoStack || null;
+        this.stpview.editorRedoStack    = data.editorRedoStack || null;
         await this.stpview.loadlevel();
 
         this.isReady = true;

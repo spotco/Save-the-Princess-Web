@@ -86,15 +86,31 @@ const POINTER_LABELS = {
 // Human-readable name for every tile in each tileset, used by the info bar.
 const TILE_NAMES = {
     tileset1: {
-        0:  'Wall',              1:  'Wall',              2:  'Wall',
-        3:  'Dog spawn \u2190', 4:  'Floor',             5:  'Wall',
-        6:  'Wall',             7:  'Dog spawn \u2192',  8:  'Wall',
-        9:  'Torch',            10: 'Dog spawn \u2193',  11: 'Dog spawn \u2191',
-        12: 'Wall',             13: 'Wall',              14: 'Wall',
-        15: 'Floor',            16: 'Princess spawn',    17: 'Wall',
-        18: 'Wall',             19: 'Wall',              20: 'Player spawn',
-        21: 'Wall',             22: 'Crate spawn',       23: 'Wall',
-        24: 'Wall',
+        0:  'Wall (dark fill)',
+        1:  'Corner top-left',
+        2:  'Corner bottom-right',
+        3:  'Dog spawn \u2190',
+        4:  'Floor',
+        5:  'Corner top-right',
+        6:  'Corner bottom-left',
+        7:  'Dog spawn \u2192',
+        8:  'Wall with gem',
+        9:  'Torch',
+        10: 'Dog spawn \u2193',
+        11: 'Dog spawn \u2191',
+        12: 'Wall with lantern',
+        13: 'Wall (top-lit cap)',
+        14: 'Wall vertical',
+        15: 'Floor',
+        16: 'Princess spawn',
+        17: 'Wall (left-lit cap)',
+        18: 'Wall horizontal',
+        19: 'Wall (black fill)',
+        20: 'Player spawn',
+        21: 'Wall (bottom-lit cap)',
+        22: 'Crate spawn',
+        23: 'Wall (right-lit cap)',
+        24: 'Wall (black fill)',
     },
     guard1set: {
         0:  'Guard spawn \u2192',   1:  'Guard spawn \u2191',   2:  'Guard point \u2192',
@@ -168,6 +184,12 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.rectDragStart      = null;
         this.showPointers       = true;
         this.pointerToggleButton = null;
+        this.undoButton         = null;
+        this.redoButton         = null;
+        this.palHoverBox        = null;
+        this.undoStack          = [];
+        this.redoStack          = [];
+        this._strokeSnapshot    = null;
 
         // UI object collections — populated by _build* methods
         this.tileImages        = [];   // [ty][tx] → Phaser.Image
@@ -191,10 +213,15 @@ export default class LevelEditorScene extends Phaser.Scene {
 
         // Accept a level passed via scene data (Phase 5: play custom level path),
         // or load level1 as a working default.
-        const passedLevel = (this.scene.settings.data || {}).levelData;
+        const sceneData   = this.scene.settings.data || {};
+        const passedLevel = sceneData.levelData;
         if (passedLevel) {
             this.levelData = passedLevel;
             this._onLevelLoaded();
+            // Restore undo/redo history from editor play round-trip (_onLevelLoaded clears it).
+            if (sceneData.editorUndoStack) this.undoStack = sceneData.editorUndoStack;
+            if (sceneData.editorRedoStack) this.redoStack = sceneData.editorRedoStack;
+            this._updateUndoRedoButtons();
         } else {
             this._loadDefaultLevel();
         }
@@ -293,6 +320,7 @@ export default class LevelEditorScene extends Phaser.Scene {
                 this._handleMapPickShortcut(ptr);
                 return;
             }
+            this._beginStroke();
             this.isPainting = true;
             this._handleMapPointer(ptr);
             const { tx, ty } = this._pointerToTile(ptr);
@@ -347,6 +375,8 @@ export default class LevelEditorScene extends Phaser.Scene {
                     this.paletteEntries.push(entry);
 
                     img.on('pointerdown', () => this._selectPaletteEntry(tilesetName, localId));
+                    img.on('pointerover', () => this._onPaletteHover(tilesetName, localId));
+                    img.on('pointerout',  () => this._onPaletteHoverEnd());
                 }
             }
             py += PAL_TILE * 5 + PAL_GAP; // 5 rows of tiles + gap between tilesets
@@ -381,6 +411,8 @@ export default class LevelEditorScene extends Phaser.Scene {
             if (entry.labelTxt) entry.labelTxt.setMask(palMask);
         });
         this.palSelBox.setMask(palMask);
+        this.palHoverBox = this.add.graphics();
+        this.palHoverBox.setMask(palMask);
         this._setPaletteScrollY(0);
         this._redrawPaletteSelection();
     }
@@ -391,20 +423,24 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.screenTabs = [];
 
         const resizeDefs = [
-            { label: '+col', fn: () => this._resizeGrid( 1,  0) },
-            { label: '-col', fn: () => this._resizeGrid(-1,  0) },
-            { label: '+row', fn: () => this._resizeGrid( 0,  1) },
-            { label: '-row', fn: () => this._resizeGrid( 0, -1) },
+            { label: '+col', fn: () => this._resizeGrid( 1,  0), ref: null },
+            { label: '-col', fn: () => this._resizeGrid(-1,  0), ref: null },
+            { label: '+row', fn: () => this._resizeGrid( 0,  1), ref: null },
+            { label: '-row', fn: () => this._resizeGrid( 0, -1), ref: null },
+            { label: 'UNDO', fn: () => this._undo(),             ref: 'undoButton' },
+            { label: 'REDO', fn: () => this._redo(),             ref: 'redoButton' },
         ];
         const rBtnW = 43, rBtnGap = 2;
         const rStartX = MAP_W - resizeDefs.length * (rBtnW + rBtnGap) - 2;
-        resizeDefs.forEach(({ label, fn }, i) => {
-            this._makeButton(
+        resizeDefs.forEach(({ label, fn, ref }, i) => {
+            const btn = this._makeButton(
                 rStartX + i * (rBtnW + rBtnGap), 2, rBtnW, TOP_H - 4,
                 label, 6,
                 fn
             );
+            if (ref) this[ref] = btn;
         });
+        this._updateUndoRedoButtons();
     }
 
     // Bottom bar: tool buttons (row 1) + action buttons (row 2).
@@ -485,6 +521,13 @@ export default class LevelEditorScene extends Phaser.Scene {
             }
         });
 
+        this.input.keyboard.on('keydown-Z', (event) => {
+            if (event.ctrlKey) { event.preventDefault(); this._undo(); }
+        });
+        this.input.keyboard.on('keydown-Y', (event) => {
+            if (event.ctrlKey) { event.preventDefault(); this._redo(); }
+        });
+
         // Arrow keys navigate between screens
         this.input.keyboard.on('keydown-LEFT',  () => this._panScreen(-1,  0));
         this.input.keyboard.on('keydown-RIGHT', () => this._panScreen( 1,  0));
@@ -531,6 +574,10 @@ export default class LevelEditorScene extends Phaser.Scene {
     _onLevelLoaded() {
         this.currentScreen = { sx: 0, sy: 0 };
         this.levelData.screens.forEach(s => this._normalizeScreenTilesets(s));
+        this.undoStack     = [];
+        this.redoStack     = [];
+        this._strokeSnapshot = null;
+        this._updateUndoRedoButtons();
         this._rebuildScreenTabs();
         this._redrawTileCanvas();
         this._setStatus(`Loaded ${this.levelData.name || 'untitled'}.`);
@@ -673,6 +720,22 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.selectedPaletteKey = { tilesetName, localId };
         this._redrawPaletteSelection();
         this._showPaletteTileInfo(tilesetName, localId);
+    }
+
+    _onPaletteHover(tilesetName, localId) {
+        this.palHoverBox.clear();
+        const entry = this.paletteEntries.find(
+            e => e.tilesetName === tilesetName && e.localId === localId
+        );
+        if (entry) {
+            this.palHoverBox.lineStyle(1, 0xaaaaaa, 0.5);
+            this.palHoverBox.strokeRect(entry.bx, entry.by - this.paletteScrollY, PAL_TILE, PAL_TILE);
+        }
+        this._setStatus(this._tileDisplayName(tilesetName, localId));
+    }
+
+    _onPaletteHoverEnd() {
+        this.palHoverBox.clear();
     }
 
     // Display the human-readable tile name in the info bar for a palette tile selection.
@@ -845,15 +908,17 @@ export default class LevelEditorScene extends Phaser.Scene {
     _finishMapPointerAction() {
         this.isPainting = false;
 
-        if (!this.rectDragStart) return;
-
-        const end = this._cursorTileFromPreview();
-        if (end) {
-            this._applyRect(this.rectDragStart.tx, this.rectDragStart.ty, end.tx, end.ty);
+        if (this.rectDragStart) {
+            const end = this._cursorTileFromPreview();
+            if (end) {
+                this._applyRect(this.rectDragStart.tx, this.rectDragStart.ty, end.tx, end.ty);
+            }
+            this.rectDragStart = null;
+            this.rectPreview.clear();
+            this.rectPreview.setVisible(false);
         }
-        this.rectDragStart = null;
-        this.rectPreview.clear();
-        this.rectPreview.setVisible(false);
+
+        this._endStroke();
     }
 
     _drawRectPreview(tx1, ty1, tx2, ty2) {
@@ -951,11 +1016,106 @@ export default class LevelEditorScene extends Phaser.Scene {
 
     _actionPlay() {
         if (!this.levelData) { this._setStatus('No level loaded.'); return; }
-        this.scene.start('GameScene', { customLevel: this.levelData });
+        this.scene.start('GameScene', {
+            customLevel:      this.levelData,
+            editorUndoStack:  this.undoStack,
+            editorRedoStack:  this.redoStack,
+        });
     }
 
     _actionBack() {
         this.scene.start('MenuScene', { playIntro: false });
+    }
+
+    // -------------------------------------------------------------------------
+    // Undo / redo
+    // -------------------------------------------------------------------------
+
+    // Snapshot tiles of the current screen at the start of a drag stroke or
+    // single-step operation (fill, rect). Called before any tile mutation.
+    _beginStroke() {
+        const screen = this._currentScreenData();
+        if (!screen) return;
+        this._strokeSnapshot = {
+            sx:    this.currentScreen.sx,
+            sy:    this.currentScreen.sy,
+            tiles: screen.tiles.slice(),
+        };
+    }
+
+    // Called after a stroke/operation finishes. Compares tile arrays; pushes
+    // an undo entry only if something changed. Clears _strokeSnapshot.
+    _endStroke() {
+        if (!this._strokeSnapshot) return;
+        const snap   = this._strokeSnapshot;
+        this._strokeSnapshot = null;
+        const screen = this.levelData.screens.find(s => s.sx === snap.sx && s.sy === snap.sy);
+        if (!screen) return;
+        const after  = screen.tiles;
+        // Only push if at least one tile actually changed.
+        let changed = false;
+        for (let i = 0; i < snap.tiles.length; i++) {
+            if (snap.tiles[i] !== after[i]) { changed = true; break; }
+        }
+        if (!changed) return;
+        this._pushUndo({
+            sx:         snap.sx,
+            sy:         snap.sy,
+            tilesBefore: snap.tiles,
+            tilesAfter:  after.slice(),
+        });
+    }
+
+    _pushUndo(entry) {
+        this.undoStack.push(entry);
+        if (this.undoStack.length > 50) this.undoStack.shift();
+        this.redoStack = [];
+        this._updateUndoRedoButtons();
+    }
+
+    _undo() {
+        if (this.undoStack.length === 0) { this._setStatus('Nothing to undo.'); return; }
+        const entry = this.undoStack.pop();
+        this.redoStack.push(entry);
+        this._applyUndoEntry(entry.sx, entry.sy, entry.tilesBefore);
+        this._updateUndoRedoButtons();
+        this._setStatus(`Undo. (${this.undoStack.length} left)`);
+    }
+
+    _redo() {
+        if (this.redoStack.length === 0) { this._setStatus('Nothing to redo.'); return; }
+        const entry = this.redoStack.pop();
+        this.undoStack.push(entry);
+        this._applyUndoEntry(entry.sx, entry.sy, entry.tilesAfter);
+        this._updateUndoRedoButtons();
+        this._setStatus(`Redo. (${this.redoStack.length} left)`);
+    }
+
+    _updateUndoRedoButtons() {
+        const C_DIS_BG  = 0x1a1a1a;
+        const C_DIS_TXT = '#444444';
+        if (this.undoButton) {
+            const canUndo = this.undoStack.length > 0;
+            this.undoButton.bg._baseColor = canUndo ? C_BTN : C_DIS_BG;
+            this.undoButton.bg.setFillStyle(this.undoButton.bg._baseColor);
+            this.undoButton.txt.setColor(canUndo ? C_TEXT : C_DIS_TXT);
+        }
+        if (this.redoButton) {
+            const canRedo = this.redoStack.length > 0;
+            this.redoButton.bg._baseColor = canRedo ? C_BTN : C_DIS_BG;
+            this.redoButton.bg.setFillStyle(this.redoButton.bg._baseColor);
+            this.redoButton.txt.setColor(canRedo ? C_TEXT : C_DIS_TXT);
+        }
+    }
+
+    _applyUndoEntry(sx, sy, tiles) {
+        if (this.currentScreen.sx !== sx || this.currentScreen.sy !== sy) {
+            this._switchToScreen(sx, sy);
+        }
+        const screen = this._currentScreenData();
+        if (!screen) return;
+        for (let i = 0; i < tiles.length; i++) screen.tiles[i] = tiles[i];
+        this._redrawTileCanvas();
     }
 
     _togglePointers() {
