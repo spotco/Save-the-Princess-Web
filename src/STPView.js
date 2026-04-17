@@ -43,6 +43,14 @@ export default class STPView {
         this.seemeSprite    = null;
         this.timerText      = null;
         this.bestTimeText   = null;
+        this.pauseHudText   = null;
+        this.pauseHudBg     = null;
+        this.pauseHudZone   = null;
+        this.pauseHudIsDown = false;
+        this.pauseHudTimer  = null;
+        this.pauseHudHoldStart = 0;
+        this.pauseHudHoldMs    = 500;
+        this.inputMode      = 'keyboard';
         this.debugGraphics  = null;
         this.keys           = null;
     }
@@ -81,6 +89,13 @@ export default class STPView {
         this.bestTimeText = this.scene.add.text(0, 13, '', {
             fontFamily: 'monospace', fontSize: '13px', color: '#ffff00'
         }).setDepth(20);
+        this.pauseHudText = this.scene.add.text(0, 26, '', {
+            fontFamily: 'monospace', fontSize: '13px', color: '#ffff00'
+        }).setDepth(20);
+        this.pauseHudBg = this.scene.add.rectangle(0, 0, 170, 43, 0x000000, 0.55)
+            .setOrigin(0, 0).setDepth(19);
+        this.pauseHudZone = this.scene.add.rectangle(0, 0, 170, 43, 0x000000, 0)
+            .setOrigin(0, 0).setDepth(21);
         this.debugGraphics = this.scene.add.graphics().setDepth(25);
         this.keys = this.scene.input.keyboard.addKeys({
             esc:   Phaser.Input.Keyboard.KeyCodes.ESC,
@@ -208,13 +223,85 @@ export default class STPView {
 
         // Timer HUD
         if (this.timercounter && this.timerText) {
-            this.timerText.setText(this.timercounter.getCurTime());
+            this.timerText.setText('Time: ' + this.timercounter.getCurTime());
             this.bestTimeText.setText(
-                this.timercounter.gettime(this.save.getCurrentLevel())
+                'Best: ' + this.timercounter.gettime(this.save.getCurrentLevel())
             );
         }
+        this._renderPauseHud();
 
         this._renderHitboxes();
+    }
+
+    setInputMode(mode) {
+        this.inputMode = mode === 'pointer' ? 'pointer' : 'keyboard';
+        this._renderPauseHud();
+    }
+
+    isPauseHudPointer(pointer) {
+        return !!pointer && pointer.x >= 0 && pointer.x <= 170 && pointer.y >= 0 && pointer.y <= 43;
+    }
+
+    handlePauseHudPointerDown(pointer) {
+        if (this.inputMode !== 'pointer' || !this.isPauseHudPointer(pointer)) {
+            return false;
+        }
+        this.pauseHudIsDown = true;
+        this._renderPauseHud();
+        if (this.pauseHudTimer) {
+            this.pauseHudTimer.remove(false);
+        }
+        this.pauseHudHoldStart = this.scene.time.now;
+        this.pauseHudTimer = this.scene.time.delayedCall(this.pauseHudHoldMs, () => {
+            this.pauseHudTimer = null;
+            if (this.pauseHudIsDown && !this.pauseMenuOpen) {
+                this.pauseHudIsDown = false;
+                this.pauseHudHoldStart = 0;
+                this._renderPauseHud();
+                this._openPauseMenu();
+            }
+        });
+        return true;
+    }
+
+    handlePauseHudPointerUp() {
+        if (!this.pauseHudIsDown && !this.pauseHudTimer) {
+            return;
+        }
+        this.pauseHudIsDown = false;
+        this.pauseHudHoldStart = 0;
+        if (this.pauseHudTimer) {
+            this.pauseHudTimer.remove(false);
+            this.pauseHudTimer = null;
+        }
+        this._renderPauseHud();
+    }
+
+    _renderPauseHud() {
+        if (!this.pauseHudText) {
+            return;
+        }
+        const isPointerMode = this.inputMode === 'pointer';
+        this.pauseHudText.setText(isPointerMode ? 'Pause' : 'Pause - ESC');
+        if (this.pauseHudIsDown) {
+            const elapsed = Math.max(0, this.scene.time.now - this.pauseHudHoldStart);
+            const pct = Math.min(1, elapsed / this.pauseHudHoldMs);
+            const bg = Math.floor(85 + 170 * pct);
+            const fg = Math.floor(255 * (1 - pct));
+            this.timerText.setColor(`rgb(${fg},${fg},0)`);
+            this.bestTimeText.setColor(`rgb(${fg},${fg},0)`);
+            this.pauseHudText.setColor(`rgb(${fg},${fg},0)`);
+            if (this.pauseHudBg) {
+                this.pauseHudBg.setFillStyle((bg << 16) | (bg << 8), 0.85);
+            }
+        } else {
+            this.timerText.setColor('#ffff00');
+            this.bestTimeText.setColor('#ffff00');
+            this.pauseHudText.setColor('#ffff00');
+            if (this.pauseHudBg) {
+                this.pauseHudBg.setFillStyle(0x000000, 0.55);
+            }
+        }
     }
 
     // Destroy any existing Phaser tilemap and build a new one for screen (mapX, mapY).
@@ -313,6 +400,7 @@ export default class STPView {
 
     _openPauseMenu() {
         if (this.pauseMenuOpen) return;
+        this._hideVirtualControls();
         this.pauseMenuOpen          = true;
         this.pauseMenuSelectedIndex = 0;
 
@@ -393,6 +481,17 @@ export default class STPView {
             case 0: this._closePauseMenu(); break;  // Resume
             case 1: this._resetLevel();     break;  // Reset
             case 2: this._exitGame();       break;  // Exit
+        }
+    }
+
+    _hideVirtualControls() {
+        if (window.stpVirtualControls && window.stpVirtualControls.hide) {
+            window.stpVirtualControls.hide();
+            return;
+        }
+        const overlay = document.getElementById('virtual-controls');
+        if (overlay) {
+            overlay.style.display = 'none';
         }
     }
 

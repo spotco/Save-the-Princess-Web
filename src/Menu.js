@@ -39,6 +39,11 @@ const ENTRY_CENTER_X = 312;
 // X position of the cursor arrow image (left of centered text).
 const CURSOR_X = 120;
 
+const LOADER_PANEL_X = 90;
+const LOADER_PANEL_Y = 155;
+const LOADER_PANEL_W = 445;
+const LOADER_PANEL_H = 315;
+
 export default class Menu {
     constructor(scene, sound, save) {
         this.scene = scene;
@@ -53,6 +58,7 @@ export default class Menu {
         this.counter             = 0;
         this.displaypress        = false;
         this.timestatinfo        = new TimerCounter(null);
+        this.inputMode           = 'keyboard';
     }
 
     create() {
@@ -62,10 +68,14 @@ export default class Menu {
         this.menuImg  = s.add.image(0, 0, 'menunew').setOrigin(0, 0).setDisplaySize(625, 625);
         // Tap / click anywhere on the title screen advances to the loader.
         this.menuImg.setInteractive();
-        this.menuImg.on('pointerdown', () => {
+        this.menuImg.on('pointerdown', (pointer) => {
+            this._setInputModeFromPointer(pointer);
             if (this.inmenuimg) {
                 this.sound.sfx('menuchange');
                 this._switchToLoader();
+            } else if (this.inloaderimg && !this.inTimesScreen && !this._isPointerInLoaderPanel(pointer)) {
+                this.sound.sfx('menuchange');
+                this._switchToMenu();
             }
         });
 
@@ -78,18 +88,17 @@ export default class Menu {
 
         // --- Loader screen — drawn entirely with Phaser; no loader.png ---
         // Dark panel with a yellow border framing the menu entries.
-        const panelX = 90, panelY = 155, panelW = 445, panelH = 315;
         this.loaderPanel = s.add.graphics();
         this.loaderPanel.fillStyle(0x000000, 0.85);
-        this.loaderPanel.fillRect(panelX, panelY, panelW, panelH);
+        this.loaderPanel.fillRect(LOADER_PANEL_X, LOADER_PANEL_Y, LOADER_PANEL_W, LOADER_PANEL_H);
         this.loaderPanel.lineStyle(2, 0xffff00, 1);
-        this.loaderPanel.strokeRect(panelX, panelY, panelW, panelH);
+        this.loaderPanel.strokeRect(LOADER_PANEL_X, LOADER_PANEL_Y, LOADER_PANEL_W, LOADER_PANEL_H);
         this.loaderPanel.setVisible(false);
 
         // Small "SELECT" label above the entries.
-        this.loaderTitleText = s.add.text(ENTRY_CENTER_X, panelY + 18, 'SELECT', MENU_TITLE_STYLE)
+        this.loaderTitleText = s.add.text(ENTRY_CENTER_X, LOADER_PANEL_Y + 18, 'SELECT', MENU_TITLE_STYLE)
                                     .setOrigin(0, 0).setVisible(false);
-        this._centerTextOnPixel(this.loaderTitleText, ENTRY_CENTER_X, panelY + 18);
+        this._centerTextOnPixel(this.loaderTitleText, ENTRY_CENTER_X, LOADER_PANEL_Y + 18);
 
         // --- Menu entries --------------------------------------------------
         // Each entry has a human-readable label, the action to run on ENTER/SPACE,
@@ -133,7 +142,8 @@ export default class Menu {
             });
 
             // Click / tap: select then activate.
-            entry.textObj.on('pointerdown', () => {
+            entry.textObj.on('pointerdown', (pointer) => {
+                this._setInputModeFromPointer(pointer);
                 if (!this.inloaderimg || this.inTimesScreen) return;
                 if (this.loaderImgMenuStatus !== i) {
                     this.loaderImgMenuStatus = i;
@@ -154,7 +164,8 @@ export default class Menu {
         this.timesmenuImg.setVisible(false);
         // Tap / click anywhere on the times screen dismisses it.
         this.timesmenuImg.setInteractive();
-        this.timesmenuImg.on('pointerdown', () => {
+        this.timesmenuImg.on('pointerdown', (pointer) => {
+            this._setInputModeFromPointer(pointer);
             if (this.inTimesScreen) {
                 this.sound.sfx('menuchange');
                 this._dismissTimesScreen();
@@ -189,6 +200,7 @@ export default class Menu {
             this.pressText.setVisible(this.displaypress);
 
             if (K(k.space) || K(k.enter)) {
+                this._setInputMode('keyboard');
                 this.sound.sfx('menuchange');
                 this._switchToLoader();
             }
@@ -198,6 +210,7 @@ export default class Menu {
             // Sub-state: times overlay is showing — any confirm/back key dismisses it.
             if (this.inTimesScreen) {
                 if (K(k.esc) || K(k.space) || K(k.enter)) {
+                    this._setInputMode('keyboard');
                     this.sound.sfx('menuchange');
                     this._dismissTimesScreen();
                 }
@@ -205,6 +218,7 @@ export default class Menu {
             }
 
             if (K(k.down)) {
+                this._setInputMode('keyboard');
                 if (this.loaderImgMenuStatus < this.entries.length - 1) {
                     this.loaderImgMenuStatus++;
                     this._scrollToSelected();
@@ -212,6 +226,7 @@ export default class Menu {
                     this.sound.sfx('menuchange');
                 }
             } else if (K(k.up)) {
+                this._setInputMode('keyboard');
                 if (this.loaderImgMenuStatus > 0) {
                     this.loaderImgMenuStatus--;
                     this._scrollToSelected();
@@ -219,9 +234,11 @@ export default class Menu {
                     this.sound.sfx('menuchange');
                 }
             } else if (K(k.esc)) {
+                this._setInputMode('keyboard');
                 this.sound.sfx('menuchange');
                 this._switchToMenu();
             } else if (K(k.space) || K(k.enter)) {
+                this._setInputMode('keyboard');
                 this.sound.sfx('menuchange');
                 this.entries[this.loaderImgMenuStatus].action();
             }
@@ -300,8 +317,7 @@ export default class Menu {
 
     refreshTextLayout() {
         this.pressText.setFontFamily('"Press Start 2P"');
-        this.pressText.setText('PRESS SPACE TO START');
-        this._centerTextOnPixel(this.pressText, ENTRY_CENTER_X, 370);
+        this._updateStartPromptText();
 
         this.loaderTitleText.setFontFamily('"Press Start 2P"');
         this.loaderTitleText.setText('SELECT');
@@ -369,6 +385,40 @@ export default class Menu {
         this.timesAllText.setText(beatCount >= 6
             ? "Grats on beating my times.\nSee you in the sequel!\n-spotco"
             : '');
+    }
+
+    _setInputModeFromPointer(pointer) {
+        const event = pointer ? pointer.event : null;
+        this._setInputMode(event && event.pointerType === 'touch' ? 'touch' : 'click');
+    }
+
+    _setInputMode(mode) {
+        this.inputMode = mode;
+        this._updateStartPromptText();
+    }
+
+    _getStartPromptText() {
+        if (this.inputMode === 'touch') {
+            return 'TAP TO START';
+        }
+        if (this.inputMode === 'click') {
+            return 'CLICK TO START';
+        }
+        return 'PRESS SPACE TO START';
+    }
+
+    _updateStartPromptText() {
+        if (!this.pressText) return;
+        this.pressText.setText(this._getStartPromptText());
+        this._centerTextOnPixel(this.pressText, ENTRY_CENTER_X, 370);
+    }
+
+    _isPointerInLoaderPanel(pointer) {
+        if (!pointer) return false;
+        return pointer.x >= LOADER_PANEL_X &&
+            pointer.x <= LOADER_PANEL_X + LOADER_PANEL_W &&
+            pointer.y >= LOADER_PANEL_Y &&
+            pointer.y <= LOADER_PANEL_Y + LOADER_PANEL_H;
     }
 
     _loadGame() {

@@ -33,7 +33,7 @@ export default class WinAnimation extends BasicAnimation {
             this.timer = 1;
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.manager.spaceKey)) {
+        if (this.manager.consumeSkipRequest()) {
             this.timer = 0;
         }
 

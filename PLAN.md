@@ -271,6 +271,18 @@ key flags `STPView` already polls, so zero gameplay logic changes.
       ID so pointer events reach the editor canvas.
 - [x] Virtual controls do not include a top-right toggle button. Hiding
       releases all held keys so the player doesn't keep moving.
+- [x] In-game HUD shows `Time:`, `Best:`, and a mode-aware pause label:
+      `Pause` in touch / click mode, `Pause - ESC` in keyboard mode.
+      Long-pressing the top-left HUD pause area in touch / click mode opens
+      the pause menu.
+- [x] Touch / click skips the same animations SPACE skips, including the
+      initial title startup animation.
+- [x] Virtual controls hide and release held keys when animations start or
+      the pause menu opens.
+- [x] Title prompt is input-aware: keyboard shows `PRESS SPACE TO START`,
+      mouse click shows `CLICK TO START`, and touch shows `TAP TO START`.
+- [x] Main menu closes back to the title screen when clicking / tapping
+      outside the loader panel.
 
 ### Phase 7 — Polish / stretch (optional, do not start without user ok)
 - [x] Undo / redo stack.

@@ -18,6 +18,7 @@ import VirtualControls   from './VirtualControls.js';
 
 // Single VirtualControls instance shared across all scene transitions.
 const virtualControls = new VirtualControls();
+window.stpVirtualControls = virtualControls;
 
 // Factory: instantiate the correct Level subclass by name.
 // Mirrors the switch in STPView.java that selects the level class.
@@ -411,6 +412,19 @@ class GameScene extends Phaser.Scene {
         // keyboard input hides them and releases any held virtual keys.
         virtualControls.hide();
         this.input.on('pointerdown', (pointer) => {
+            if (this.stpview && this.stpview.animationManager && this.stpview.animationManager.inAnimation) {
+                virtualControls.hide();
+                return;
+            }
+            if (this.stpview) {
+                this.stpview.setInputMode('pointer');
+                if (this.stpview.handlePauseHudPointerDown(pointer)) {
+                    return;
+                }
+                if (this.stpview.pauseMenuOpen) {
+                    return;
+                }
+            }
             const event = pointer.event || {};
             if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
                 const pointerId = Number.isFinite(event.pointerId) ? event.pointerId : pointer.id;
@@ -419,7 +433,20 @@ class GameScene extends Phaser.Scene {
                 virtualControls.show();
             }
         });
+        this.input.on('pointerup', () => {
+            if (this.stpview) {
+                this.stpview.handlePauseHudPointerUp();
+            }
+        });
+        this.input.on('pointerupoutside', () => {
+            if (this.stpview) {
+                this.stpview.handlePauseHudPointerUp();
+            }
+        });
         this.input.keyboard.on('keydown', (event) => {
+            if (event.isTrusted && this.stpview) {
+                this.stpview.setInputMode('keyboard');
+            }
             if (event.isTrusted && virtualControls.isVisible()) {
                 virtualControls.hide();
             }

@@ -17,8 +17,15 @@ export default class AnimationManager {
         this.currentAnimation = null;
         this.currentType      = null;
         this.altArg           = null;
+        this.pointerSkipRequested = false;
         this.spaceKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.nKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
+
+        this.scene.input.on('pointerdown', () => {
+            if (this.inAnimation) {
+                this.pointerSkipRequested = true;
+            }
+        });
     }
 
     startAnimation(type, altArg) {
@@ -35,6 +42,7 @@ export default class AnimationManager {
         this.altArg           = altArg;
         this.currentAnimation = animation;
         this.inAnimation      = true;
+        this._hideVirtualControls();
     }
 
     update(game) {
@@ -74,6 +82,7 @@ export default class AnimationManager {
         this.currentAnimation = null;
         this.currentType      = null;
         this.altArg           = null;
+        this.pointerSkipRequested = false;
 
         if (completedType === 'deathAnimation' || completedType === 'crushedAnimation') {
             this._restartCurrentLevel();
@@ -109,6 +118,18 @@ export default class AnimationManager {
             return new CreditScrollAnimation(this, altArg);
         }
         return null;
+    }
+
+    consumeSkipRequest() {
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+            this.pointerSkipRequested = false;
+            return true;
+        }
+        if (this.pointerSkipRequested) {
+            this.pointerSkipRequested = false;
+            return true;
+        }
+        return false;
     }
 
     _restartCurrentLevel() {
@@ -192,6 +213,17 @@ export default class AnimationManager {
         }
 
         this.scene.scene.start('MenuScene', { playIntro: false });
+    }
+
+    _hideVirtualControls() {
+        if (window.stpVirtualControls && window.stpVirtualControls.hide) {
+            window.stpVirtualControls.hide();
+            return;
+        }
+        const overlay = document.getElementById('virtual-controls');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
     }
 
     _getCurrentLevelName() {

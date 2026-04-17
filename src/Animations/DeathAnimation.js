@@ -29,7 +29,7 @@ export default class DeathAnimation extends BasicAnimation {
             this.timer = 1;
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.manager.spaceKey)) {
+        if (this.manager.consumeSkipRequest()) {
             this.dieSound.stop();
             this.timer = 5;
         }

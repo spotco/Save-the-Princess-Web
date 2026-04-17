@@ -25,7 +25,7 @@ export default class KnightBossInitAnimation extends BasicAnimation {
         this.testcounter++;
         this.timer--;
 
-        if (Phaser.Input.Keyboard.JustDown(this.manager.spaceKey)) {
+        if (this.manager.consumeSkipRequest()) {
             this.timer = 1;
         }
 

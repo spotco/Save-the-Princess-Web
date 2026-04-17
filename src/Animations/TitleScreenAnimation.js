@@ -17,7 +17,7 @@ export default class TitleScreenAnimation extends BasicAnimation {
     }
 
     update() {
-        if (Phaser.Input.Keyboard.JustDown(this.manager.spaceKey)) {
+        if (this.manager.consumeSkipRequest()) {
             this.manager.done();
             return;
         }
