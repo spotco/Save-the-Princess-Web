@@ -2,9 +2,15 @@
 // Non-source addition; sits outside Phaser entirely as a plain HTML div injected
 // over the canvas.  Fires synthetic KeyboardEvents on window so Player.js and
 // STPView.js need zero changes — they keep reading key.isDown as usual.
+//
+// Sliding between buttons is handled by tracking each pointer's position on
+// pointermove (window) and snapping to the closest d-pad button, so dragging
+// from one direction to another changes direction smoothly.
 
 const BTN_SIZE = 65;   // px per directional button
 const PAD_EDGE =  8;   // gap from screen edges
+// Maximum distance from the d-pad area centre before a pointer is released.
+const PAD_MARGIN = BTN_SIZE * 0.6;
 
 const DPAD_DEFS = [
     { label: '\u25b2', key: 'ArrowUp',    code: 'ArrowUp',    keyCode: 38, dx: 1, dy: 0 },
@@ -16,12 +22,22 @@ const DPAD_DEFS = [
 export default class VirtualControls {
 
     constructor() {
-        this._overlay    = null;   // outer <div> covering the 625×625 game area
-        this._dpad       = null;   // d-pad <div>
-        this._toggle     = null;   // toggle <button>
-        this._visible    = false;  // is the overlay currently showing?
-        this._dpadOn     = true;   // is the d-pad sub-panel expanded?
-        this._everShown  = false;  // has it been revealed at least once this session?
+        this._overlay   = null;   // outer <div> covering the 625×625 game area
+        this._dpad      = null;   // d-pad <div>
+        this._toggle    = null;   // toggle <button>
+        this._visible   = false;  // is the overlay currently showing?
+        this._dpadOn    = true;   // is the d-pad sub-panel expanded?
+        this._everShown = false;  // has it been revealed at least once this session?
+
+        // pointerId → def currently held by that pointer (null = over empty area)
+        this._activePointers = new Map();
+
+        // HTMLElement → def — built during _addArrowButton
+        this._buttonEls = new Map();
+
+        // Bound handlers kept so window listeners can be removed on destroy.
+        this._onWindowMove   = (e) => this._handlePointerMove(e);
+        this._onWindowUp     = (e) => this._handlePointerUp(e);
 
         this._build();
     }
@@ -30,7 +46,6 @@ export default class VirtualControls {
     // Public API
     // -------------------------------------------------------------------------
 
-    // Show the overlay (and record that it has been revealed).
     show() {
         if (!this._overlay) return;
         this._overlay.style.display = 'block';
@@ -38,10 +53,8 @@ export default class VirtualControls {
         this._everShown = true;
     }
 
-    // Hide the overlay without resetting _everShown.
     hide() {
         if (!this._overlay) return;
-        // Release any held keys before hiding so movement doesn't stick.
         this._releaseAll();
         this._overlay.style.display = 'none';
         this._visible = false;
@@ -50,9 +63,11 @@ export default class VirtualControls {
     isVisible()    { return this._visible;   }
     wasEverShown() { return this._everShown; }
 
-    // Remove the overlay from the DOM (called if the game is torn down).
     destroy() {
         this._releaseAll();
+        window.removeEventListener('pointermove',  this._onWindowMove);
+        window.removeEventListener('pointerup',    this._onWindowUp);
+        window.removeEventListener('pointercancel',this._onWindowUp);
         if (this._overlay && this._overlay.parentNode) {
             this._overlay.parentNode.removeChild(this._overlay);
         }
@@ -73,13 +88,13 @@ export default class VirtualControls {
             'pointer-events:none;z-index:70;display:none;';
         this._overlay = ov;
 
-        // D-pad — bottom-left corner, 3×3 button grid
+        // D-pad — bottom-left corner, 3×3 button cross
         const dpad = document.createElement('div');
         dpad.style.cssText =
             'position:absolute;' +
             `bottom:${PAD_EDGE}px;left:${PAD_EDGE}px;` +
             `width:${BTN_SIZE * 3}px;height:${BTN_SIZE * 3}px;` +
-            'pointer-events:none;';
+            'pointer-events:auto;touch-action:none;';
         this._dpad = dpad;
         ov.appendChild(dpad);
 
@@ -87,7 +102,24 @@ export default class VirtualControls {
             this._addArrowButton(def, dpad);
         }
 
-        // Toggle button — top-right corner, always visible while overlay is shown
+        // D-pad pointerdown — start tracking the pointer.
+        dpad.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (!this._dpadOn) return;
+            const def = this._closestDef(e.clientX, e.clientY);
+            if (!def) return;
+            this._activePointers.set(e.pointerId, def);
+            this._fireKey('keydown', def);
+            this._setButtonActive(def, true);
+        });
+
+        // pointermove / pointerup on window — track the pointer even when it
+        // slides off the button that originally received pointerdown.
+        window.addEventListener('pointermove',   this._onWindowMove);
+        window.addEventListener('pointerup',     this._onWindowUp);
+        window.addEventListener('pointercancel', this._onWindowUp);
+
+        // Toggle button — top-right corner
         const tog = document.createElement('button');
         tog.textContent = '\ud83d\udd79';   // 🕹
         tog.title = 'Toggle D-pad';
@@ -119,50 +151,104 @@ export default class VirtualControls {
             'background:rgba(255,255,255,0.12);' +
             'border:2px solid rgba(255,255,255,0.28);border-radius:10px;' +
             'color:rgba(255,255,255,0.85);font-size:26px;line-height:1;' +
-            'cursor:pointer;pointer-events:auto;touch-action:none;' +
+            // pointer-events:none — the parent dpad div handles all pointer events
+            'pointer-events:none;touch-action:none;' +
             'user-select:none;-webkit-user-select:none;';
-
-        const fireDown = () => window.dispatchEvent(new KeyboardEvent('keydown', {
-            key: def.key, code: def.code, keyCode: def.keyCode, which: def.keyCode,
-            bubbles: true, cancelable: true,
-        }));
-        const fireUp = () => window.dispatchEvent(new KeyboardEvent('keyup', {
-            key: def.key, code: def.code, keyCode: def.keyCode, which: def.keyCode,
-            bubbles: true, cancelable: true,
-        }));
-
-        btn.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            btn.setPointerCapture(e.pointerId);
-            fireDown();
-        });
-        btn.addEventListener('pointerup',     (e) => { e.preventDefault(); fireUp(); });
-        btn.addEventListener('pointercancel', ()  => fireUp());
-        btn.addEventListener('contextmenu',   (e) => e.preventDefault());
-
-        // Visual feedback
-        btn.addEventListener('pointerdown', () => {
-            btn.style.background = 'rgba(255,255,255,0.28)';
-        });
-        btn.addEventListener('pointerup',     () => {
-            btn.style.background = 'rgba(255,255,255,0.12)';
-        });
-        btn.addEventListener('pointercancel', () => {
-            btn.style.background = 'rgba(255,255,255,0.12)';
-        });
-
+        this._buttonEls.set(btn, def);
         parent.appendChild(btn);
+        def._el = btn;   // back-reference for visual feedback
         return btn;
     }
 
-    // Fire keyup for all four directions — call before hiding so the player
-    // doesn't keep walking after the overlay disappears.
-    _releaseAll() {
+    // -------------------------------------------------------------------------
+    // Pointer tracking
+    // -------------------------------------------------------------------------
+
+    _handlePointerMove(e) {
+        if (!this._activePointers.has(e.pointerId)) return;
+        const oldDef = this._activePointers.get(e.pointerId);
+        const newDef = this._closestDef(e.clientX, e.clientY);
+
+        if (newDef === oldDef) return;
+
+        // Release old direction
+        if (oldDef) {
+            this._fireKey('keyup', oldDef);
+            this._setButtonActive(oldDef, false);
+        }
+        // Engage new direction (may be null if pointer left the pad area)
+        if (newDef) {
+            this._fireKey('keydown', newDef);
+            this._setButtonActive(newDef, true);
+        }
+        this._activePointers.set(e.pointerId, newDef || null);
+    }
+
+    _handlePointerUp(e) {
+        if (!this._activePointers.has(e.pointerId)) return;
+        const def = this._activePointers.get(e.pointerId);
+        if (def) {
+            this._fireKey('keyup', def);
+            this._setButtonActive(def, false);
+        }
+        this._activePointers.delete(e.pointerId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    // Return the def whose button centre is closest to (x, y), or null if
+    // the pointer is too far from the d-pad area.
+    _closestDef(x, y) {
+        if (!this._dpad) return null;
+        const padRect = this._dpad.getBoundingClientRect();
+        // Reject if clearly outside the d-pad region (with margin).
+        if (x < padRect.left  - PAD_MARGIN || x > padRect.right  + PAD_MARGIN ||
+            y < padRect.top   - PAD_MARGIN || y > padRect.bottom + PAD_MARGIN) {
+            return null;
+        }
+        let closest = null;
+        let closestDist = Infinity;
         for (const def of DPAD_DEFS) {
-            window.dispatchEvent(new KeyboardEvent('keyup', {
-                key: def.key, code: def.code, keyCode: def.keyCode, which: def.keyCode,
-                bubbles: true, cancelable: true,
-            }));
+            if (!def._el) continue;
+            const r   = def._el.getBoundingClientRect();
+            const cx  = (r.left + r.right)  / 2;
+            const cy  = (r.top  + r.bottom) / 2;
+            const dist = Math.hypot(x - cx, y - cy);
+            if (dist < closestDist) { closestDist = dist; closest = def; }
+        }
+        return closest;
+    }
+
+    _fireKey(type, def) {
+        window.dispatchEvent(new KeyboardEvent(type, {
+            key: def.key, code: def.code, keyCode: def.keyCode, which: def.keyCode,
+            bubbles: true, cancelable: true,
+        }));
+    }
+
+    _setButtonActive(def, active) {
+        if (def && def._el) {
+            def._el.style.background = active
+                ? 'rgba(255,255,255,0.35)'
+                : 'rgba(255,255,255,0.12)';
+        }
+    }
+
+    // Release all keys and clear pointer tracking (called on hide / destroy).
+    _releaseAll() {
+        for (const [, def] of this._activePointers) {
+            if (def) {
+                this._fireKey('keyup', def);
+                this._setButtonActive(def, false);
+            }
+        }
+        this._activePointers.clear();
+        // Also unconditionally release all four keys as a safety net.
+        for (const def of DPAD_DEFS) {
+            this._fireKey('keyup', def);
+            this._setButtonActive(def, false);
         }
     }
 }
