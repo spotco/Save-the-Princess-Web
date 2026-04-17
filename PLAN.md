@@ -2,11 +2,6 @@
 
 **Last Updated**: 2026-04-13 (editor skeleton continued after partial run)
 
-Human TODO, add to plan:
-cannot place wizard tileset in level 1, fix this
-pointers not visible when zoomed out, fix
-level 6 to ending tileset in 0,1 doesn't look right
-
 ---
 
 ## Active Focus
