@@ -83,6 +83,42 @@ const POINTER_LABELS = {
     },
 };
 
+// Human-readable name for every tile in each tileset, used by the info bar.
+const TILE_NAMES = {
+    tileset1: {
+        0:  'Wall',              1:  'Wall',              2:  'Wall',
+        3:  'Dog spawn \u2190', 4:  'Floor',             5:  'Wall',
+        6:  'Wall',             7:  'Dog spawn \u2192',  8:  'Wall',
+        9:  'Torch',            10: 'Dog spawn \u2193',  11: 'Dog spawn \u2191',
+        12: 'Wall',             13: 'Wall',              14: 'Wall',
+        15: 'Floor',            16: 'Princess spawn',    17: 'Wall',
+        18: 'Wall',             19: 'Wall',              20: 'Player spawn',
+        21: 'Wall',             22: 'Crate spawn',       23: 'Wall',
+        24: 'Wall',
+    },
+    guard1set: {
+        0:  'Guard spawn \u2192',   1:  'Guard spawn \u2191',   2:  'Guard point \u2192',
+        3:  'Guard point \u2190',   4:  'Door (closed)',         5:  'Guard spawn \u2193',
+        6:  'Guard spawn \u2190',   7:  'Guard point \u2193',   8:  'Guard point \u2191',
+        9:  'Door (open)',          10: 'Door button',           11: 'Wall',
+        12: 'Window',              13: 'Exit \u2192',           14: 'Exit \u2190',
+        15: 'Guard stop \u2192',   16: 'Guard stop \u2190',    17: 'Key',
+        18: 'Exit \u2191',         19: 'Wall',                  20: 'Guard stop \u2193',
+        21: 'Guard stop \u2191',   22: 'Key door',              23: 'Exit \u2193',
+        24: 'Wall',
+    },
+    wizard1set: {
+        0:  'Wizard spawn \u2191',      1:  'Wall',   2:  'Wall',   3:  'Wall',
+        4:  'Knight boss',              5:  'Wizard spawn \u2192',  6:  'Wall',
+        7:  'Wall',                     8:  'Wall',   9:  'Wall',
+        10: 'Wizard spawn \u2193',      11: 'Wall',   12: 'Wall',   13: 'Wall',
+        14: 'Wall',                     15: 'Wizard spawn \u2190',
+        16: 'Knight boss delay spawn',  17: 'Wall',   18: 'Wall',   19: 'Wall',
+        20: 'Tracker',                  21: 'Boss activate',
+        22: 'Boss activate spawn',      23: 'Wall',   24: 'Wall',
+    },
+};
+
 // ---------------------------------------------------------------------------
 // Colours
 // ---------------------------------------------------------------------------
@@ -259,6 +295,8 @@ export default class LevelEditorScene extends Phaser.Scene {
             }
             this.isPainting = true;
             this._handleMapPointer(ptr);
+            const { tx, ty } = this._pointerToTile(ptr);
+            this._showTileInfo(tx, ty);
         });
         hitZone.on('pointermove', (ptr) => {
             this._updateCursorHighlight(ptr);
@@ -606,6 +644,17 @@ export default class LevelEditorScene extends Phaser.Scene {
         }
     }
 
+    // Display the human-readable tile name in the info bar when the user clicks a map tile.
+    _showTileInfo(tx, ty) {
+        const screen = this._currentScreenData();
+        if (!screen || tx < 0 || tx >= 25 || ty < 0 || ty >= 25) return;
+        const gid = screen.tiles[ty * screen.width + tx];
+        if (!gid) { this._setStatus('(empty)'); return; }
+        const tsData = this._tilesetForGid(gid, screen.tilesets);
+        if (!tsData) { this._setStatus(`GID ${gid}`); return; }
+        this._setStatus(this._tileDisplayName(tsData.name, gid - tsData.firstgid));
+    }
+
     // Return the tileset entry whose firstgid range contains the given GID.
     _tilesetForGid(gid, tilesets) {
         let best = null;
@@ -622,6 +671,18 @@ export default class LevelEditorScene extends Phaser.Scene {
     _selectPaletteEntry(tilesetName, localId) {
         this.selectedPaletteKey = { tilesetName, localId };
         this._redrawPaletteSelection();
+        this._showPaletteTileInfo(tilesetName, localId);
+    }
+
+    // Display the human-readable tile name in the info bar for a palette tile selection.
+    _showPaletteTileInfo(tilesetName, localId) {
+        this._setStatus(this._tileDisplayName(tilesetName, localId));
+    }
+
+    // Return the human-readable name for a tile, falling back to tileset+id if unknown.
+    _tileDisplayName(tilesetName, localId) {
+        const names = TILE_NAMES[tilesetName];
+        return (names && names[localId] !== undefined) ? names[localId] : `${tilesetName} #${localId}`;
     }
 
     _setPaletteScrollY(scrollY) {
