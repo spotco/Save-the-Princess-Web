@@ -407,15 +407,25 @@ class GameScene extends Phaser.Scene {
         this.stpview.editorRedoStack    = data.editorRedoStack || null;
         await this.stpview.loadlevel();
 
-        // Virtual controls: re-show immediately if previously revealed,
-        // otherwise show on the player's first click or touch.
-        if (virtualControls.wasEverShown()) {
-            virtualControls.show();
-        }
-        this.input.on('pointerdown', () => {
-            if (!virtualControls.isVisible()) {
+        // Virtual controls start hidden. Pointer input reveals them; real
+        // keyboard input hides them and releases any held virtual keys.
+        virtualControls.hide();
+        this.input.on('pointerdown', (pointer) => {
+            const event = pointer.event || {};
+            if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+                const pointerId = Number.isFinite(event.pointerId) ? event.pointerId : pointer.id;
+                virtualControls.showAtAndTrack(pointerId, event.clientX, event.clientY);
+            } else if (!virtualControls.isVisible()) {
                 virtualControls.show();
             }
+        });
+        this.input.keyboard.on('keydown', (event) => {
+            if (event.isTrusted && virtualControls.isVisible()) {
+                virtualControls.hide();
+            }
+        });
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            virtualControls.hide();
         });
 
         this.isReady = true;

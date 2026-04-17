@@ -1,7 +1,7 @@
-// VirtualControls.js — DOM overlay providing a virtual D-pad for touch / mouse play.
+// VirtualControls.js - DOM overlay providing a virtual D-pad for touch / mouse play.
 // Non-source addition; sits outside Phaser entirely as a plain HTML div injected
 // over the canvas.  Fires synthetic KeyboardEvents on window so Player.js and
-// STPView.js need zero changes — they keep reading key.isDown as usual.
+// STPView.js need zero changes - they keep reading key.isDown as usual.
 //
 // Sliding between buttons is handled by tracking each pointer's position on
 // pointermove (window) and snapping to the closest d-pad button, so dragging
@@ -9,6 +9,7 @@
 
 const BTN_SIZE = 65;   // px per directional button
 const PAD_EDGE =  8;   // gap from screen edges
+const PAD_SIZE = BTN_SIZE * 3;
 // Maximum distance from the d-pad area centre before a pointer is released.
 const PAD_MARGIN = BTN_SIZE * 0.6;
 
@@ -22,22 +23,20 @@ const DPAD_DEFS = [
 export default class VirtualControls {
 
     constructor() {
-        this._overlay   = null;   // outer <div> covering the 625×625 game area
-        this._dpad      = null;   // d-pad <div>
-        this._toggle    = null;   // toggle <button>
-        this._visible   = false;  // is the overlay currently showing?
-        this._dpadOn    = true;   // is the d-pad sub-panel expanded?
-        this._everShown = false;  // has it been revealed at least once this session?
+        this._overlay = null;   // outer <div> covering the 625x625 game area
+        this._dpad    = null;   // d-pad <div>
+        this._visible = false;  // is the overlay currently showing?
+        this._trackingInitialPointer = false;
 
-        // pointerId → def currently held by that pointer (null = over empty area)
+        // pointerId -> def currently held by that pointer (null = over empty area)
         this._activePointers = new Map();
 
-        // HTMLElement → def — built during _addArrowButton
+        // HTMLElement -> def - built during _addArrowButton
         this._buttonEls = new Map();
 
         // Bound handlers kept so window listeners can be removed on destroy.
-        this._onWindowMove   = (e) => this._handlePointerMove(e);
-        this._onWindowUp     = (e) => this._handlePointerUp(e);
+        this._onWindowMove = (e) => this._handlePointerMove(e);
+        this._onWindowUp   = (e) => this._handlePointerUp(e);
 
         this._build();
     }
@@ -48,9 +47,26 @@ export default class VirtualControls {
 
     show() {
         if (!this._overlay) return;
+        this._syncOverlayToCanvas();
         this._overlay.style.display = 'block';
-        this._visible   = true;
-        this._everShown = true;
+        this._visible = true;
+    }
+
+    showAt(clientX, clientY) {
+        if (!this._overlay) return;
+        const canvasRect = this._syncOverlayToCanvas();
+        this._moveDpadTo(clientX, clientY, canvasRect);
+        this._overlay.style.display = 'block';
+        this._visible = true;
+    }
+
+    showAtAndTrack(pointerId, clientX, clientY) {
+        this.showAt(clientX, clientY);
+        if (!this._visible) return;
+        if (Number.isFinite(pointerId)) {
+            this._activePointers.set(pointerId, null);
+        }
+        this._trackingInitialPointer = true;
     }
 
     hide() {
@@ -60,8 +76,7 @@ export default class VirtualControls {
         this._visible = false;
     }
 
-    isVisible()    { return this._visible;   }
-    wasEverShown() { return this._everShown; }
+    isVisible() { return this._visible; }
 
     destroy() {
         this._releaseAll();
@@ -79,7 +94,7 @@ export default class VirtualControls {
     // -------------------------------------------------------------------------
 
     _build() {
-        // Outer container — full 625×625, pointer-events:none so the canvas
+        // Outer container - full 625x625, pointer-events:none so the canvas
         // beneath still receives clicks in areas not covered by buttons.
         const ov = document.createElement('div');
         ov.id = 'virtual-controls';
@@ -88,12 +103,12 @@ export default class VirtualControls {
             'pointer-events:none;z-index:70;display:none;';
         this._overlay = ov;
 
-        // D-pad — bottom-left corner, 3×3 button cross
+        // D-pad - 3x3 button cross, moved to the player's click / touch point.
         const dpad = document.createElement('div');
         dpad.style.cssText =
             'position:absolute;' +
             `bottom:${PAD_EDGE}px;left:${PAD_EDGE}px;` +
-            `width:${BTN_SIZE * 3}px;height:${BTN_SIZE * 3}px;` +
+            `width:${PAD_SIZE}px;height:${PAD_SIZE}px;` +
             'pointer-events:auto;touch-action:none;';
         this._dpad = dpad;
         ov.appendChild(dpad);
@@ -102,10 +117,9 @@ export default class VirtualControls {
             this._addArrowButton(def, dpad);
         }
 
-        // D-pad pointerdown — start tracking the pointer.
+        // D-pad pointerdown - start tracking the pointer.
         dpad.addEventListener('pointerdown', (e) => {
             e.preventDefault();
-            if (!this._dpadOn) return;
             const def = this._closestDef(e.clientX, e.clientY);
             if (!def) return;
             this._activePointers.set(e.pointerId, def);
@@ -113,30 +127,11 @@ export default class VirtualControls {
             this._setButtonActive(def, true);
         });
 
-        // pointermove / pointerup on window — track the pointer even when it
+        // pointermove / pointerup on window - track the pointer even when it
         // slides off the button that originally received pointerdown.
         window.addEventListener('pointermove',   this._onWindowMove);
         window.addEventListener('pointerup',     this._onWindowUp);
         window.addEventListener('pointercancel', this._onWindowUp);
-
-        // Toggle button — top-right corner
-        const tog = document.createElement('button');
-        tog.textContent = '\ud83d\udd79';   // 🕹
-        tog.title = 'Toggle D-pad';
-        tog.style.cssText =
-            'position:absolute;top:5px;right:5px;width:38px;height:38px;' +
-            'background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.25);' +
-            'border-radius:6px;color:#fff;font-size:18px;line-height:1;' +
-            'cursor:pointer;pointer-events:auto;touch-action:none;' +
-            'user-select:none;-webkit-user-select:none;';
-        tog.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            this._dpadOn = !this._dpadOn;
-            dpad.style.display = this._dpadOn ? 'block' : 'none';
-            if (!this._dpadOn) this._releaseAll();
-        });
-        this._toggle = tog;
-        ov.appendChild(tog);
 
         document.body.appendChild(ov);
     }
@@ -151,7 +146,7 @@ export default class VirtualControls {
             'background:rgba(255,255,255,0.12);' +
             'border:2px solid rgba(255,255,255,0.28);border-radius:10px;' +
             'color:rgba(255,255,255,0.85);font-size:26px;line-height:1;' +
-            // pointer-events:none — the parent dpad div handles all pointer events
+            // pointer-events:none - the parent dpad div handles all pointer events
             'pointer-events:none;touch-action:none;' +
             'user-select:none;-webkit-user-select:none;';
         this._buttonEls.set(btn, def);
@@ -165,7 +160,13 @@ export default class VirtualControls {
     // -------------------------------------------------------------------------
 
     _handlePointerMove(e) {
-        if (!this._activePointers.has(e.pointerId)) return;
+        if (!this._activePointers.has(e.pointerId)) {
+            if (!this._trackingInitialPointer || !this._isPointerHeld(e)) return;
+            this._activePointers.set(e.pointerId, null);
+            this._trackingInitialPointer = false;
+        } else if (this._trackingInitialPointer) {
+            this._trackingInitialPointer = false;
+        }
         const oldDef = this._activePointers.get(e.pointerId);
         const newDef = this._closestDef(e.clientX, e.clientY);
 
@@ -185,6 +186,7 @@ export default class VirtualControls {
     }
 
     _handlePointerUp(e) {
+        this._trackingInitialPointer = false;
         if (!this._activePointers.has(e.pointerId)) return;
         const def = this._activePointers.get(e.pointerId);
         if (def) {
@@ -197,6 +199,37 @@ export default class VirtualControls {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    _syncOverlayToCanvas() {
+        const canvas = document.querySelector('canvas');
+        if (!canvas) {
+            return { left: 0, top: 0, width: 625, height: 625 };
+        }
+        const rect = canvas.getBoundingClientRect();
+        this._overlay.style.left   = `${rect.left}px`;
+        this._overlay.style.top    = `${rect.top}px`;
+        this._overlay.style.width  = `${rect.width}px`;
+        this._overlay.style.height = `${rect.height}px`;
+        return rect;
+    }
+
+    _moveDpadTo(clientX, clientY, canvasRect) {
+        if (!this._dpad) return;
+        const rect = canvasRect || this._syncOverlayToCanvas();
+        const localX = clientX - rect.left;
+        const localY = clientY - rect.top;
+        const maxLeft = Math.max(PAD_EDGE, rect.width  - PAD_SIZE - PAD_EDGE);
+        const maxTop  = Math.max(PAD_EDGE, rect.height - PAD_SIZE - PAD_EDGE);
+        const left = Math.min(Math.max(localX - PAD_SIZE / 2, PAD_EDGE), maxLeft);
+        const top  = Math.min(Math.max(localY - PAD_SIZE / 2, PAD_EDGE), maxTop);
+        this._dpad.style.left   = `${left}px`;
+        this._dpad.style.top    = `${top}px`;
+        this._dpad.style.bottom = 'auto';
+    }
+
+    _isPointerHeld(e) {
+        return e.buttons !== 0 || e.pointerType === 'touch';
+    }
 
     // Return the def whose button centre is closest to (x, y), or null if
     // the pointer is too far from the d-pad area.
@@ -212,9 +245,9 @@ export default class VirtualControls {
         let closestDist = Infinity;
         for (const def of DPAD_DEFS) {
             if (!def._el) continue;
-            const r   = def._el.getBoundingClientRect();
-            const cx  = (r.left + r.right)  / 2;
-            const cy  = (r.top  + r.bottom) / 2;
+            const r    = def._el.getBoundingClientRect();
+            const cx   = (r.left + r.right)  / 2;
+            const cy   = (r.top  + r.bottom) / 2;
             const dist = Math.hypot(x - cx, y - cy);
             if (dist < closestDist) { closestDist = dist; closest = def; }
         }
@@ -245,6 +278,7 @@ export default class VirtualControls {
             }
         }
         this._activePointers.clear();
+        this._trackingInitialPointer = false;
         // Also unconditionally release all four keys as a safety net.
         for (const def of DPAD_DEFS) {
             this._fireKey('keyup', def);

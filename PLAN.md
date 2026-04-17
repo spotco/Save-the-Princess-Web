@@ -252,11 +252,11 @@ Touch devices and users who prefer not to use a keyboard need on-screen
 controls. This phase adds a virtual D-pad overlay that maps to the same
 key flags `STPView` already polls, so zero gameplay logic changes.
 
-- [x] **Detection**: overlay appears on the player's first click or touch
-      inside GameScene; stays visible for the rest of that session.
-      Re-shown automatically when returning to GameScene from the editor.
+- [x] **Detection**: overlay is hidden by default. It appears on click or
+      touch inside GameScene, and real keyboard input hides it again.
 - [x] **Overlay layout** (drawn on top of the game canvas, outside Phaser):
-  - Bottom-left: D-pad cross (▲ ◄ ► ▼, 65×65px each).
+  - D-pad cross (up / left / right / down, 65x65px each) appears at the
+    player's click / touch point and clamps inside the game area.
   - Semi-transparent so the game tiles beneath remain readable.
   - Fixed position; does not scroll with the level.
 - [x] **Implementation approach**: `src/VirtualControls.js` injects a `<div>`
@@ -269,8 +269,8 @@ key flags `STPView` already polls, so zero gameplay logic changes.
       path handles both.
 - [x] **Hide in editor**: `LevelEditorScene.create()` hides the overlay by
       ID so pointer events reach the editor canvas.
-- [x] Toggle button (🕹) in top-right corner shows/hides the D-pad.
-      Hiding releases all held keys so the player doesn't keep moving.
+- [x] Virtual controls do not include a top-right toggle button. Hiding
+      releases all held keys so the player doesn't keep moving.
 
 ### Phase 7 — Polish / stretch (optional, do not start without user ok)
 - [x] Undo / redo stack.
