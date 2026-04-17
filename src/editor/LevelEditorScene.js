@@ -429,14 +429,15 @@ export default class LevelEditorScene extends Phaser.Scene {
 
         // Row 2 — actions
         const actDefs = [
-            { label: 'SAVE', fn: () => this._actionSave() },
-            { label: 'LOAD', fn: () => this._actionLoad() },
+            { label: 'SAVE',   fn: () => this._actionSave() },
+            { label: 'LOAD',   fn: () => this._actionLoad() },
             { label: 'IMPORT', fn: () => this._actionImportExisting() },
-            { label: 'NEW',  fn: () => this._actionNew()  },
+            { label: 'NEW',    fn: () => this._actionNew()  },
+            { label: 'PLAY',   fn: () => this._actionPlay() },
             { label: 'PTR:ON', fn: () => this._togglePointers() },
-            { label: 'MENU', fn: () => this._actionBack() },
+            { label: 'MENU',   fn: () => this._actionBack() },
         ];
-        const aBtnW = 82, aBtnGap = 1, aRow = BOT_Y + 46;
+        const aBtnW = 70, aBtnGap = 1, aRow = BOT_Y + 46;
         actDefs.forEach(({ label, fn }, i) => {
             const btn = this._makeButton(i * (aBtnW + aBtnGap), aRow, aBtnW, 26, label, 7, fn);
             if (label === 'PTR:ON') {
@@ -946,6 +947,11 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.levelData = this._makeBlankLevel();
         this._onLevelLoaded();
         this._setStatus('Created blank level.');
+    }
+
+    _actionPlay() {
+        if (!this.levelData) { this._setStatus('No level loaded.'); return; }
+        this.scene.start('GameScene', { customLevel: this.levelData });
     }
 
     _actionBack() {

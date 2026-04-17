@@ -214,31 +214,29 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
       `bossactivate`, `bossactivatespawn`, `final`, `cratespawn`,
       `princess`, `guardpoint`, `stop`).
 
-### Phase 5 — Save / load / play custom levels
-- [ ] **Save**: serialize current editor state via
+### Phase 5 — Save / load / play custom levels ✓ DONE
+- [x] **Save**: serialize current editor state via
       `StpLevelFormat.toJsonString`, trigger download via `Blob` +
       anchor click. File name `<name>.stplevel.json`.
-- [ ] **Load**: `<input type="file" accept=".json,.stplevel.json">`
+- [x] **Load**: `<input type="file" accept=".json,.stplevel.json">`
       invisible element; on change, parse + validate, replace editor
       state.
-- [ ] **Import existing**: menu button per level (1–6) that reuses the
-      game's XML cache to build a `.stplevel.json` and loads it into
-      the editor.
-- [ ] **Play**: add a `Play` button in the editor that jumps to
-      `GameScene` with the in-memory `.stplevel.json` as scene data.
-- [ ] `GameScene` must accept either `{ levelName }` (existing path) or
+- [x] **Import existing**: menu button per level (1–6) loads the bundled
+      `.stplevel.json` directly into the editor.
+- [x] **Play**: `Play` button in the editor starts `GameScene` with
+      `{ customLevel: this.levelData }` as scene data.
+- [x] `GameScene` accepts either `{ levelName }` (campaign path) or
       `{ customLevel: <parsed object> }`; the latter instantiates
       `CustomLevel` instead of `LevelN`.
 
-### Phase 6 — `CustomLevel` runtime
-- [ ] Create `src/levels/CustomLevel.js` extending `Level`. Its `init()`
+### Phase 6 — `CustomLevel` runtime ✓ DONE
+- [x] Created `src/levels/CustomLevel.js` extending `Level`. Its `init()`
       populates `this.storedmap` directly from the parsed JSON instead
       of hitting the XML cache. `createMasterList()` passes the stored
       `screensX, screensY`.
-- [ ] Verify all entity spawns work unchanged (since tileProps keys
-      match the existing strings the base `Level` methods check).
-- [ ] Do NOT touch the existing `Level1..6` classes — they remain the
-      Java-faithful reference path.
+- [x] Entity spawns work unchanged — tileProps keys match the strings
+      the base `Level` methods check.
+- [x] `Level1..6` classes untouched.
 
 ### Phase 6.5 — In-game virtual controls (touch / mouse)
 Touch devices and users who prefer not to use a keyboard need on-screen

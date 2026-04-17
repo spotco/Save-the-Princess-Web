@@ -13,6 +13,7 @@ import Level4            from './levels/Level4.js';
 import Level5            from './levels/Level5.js';
 import Level6            from './levels/Level6.js';
 import LevelEditorScene  from './editor/LevelEditorScene.js';
+import CustomLevel       from './levels/CustomLevel.js';
 
 // Factory: instantiate the correct Level subclass by name.
 // Mirrors the switch in STPView.java that selects the level class.
@@ -378,15 +379,22 @@ class GameScene extends Phaser.Scene {
     async create() {
         this.isReady = false;
 
-        const data      = this.scene.settings.data || {};
-        const levelName = data.levelName || 'Level1';
+        const data       = this.scene.settings.data || {};
+        const levelName  = data.levelName  || 'Level1';
+        const customData = data.customLevel || null;
 
         const sound = new SoundManager(this);
         const save  = new SaveReader();
-        save.loadGame();
-        // Ensure the save reflects the level we're loading
-        // (MenuScene already called newGame() or loadGame() before transitioning)
-        const level = createLevel(this, levelName);
+
+        let level;
+        if (customData) {
+            // Custom level from the editor — no save-file state to load.
+            level = new CustomLevel(this, customData);
+        } else {
+            // Normal campaign level — restore save progress.
+            save.loadGame();
+            level = createLevel(this, levelName);
+        }
 
         this.stpview = new STPView(this, level, sound, save);
         await this.stpview.loadlevel();
