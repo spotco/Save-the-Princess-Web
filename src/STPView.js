@@ -22,17 +22,29 @@ export default class STPView {
         this.seemecounter = 26;   // mirrors STPGame.loadlevel() initial value
         this.timercounter = null;
         this.animationManager = new AnimationManager(this.scene, this);
-        this.isPaused     = false;
         this.displayHitboxes = false;
 
+        // Editor-play mode: set by GameScene after construction.
+        // When true, Exit returns to LevelEditorScene instead of MenuScene.
+        this.isEditorPlay    = false;
+        this.customLevelData = null;
+
+        // Pause menu state
+        this.pauseMenuOpen            = false;
+        this.pauseMenuSelectedIndex   = 0;
+        this.pauseMenuOverlay         = null;   // Graphics (blackout + panel)
+        this.pauseMenuTitleText       = null;   // Phaser.Text "PAUSED"
+        this.pauseMenuCursor          = null;   // loadercursor Image
+        this.pauseMenuEntryTexts      = [];     // [RESUME, RESET, EXIT] Text objects
+        this.pauseMenuEntryYPositions = [];     // cursor Y per entry
+
         // Phaser display refs
-        this.currentTilemap   = null;
-        this.seemeSprite      = null;
-        this.timerText        = null;
-        this.bestTimeText     = null;
-        this.pauseText        = null;
-        this.debugGraphics    = null;
-        this.keys             = null;
+        this.currentTilemap = null;
+        this.seemeSprite    = null;
+        this.timerText      = null;
+        this.bestTimeText   = null;
+        this.debugGraphics  = null;
+        this.keys           = null;
     }
 
     // async: parses level TMX, builds masterList, creates player.
@@ -69,14 +81,14 @@ export default class STPView {
         this.bestTimeText = this.scene.add.text(0, 13, '', {
             fontFamily: 'monospace', fontSize: '13px', color: '#ffff00'
         }).setDepth(20);
-        this.pauseText = this.scene.add.text(312, 312, 'PAUSED', {
-            fontFamily: 'monospace', fontSize: '20px', color: '#ffff00'
-        }).setOrigin(0.5, 0.5).setDepth(30).setVisible(false);
         this.debugGraphics = this.scene.add.graphics().setDepth(25);
         this.keys = this.scene.input.keyboard.addKeys({
             esc:   Phaser.Input.Keyboard.KeyCodes.ESC,
             h:     Phaser.Input.Keyboard.KeyCodes.H,
-            n:     Phaser.Input.Keyboard.KeyCodes.N
+            n:     Phaser.Input.Keyboard.KeyCodes.N,
+            up:    Phaser.Input.Keyboard.KeyCodes.UP,
+            down:  Phaser.Input.Keyboard.KeyCodes.DOWN,
+            enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
         });
 
         this._render();
@@ -109,7 +121,7 @@ export default class STPView {
             return;
         }
 
-        if (this.isPaused) {
+        if (this.pauseMenuOpen) {
             this._render();
             return;
         }
@@ -202,10 +214,6 @@ export default class STPView {
             );
         }
 
-        if (this.pauseText) {
-            this.pauseText.setVisible(this.isPaused);
-        }
-
         this._renderHitboxes();
     }
 
@@ -267,8 +275,26 @@ export default class STPView {
         const K = Phaser.Input.Keyboard.JustDown;
 
         if (K(this.keys.esc)) {
-            this.isPaused = !this.isPaused;
+            if (this.pauseMenuOpen) {
+                this._closePauseMenu();
+            } else {
+                this._openPauseMenu();
+            }
         }
+
+        if (this.pauseMenuOpen) {
+            if (K(this.keys.up)) {
+                this._pauseMenuSelectEntry(Math.max(0, this.pauseMenuSelectedIndex - 1));
+            }
+            if (K(this.keys.down)) {
+                this._pauseMenuSelectEntry(Math.min(2, this.pauseMenuSelectedIndex + 1));
+            }
+            if (K(this.keys.enter)) {
+                this._pauseMenuConfirm();
+            }
+            return false;
+        }
+
         if (K(this.keys.h)) {
             this.displayHitboxes = !this.displayHitboxes;
             if (!this.displayHitboxes && this.debugGraphics) {
@@ -281,6 +307,135 @@ export default class STPView {
         }
 
         return false;
+    }
+
+    // --- Pause menu ---
+
+    _openPauseMenu() {
+        if (this.pauseMenuOpen) return;
+        this.pauseMenuOpen          = true;
+        this.pauseMenuSelectedIndex = 0;
+
+        const RES         = window.devicePixelRatio || 1;
+        const panelX      = 130, panelY = 195, panelW = 365, panelH = 260;
+        const centerX     = 312;
+        const titleY      = 218;
+        const firstEntryY = 270;
+        const entrySpacing = 65;
+        const cursorX     = 148;
+
+        // Full-canvas dimmer + panel drawn into one Graphics object
+        this.pauseMenuOverlay = this.scene.add.graphics().setDepth(40);
+        this.pauseMenuOverlay.fillStyle(0x000000, 0.72);
+        this.pauseMenuOverlay.fillRect(0, 0, 625, 625);
+        this.pauseMenuOverlay.fillStyle(0x000000, 0.9);
+        this.pauseMenuOverlay.fillRect(panelX, panelY, panelW, panelH);
+        this.pauseMenuOverlay.lineStyle(2, 0xffff00, 1);
+        this.pauseMenuOverlay.strokeRect(panelX, panelY, panelW, panelH);
+
+        // "PAUSED" heading
+        this.pauseMenuTitleText = this.scene.add.text(centerX, titleY, 'PAUSED', {
+            fontFamily: '"Press Start 2P"', fontSize: '10px',
+            color: '#888888', resolution: RES,
+        }).setOrigin(0.5, 0).setDepth(41);
+
+        // Three selectable entries
+        const entryLabels = ['RESUME', 'RESET', 'EXIT'];
+        this.pauseMenuEntryTexts      = [];
+        this.pauseMenuEntryYPositions = [];
+
+        for (let i = 0; i < entryLabels.length; i++) {
+            const entryY = firstEntryY + i * entrySpacing;
+            const txt = this.scene.add.text(centerX, entryY, entryLabels[i], {
+                fontFamily: '"Press Start 2P"', fontSize: '16px',
+                color: i === 0 ? '#ffff00' : '#ffffff', resolution: RES,
+            }).setOrigin(0.5, 0).setDepth(41)
+              .setInteractive({ useHandCursor: true });
+
+            txt.on('pointerover', () => this._pauseMenuSelectEntry(i));
+            txt.on('pointerdown', () => { this._pauseMenuSelectEntry(i); this._pauseMenuConfirm(); });
+
+            this.pauseMenuEntryTexts.push(txt);
+            // Cursor sits at the vertical midpoint of the text (~8px below top at 16px size)
+            this.pauseMenuEntryYPositions.push(entryY + 8);
+        }
+
+        // Cursor arrow image
+        this.pauseMenuCursor = this.scene.add.image(
+            cursorX, this.pauseMenuEntryYPositions[0], 'loadercursor'
+        ).setOrigin(0, 0.5).setDepth(41);
+    }
+
+    _closePauseMenu() {
+        if (!this.pauseMenuOpen) return;
+        this.pauseMenuOpen = false;
+
+        if (this.pauseMenuOverlay)   { this.pauseMenuOverlay.destroy();   this.pauseMenuOverlay   = null; }
+        if (this.pauseMenuTitleText) { this.pauseMenuTitleText.destroy(); this.pauseMenuTitleText = null; }
+        if (this.pauseMenuCursor)    { this.pauseMenuCursor.destroy();    this.pauseMenuCursor    = null; }
+        for (const txt of this.pauseMenuEntryTexts) txt.destroy();
+        this.pauseMenuEntryTexts      = [];
+        this.pauseMenuEntryYPositions = [];
+    }
+
+    _pauseMenuSelectEntry(index) {
+        this.pauseMenuSelectedIndex = index;
+        for (let i = 0; i < this.pauseMenuEntryTexts.length; i++) {
+            this.pauseMenuEntryTexts[i].setColor(i === index ? '#ffff00' : '#ffffff');
+        }
+        if (this.pauseMenuCursor) {
+            this.pauseMenuCursor.setY(this.pauseMenuEntryYPositions[index]);
+        }
+    }
+
+    _pauseMenuConfirm() {
+        switch (this.pauseMenuSelectedIndex) {
+            case 0: this._closePauseMenu(); break;  // Resume
+            case 1: this._resetLevel();     break;  // Reset
+            case 2: this._exitGame();       break;  // Exit
+        }
+    }
+
+    // Reset the level without a death animation: rebuild entity lists, reposition
+    // player at spawn, restart timer.  Mirrors the setup done in loadlevel() but
+    // skips the async asset-load step since storedmap is already populated.
+    _resetLevel() {
+        this._closePauseMenu();
+
+        this.level.locationx = 0;
+        this.level.locationy = 0;
+        this.level.createMasterList();
+        this._hideAllScreenEntities();
+
+        const spawn = this.level.createPlayer(0, 0);
+        this.player.x             = spawn.x + 6;   // mirrors Player constructor: spawnX + 6
+        this.player.y             = spawn.y - 2;   // mirrors Player constructor: spawnY - 2
+        this.player.haskey        = false;
+        this.player.lastdirection = Player.DIR_DOWN;
+        this.player.inithitbox();
+
+        if (this.timercounter) {
+            this.timercounter.stop();
+            this.timercounter.reset();
+            this.timercounter.start();
+        }
+
+        this.seeme        = true;
+        this.seemecounter = 26;
+
+        this.changeloc();
+    }
+
+    // Exit to MenuScene (campaign) or back to LevelEditorScene (editor play mode).
+    _exitGame() {
+        if (this.timercounter) this.timercounter.stop();
+        if (this.sound)        this.sound.stop();
+
+        if (this.isEditorPlay) {
+            this.scene.scene.start('LevelEditorScene', { levelData: this.customLevelData });
+        } else {
+            this.scene.scene.start('MenuScene');
+        }
     }
 
     _renderHitboxes() {
