@@ -247,33 +247,30 @@ editor play mode; the only difference is what **Exit** does.
 - [x] Removed `isPaused` boolean and `PAUSED` text object.
 - [x] `N` (skip level) and `H` (hitbox) debug keys unchanged.
 
-### Phase 6.75 — In-game virtual controls (touch / mouse)
+### Phase 6.75 — In-game virtual controls (touch / mouse) ✓ DONE
 Touch devices and users who prefer not to use a keyboard need on-screen
 controls. This phase adds a virtual D-pad overlay that maps to the same
 key flags `STPView` already polls, so zero gameplay logic changes.
 
-- [ ] **Detection**: show the overlay when `'ontouchstart' in window` OR
-      when the game URL has `?controls=virtual`. Always hidden on desktop
-      unless forced. Store the preference in `localStorage` so it persists.
-- [ ] **Overlay layout** (drawn on top of the game canvas, outside Phaser):
-  - Left side: D-pad (four arrow buttons in a cross — up/down/left/right).
+- [x] **Detection**: overlay appears on the player's first click or touch
+      inside GameScene; stays visible for the rest of that session.
+      Re-shown automatically when returning to GameScene from the editor.
+- [x] **Overlay layout** (drawn on top of the game canvas, outside Phaser):
+  - Bottom-left: D-pad cross (▲ ◄ ► ▼, 65×65px each).
   - Semi-transparent so the game tiles beneath remain readable.
   - Fixed position; does not scroll with the level.
-- [ ] **Implementation approach**: inject a `<div>` overlay over the Phaser
-      `<canvas>`. Each virtual button fires `keydown`/`keyup` synthetic
-      events (or sets a shared `VirtualInput` flags object that `STPView`
-      reads alongside `Phaser.Input.Keyboard`). Synthetic keyboard events
-      keep `STPView` / `Player` untouched.
-- [ ] **Multi-touch**: pressing D-pad left and Jump simultaneously must work.
-      Use `touchstart` / `touchend` per-button element so each button
-      tracks its own touch point independently.
-- [ ] **Mouse fallback**: the same overlay buttons respond to `mousedown` /
-      `mouseup` so desktop users can click them if desired.
-- [ ] **Hide in editor**: the overlay must not appear while `LevelEditorScene`
-      is active — pointer events there belong to the editor canvas, not
-      virtual controls.
-- [ ] Add a small toggle button (gamepad icon or "⌨" / "🕹" label) in a
-      corner of the game canvas to show/hide the overlay at any time.
+- [x] **Implementation approach**: `src/VirtualControls.js` injects a `<div>`
+      overlay over the Phaser `<canvas>`. Each button fires synthetic
+      `KeyboardEvent` on `window` — Phaser's keyboard plugin picks them up
+      as real key presses. `STPView` / `Player` untouched.
+- [x] **Multi-touch**: `setPointerCapture` per button; each button tracks
+      its own pointer independently.
+- [x] **Mouse fallback**: pointer events unify mouse and touch — same code
+      path handles both.
+- [x] **Hide in editor**: `LevelEditorScene.create()` hides the overlay by
+      ID so pointer events reach the editor canvas.
+- [x] Toggle button (🕹) in top-right corner shows/hides the D-pad.
+      Hiding releases all held keys so the player doesn't keep moving.
 
 ### Phase 7 — Polish / stretch (optional, do not start without user ok)
 - [x] Undo / redo stack.

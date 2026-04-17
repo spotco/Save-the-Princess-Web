@@ -14,6 +14,10 @@ import Level5            from './levels/Level5.js';
 import Level6            from './levels/Level6.js';
 import LevelEditorScene  from './editor/LevelEditorScene.js';
 import CustomLevel       from './levels/CustomLevel.js';
+import VirtualControls   from './VirtualControls.js';
+
+// Single VirtualControls instance shared across all scene transitions.
+const virtualControls = new VirtualControls();
 
 // Factory: instantiate the correct Level subclass by name.
 // Mirrors the switch in STPView.java that selects the level class.
@@ -402,6 +406,17 @@ class GameScene extends Phaser.Scene {
         this.stpview.editorUndoStack    = data.editorUndoStack || null;
         this.stpview.editorRedoStack    = data.editorRedoStack || null;
         await this.stpview.loadlevel();
+
+        // Virtual controls: re-show immediately if previously revealed,
+        // otherwise show on the player's first click or touch.
+        if (virtualControls.wasEverShown()) {
+            virtualControls.show();
+        }
+        this.input.on('pointerdown', () => {
+            if (!virtualControls.isVisible()) {
+                virtualControls.show();
+            }
+        });
 
         this.isReady = true;
     }

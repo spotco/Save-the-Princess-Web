@@ -199,6 +199,10 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.screenTabs    = [];   // { bg, txt } for each screen tab
         this.toolButtons   = {};   // toolName → { bg, txt }
 
+        // Virtual controls must not appear while the editor is active.
+        const vcOverlay = document.getElementById('virtual-controls');
+        if (vcOverlay) vcOverlay.style.display = 'none';
+
         this._addTilesetFrames();
         this._createEmptyTileTexture();
         this._buildBackground();
