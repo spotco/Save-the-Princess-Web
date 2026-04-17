@@ -238,7 +238,39 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
       the base `Level` methods check.
 - [x] `Level1..6` classes untouched.
 
-### Phase 6.5 — In-game virtual controls (touch / mouse)
+### Phase 6.5 — In-game pause menu ← CURRENT
+Replace the current ESC-toggles-`isPaused` text with a proper pause menu
+that looks like the title loader screen (Press Start 2P text, dark overlay,
+cursor-driven selection). Works identically in both campaign play and
+editor play mode; the only difference is what **Exit** does.
+
+- [ ] **Trigger**: ESC opens the pause menu (instead of toggling `isPaused`
+      directly). A second ESC or selecting **Resume** closes it and resumes.
+- [ ] **Appearance**: semi-transparent dark overlay over the game canvas.
+      Three entries rendered with `scene.add.text()` in Press Start 2P,
+      styled like the loader menu entries. A cursor sprite (`loadercursor`)
+      tracks the selected entry. Pointer (mouse/touch) hover selects;
+      click fires the action. Keyboard up/down arrows move selection;
+      Enter/Space confirms.
+- [ ] **Entries**:
+  - **Resume** — dismiss the menu and unpause.
+  - **Reset** — respawn the player at the level spawn position with no
+    death animation. Enemy and object state resets (re-run `loadlevel`
+    without re-fetching assets: re-call `createMasterList`, reposition
+    player, re-call `changeloc`). Timer resets to 0.
+  - **Exit**:
+    - Campaign mode (`customLevel` absent): go to `MenuScene`.
+    - Editor play mode (`customLevel` present): go to `LevelEditorScene`
+      with the original `levelData` passed back via scene data.
+- [ ] `STPView` must expose the source mode so GameScene can pass it
+      through. Design: GameScene stores `this.isEditorPlay = !!customData`
+      and passes it to STPView (or reads it from scene settings). STPView
+      uses it only to decide the Exit destination.
+- [ ] Remove the existing `isPaused` boolean toggle from the ESC handler
+      and the `PAUSED` text object — both are replaced by the menu.
+- [ ] The `N` (skip level) and `H` (hitbox) debug keys remain unchanged.
+
+### Phase 6.75 — In-game virtual controls (touch / mouse)
 Touch devices and users who prefer not to use a keyboard need on-screen
 controls. This phase adds a virtual D-pad overlay that maps to the same
 key flags `STPView` already polls, so zero gameplay logic changes.
