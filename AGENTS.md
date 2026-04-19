@@ -137,6 +137,25 @@ Save-the-Princess-Web/
 
 ---
 
+## Editor Session Persistence
+
+- The level editor is a persistent workspace, not a throwaway scene.
+- Leaving the editor for the title/menu and later opening the editor again must restore the current editor session.
+- Editor play mode must preserve and return the same editor session on death, reset/restart, pause return, win/end exits, and debug skip paths.
+- Preserve all editor data needed to continue work on multi-map levels:
+  `levelData` including `screensX`, `screensY`, `spawnScreen`, every screen's
+  tiles / tilesets / tileProps, the current screen coordinate, selected tool,
+  selected palette tile, palette scroll, pointer-label visibility, and undo/redo
+  stacks when those stacks are still valid.
+- Do not clear editor data on scene transitions. Clear or replace it only for
+  explicit editor actions that intentionally replace the workspace, such as
+  `New`, `Load`, `Import`, or a full browser/page reload.
+- If a feature changes the screen topology, make sure preserved state cannot
+  reference removed screens. For example, clear or validate per-screen undo
+  entries when columns/rows are removed.
+
+---
+
 ## Development Workflow
 
 1. Read `PLAN.md` before starting any non-trivial task. It tracks active work only.

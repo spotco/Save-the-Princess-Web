@@ -28,6 +28,7 @@ export default class STPView {
         // When true, Exit returns to LevelEditorScene instead of MenuScene.
         this.isEditorPlay    = false;
         this.customLevelData = null;
+        this.editorSession   = null;
 
         // Pause menu state
         this.pauseMenuOpen            = false;
@@ -428,7 +429,8 @@ export default class STPView {
         }).setOrigin(0.5, 0).setDepth(41);
 
         // Three selectable entries
-        const entryLabels = ['RESUME', 'RESET', 'EXIT'];
+        const exitLabel = this.isEditorPlay ? 'RETURN TO EDITOR' : 'EXIT TO TITLE';
+        const entryLabels = ['RESUME', 'RESET', exitLabel];
         this.pauseMenuEntryTexts      = [];
         this.pauseMenuEntryYPositions = [];
 
@@ -495,6 +497,24 @@ export default class STPView {
         }
     }
 
+    getEditorPlayGameData() {
+        return {
+            customLevel:      this.customLevelData,
+            editorUndoStack:  this.editorUndoStack,
+            editorRedoStack:  this.editorRedoStack,
+            editorSession:    this.editorSession,
+        };
+    }
+
+    getEditorPlayEditorData() {
+        return {
+            levelData:       this.customLevelData,
+            editorUndoStack: this.editorUndoStack,
+            editorRedoStack: this.editorRedoStack,
+            editorSession:   this.editorSession,
+        };
+    }
+
     // Reset the level without a death animation: rebuild entity lists, reposition
     // player at spawn, restart timer.  Mirrors the setup done in loadlevel() but
     // skips the async asset-load step since storedmap is already populated.
@@ -531,11 +551,7 @@ export default class STPView {
         if (this.sound)        this.sound.stop();
 
         if (this.isEditorPlay) {
-            this.scene.scene.start('LevelEditorScene', {
-                levelData:       this.customLevelData,
-                editorUndoStack: this.editorUndoStack,
-                editorRedoStack: this.editorRedoStack,
-            });
+            this.scene.scene.start('LevelEditorScene', this.getEditorPlayEditorData());
         } else {
             this.scene.scene.start('MenuScene');
         }
@@ -581,6 +597,17 @@ export default class STPView {
     }
 
     _skipLevel() {
+        if (this.isEditorPlay) {
+            if (this.timercounter) {
+                this.timercounter.stop();
+            }
+            if (this.sound) {
+                this.sound.stop();
+            }
+            this.scene.scene.start('LevelEditorScene', this.getEditorPlayEditorData());
+            return;
+        }
+
         const currentLevelName = this.save.getCurrentLevel();
 
         if (currentLevelName === 'Level6') {

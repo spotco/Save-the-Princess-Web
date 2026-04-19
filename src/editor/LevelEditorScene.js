@@ -157,6 +157,8 @@ function ts(size = 8, color = C_TEXT) {
     return { fontFamily: '"Press Start 2P"', fontSize: `${size}px`, color, resolution: RES };
 }
 
+let preservedEditorSession = null;
+
 // ---------------------------------------------------------------------------
 
 export default class LevelEditorScene extends Phaser.Scene {
@@ -214,18 +216,29 @@ export default class LevelEditorScene extends Phaser.Scene {
         this._buildRectPreview();
         this._setupKeyboard();
         this._createHiddenFileInput();
+        this.events.once('shutdown', () => this._saveEditorSession());
 
         // Accept a level passed via scene data (Phase 5: play custom level path),
-        // or load level1 as a working default.
+        // restore the current editor session after a menu round-trip, or load
+        // level1 as a working default.
         const sceneData   = this.scene.settings.data || {};
-        const passedLevel = sceneData.levelData;
-        if (passedLevel) {
-            this.levelData = passedLevel;
-            this._onLevelLoaded();
-            // Restore undo/redo history from editor play round-trip (_onLevelLoaded clears it).
-            if (sceneData.editorUndoStack) this.undoStack = sceneData.editorUndoStack;
-            if (sceneData.editorRedoStack) this.redoStack = sceneData.editorRedoStack;
-            this._updateUndoRedoButtons();
+        const passedSession = sceneData.editorSession || null;
+        const passedLevel   = sceneData.levelData;
+        if (passedSession) {
+            this._restoreEditorSession(passedSession);
+        } else if (passedLevel) {
+            this._restoreEditorSession({
+                levelData:          passedLevel,
+                undoStack:          sceneData.editorUndoStack || [],
+                redoStack:          sceneData.editorRedoStack || [],
+                currentScreen:      sceneData.editorCurrentScreen || { sx: 0, sy: 0 },
+                currentTool:        sceneData.editorCurrentTool || 'paint',
+                selectedPaletteKey: sceneData.editorSelectedPaletteKey || { tilesetName: 'tileset1', localId: 0 },
+                paletteScrollY:     sceneData.editorPaletteScrollY || 0,
+                showPointers:       sceneData.editorShowPointers !== false,
+            });
+        } else if (preservedEditorSession) {
+            this._restoreEditorSession(preservedEditorSession);
         } else {
             this._loadDefaultLevel();
         }
@@ -585,6 +598,72 @@ export default class LevelEditorScene extends Phaser.Scene {
         this._rebuildScreenTabs();
         this._redrawTileCanvas();
         this._setStatus(`Loaded ${this.levelData.name || 'untitled'}.`);
+    }
+
+    _captureEditorSession() {
+        if (!this.levelData) {
+            return null;
+        }
+        return {
+            levelData:          this.levelData,
+            currentScreen:      { sx: this.currentScreen.sx, sy: this.currentScreen.sy },
+            currentTool:        this.currentTool,
+            selectedPaletteKey: {
+                tilesetName: this.selectedPaletteKey.tilesetName,
+                localId:     this.selectedPaletteKey.localId,
+            },
+            paletteScrollY:     this.paletteScrollY,
+            showPointers:       this.showPointers,
+            undoStack:          this.undoStack,
+            redoStack:          this.redoStack,
+        };
+    }
+
+    _saveEditorSession() {
+        preservedEditorSession = this._captureEditorSession();
+        return preservedEditorSession;
+    }
+
+    _restoreEditorSession(session) {
+        if (!session || !session.levelData) {
+            this._loadDefaultLevel();
+            return;
+        }
+
+        this.levelData = session.levelData;
+        this._onLevelLoaded();
+
+        this.undoStack          = session.undoStack || [];
+        this.redoStack          = session.redoStack || [];
+        this.currentTool        = session.currentTool || 'paint';
+        this.selectedPaletteKey = session.selectedPaletteKey || { tilesetName: 'tileset1', localId: 0 };
+        this.paletteScrollY     = session.paletteScrollY || 0;
+        this.showPointers       = session.showPointers !== false;
+        this.currentScreen      = this._validatedScreen(session.currentScreen);
+
+        this._updateToolButtonHighlight();
+        this._updateUndoRedoButtons();
+        this._updatePointerToggleButton();
+        this._updatePalettePointerLabels();
+        this._setPaletteScrollY(this.paletteScrollY);
+        this._rebuildScreenTabs();
+        this._redrawTileCanvas();
+        this._setStatus(`Loaded ${this.levelData.name || 'untitled'}.`);
+        preservedEditorSession = this._captureEditorSession();
+    }
+
+    _validatedScreen(screen) {
+        if (!this.levelData || !screen) {
+            return { sx: 0, sy: 0 };
+        }
+        let sx = Number.isFinite(screen.sx) ? screen.sx : 0;
+        let sy = Number.isFinite(screen.sy) ? screen.sy : 0;
+        sx = Math.max(0, Math.min(this.levelData.screensX - 1, sx));
+        sy = Math.max(0, Math.min(this.levelData.screensY - 1, sy));
+        if (!this.levelData.screens.find(s => s.sx === sx && s.sy === sy)) {
+            return { sx: 0, sy: 0 };
+        }
+        return { sx, sy };
     }
 
     // Ensure every screen has all three canonical tilesets so that any tileset
@@ -1020,14 +1099,17 @@ export default class LevelEditorScene extends Phaser.Scene {
 
     _actionPlay() {
         if (!this.levelData) { this._setStatus('No level loaded.'); return; }
+        const editorSession = this._saveEditorSession();
         this.scene.start('GameScene', {
             customLevel:      this.levelData,
             editorUndoStack:  this.undoStack,
             editorRedoStack:  this.redoStack,
+            editorSession:    editorSession,
         });
     }
 
     _actionBack() {
+        this._saveEditorSession();
         this.scene.start('MenuScene', { playIntro: false });
     }
 
@@ -1159,6 +1241,9 @@ export default class LevelEditorScene extends Phaser.Scene {
         if (this.currentScreen.sx >= newScreensX) this.currentScreen.sx = newScreensX - 1;
         if (this.currentScreen.sy >= newScreensY) this.currentScreen.sy = newScreensY - 1;
 
+        this.undoStack = [];
+        this.redoStack = [];
+        this._updateUndoRedoButtons();
         this._rebuildScreenTabs();
         this._redrawTileCanvas();
         this._setStatus(`Grid resized to ${newScreensX}x${newScreensY}.`);

@@ -406,6 +406,7 @@ class GameScene extends Phaser.Scene {
         this.stpview.customLevelData    = customData;
         this.stpview.editorUndoStack    = data.editorUndoStack || null;
         this.stpview.editorRedoStack    = data.editorRedoStack || null;
+        this.stpview.editorSession      = data.editorSession || null;
         await this.stpview.loadlevel();
 
         // Virtual controls start hidden. Pointer input reveals them; real

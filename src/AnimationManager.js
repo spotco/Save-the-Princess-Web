@@ -137,6 +137,11 @@ export default class AnimationManager {
             this.display.sound.stop();
         }
 
+        if (this._isEditorPlay()) {
+            this.scene.scene.restart(this.display.getEditorPlayGameData());
+            return;
+        }
+
         const levelName = this._getCurrentLevelName();
         if (levelName !== null) {
             this.scene.scene.restart({ levelName: levelName });
@@ -148,6 +153,17 @@ export default class AnimationManager {
     _advanceToNextLevel() {
         if (!this.display || !this.display.save) {
             this.scene.scene.start('MenuScene');
+            return;
+        }
+
+        if (this._isEditorPlay()) {
+            if (this.display.timercounter) {
+                this.display.timercounter.stop();
+            }
+            if (this.display.sound) {
+                this.display.sound.stop();
+            }
+            this.scene.scene.start('LevelEditorScene', this.display.getEditorPlayEditorData());
             return;
         }
 
@@ -186,6 +202,14 @@ export default class AnimationManager {
     }
 
     _returnToTitle() {
+        if (this._isEditorPlay()) {
+            if (this.display && this.display.sound) {
+                this.display.sound.stop();
+            }
+            this.scene.scene.start('LevelEditorScene', this.display.getEditorPlayEditorData());
+            return;
+        }
+
         if (this.display && this.display.save && this.display.save.getCurrentLevel &&
                 this.display.save.getCurrentLevel() !== 'End') {
             this.display.save.nextLevel();
@@ -212,6 +236,11 @@ export default class AnimationManager {
             this.display.sound.stop();
         }
 
+        if (this._isEditorPlay()) {
+            this.scene.scene.start('LevelEditorScene', this.display.getEditorPlayEditorData());
+            return;
+        }
+
         this.scene.scene.start('MenuScene', { playIntro: false });
     }
 
@@ -231,5 +260,12 @@ export default class AnimationManager {
             return this.display.save.getCurrentLevel();
         }
         return null;
+    }
+
+    _isEditorPlay() {
+        return !!(this.display &&
+            this.display.isEditorPlay &&
+            this.display.getEditorPlayGameData &&
+            this.display.getEditorPlayEditorData);
     }
 }

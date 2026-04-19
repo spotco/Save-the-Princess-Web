@@ -1,6 +1,6 @@
 # Save the Princess - Active Development Plan
 
-**Last Updated**: 2026-04-13 (editor skeleton continued after partial run)
+**Last Updated**: 2026-04-19 (editor session persistence)
 
 ---
 
@@ -318,6 +318,15 @@ key flags `STPView` already polls, so zero gameplay logic changes.
    `this.scene.scene.start('GameScene', { levelName })`. `GameScene`
    receives the level name via `this.scene.settings.data.levelName` in
    `create()`. The editor adds a second shape: `{ customLevel }`.
+3. **Editor sessions persist across title/menu and play round-trips.**
+   Leaving the editor for the title/menu and later opening the editor again
+   restores the same workspace. Death/crush restarts editor play with the same
+   `{ customLevel }` scene data. Win/final-animation exits, pause Return to
+   Editor, and debug skip return to `LevelEditorScene` with the full editor
+   session: `levelData`, current screen, selected tool, palette selection,
+   palette scroll, pointer-label visibility, and undo/redo stacks. Editor data
+   is replaced only by explicit editor workspace actions such as New, Load, or
+   Import, or by a full page reload.
 
 ---
 
