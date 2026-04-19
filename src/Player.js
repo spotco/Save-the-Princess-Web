@@ -161,6 +161,9 @@ export default class Player {
 
         if (iswalk) {
             game.seeme = false;
+            if (game.registerPlayerMovementActivity) {
+                game.registerPlayerMovementActivity();
+            }
         }
 
         // Standing: revert to directional stand animation

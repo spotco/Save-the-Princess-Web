@@ -18,8 +18,12 @@ export default class STPView {
         this.objectList   = [];
 
         this.player       = null;
-        this.seeme        = true;
+        this.seeme        = false;
         this.seemecounter = 26;   // mirrors STPGame.loadlevel() initial value
+        this.seemeInitialIdleMilliseconds = 3000;
+        this.seemeIdleMilliseconds        = 20000;
+        this.seemeIdleElapsed             = 0;
+        this.seemeHasObservedInput        = false;
         this.timercounter = null;
         this.animationManager = new AnimationManager(this.scene, this);
         this.displayHitboxes = false;
@@ -75,8 +79,10 @@ export default class STPView {
 
         this.sound.play(this.level.mapsong);
 
-        this.seeme        = true;
+        this.seeme        = false;
         this.seemecounter = 26;
+        this.seemeIdleElapsed      = 0;
+        this.seemeHasObservedInput = false;
 
         this.timercounter = new TimerCounter(this.save.getCurrentLevel());
         this.timercounter.start();
@@ -141,6 +147,8 @@ export default class STPView {
             this._render();
             return;
         }
+
+        this._updateSeemeIdle(delta);
 
         this.player.update(this);
 
@@ -237,6 +245,18 @@ export default class STPView {
     setInputMode(mode) {
         this.inputMode = mode === 'pointer' ? 'pointer' : 'keyboard';
         this._renderPauseHud();
+    }
+
+    registerPlayerMovementActivity() {
+        this.seemeIdleElapsed      = 0;
+        this.seemeHasObservedInput = true;
+        if (this.seeme) {
+            this.seeme        = false;
+            this.seemecounter = 26;
+            if (this.seemeSprite) {
+                this.seemeSprite.setVisible(false);
+            }
+        }
     }
 
     isPauseHudPointer(pointer) {
@@ -397,6 +417,17 @@ export default class STPView {
         return false;
     }
 
+    _updateSeemeIdle(delta) {
+        this.seemeIdleElapsed += delta || 0;
+        const idleLimit = this.seemeHasObservedInput
+            ? this.seemeIdleMilliseconds
+            : this.seemeInitialIdleMilliseconds;
+        if (!this.seeme && this.seemeIdleElapsed >= idleLimit) {
+            this.seeme        = true;
+            this.seemecounter = 0;
+        }
+    }
+
     // --- Pause menu ---
 
     _openPauseMenu() {
@@ -539,8 +570,10 @@ export default class STPView {
             this.timercounter.start();
         }
 
-        this.seeme        = true;
+        this.seeme        = false;
         this.seemecounter = 26;
+        this.seemeIdleElapsed      = 0;
+        this.seemeHasObservedInput = false;
 
         this.changeloc();
     }

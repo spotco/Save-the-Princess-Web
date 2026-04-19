@@ -1,6 +1,6 @@
 # Additions From Source
 
-**Last Updated**: 2026-04-13
+**Last Updated**: 2026-04-19
 
 ---
 
@@ -19,5 +19,6 @@ Only add items here when they are outside the original source behavior or featur
 - [ ] Save point feature
 - [ ] Sprint button
 - [~] Touch screen / mouse controls *(in progress — Phase 1.5 for menus, Phase 3 for editor, Phase 6.5 for in-game virtual D-pad; see `PLAN.md`)*
+- [x] Show the in-game `seeme` / where-am-I prompt after 3 seconds with no player movement at level start, and after 20 seconds without player movement once movement has been observed in that level.
 - [ ] Investigate how save files work
 - [ ] Try AI gen some levels
