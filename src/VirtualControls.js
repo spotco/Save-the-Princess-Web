@@ -26,6 +26,7 @@ export default class VirtualControls {
         this._overlay = null;   // outer <div> covering the 625x625 game area
         this._dpad    = null;   // d-pad <div>
         this._visible = false;  // is the overlay currently showing?
+        this._isHiding = false; // prevents synthetic key releases from re-entering hide()
         this._trackingInitialPointer = false;
 
         // pointerId -> def currently held by that pointer (null = over empty area)
@@ -73,10 +74,12 @@ export default class VirtualControls {
     }
 
     hide() {
-        if (!this._overlay) return;
-        this._releaseAll();
-        this._overlay.style.display = 'none';
+        if (!this._overlay || this._isHiding) return;
+        this._isHiding = true;
         this._visible = false;
+        this._overlay.style.display = 'none';
+        this._releaseAll();
+        this._isHiding = false;
     }
 
     isVisible() { return this._visible; }

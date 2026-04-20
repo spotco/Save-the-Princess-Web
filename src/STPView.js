@@ -12,6 +12,7 @@ export default class STPView {
         this.level        = level;
         this.sound        = soundManager;
         this.save         = saveReader;
+        this.currentLevelName = null;
 
         this.staticsList  = [];
         this.enemyList    = [];
@@ -64,7 +65,11 @@ export default class STPView {
     // Call once from GameScene.create() and await it.
     // Mirrors STPGame.loadlevel().
     async loadlevel() {
-        console.log('Loading level:', this.save.getCurrentLevel());
+        if (this.isEditorPlay) {
+            console.log('Loading editor level');
+        } else {
+            console.log('Loading level:', this.currentLevelName);
+        }
 
         await this.level.init();
 
@@ -84,7 +89,7 @@ export default class STPView {
         this.seemeIdleElapsed      = 0;
         this.seemeHasObservedInput = false;
 
-        this.timercounter = new TimerCounter(this.save.getCurrentLevel());
+        this.timercounter = new TimerCounter(this.currentLevelName);
         this.timercounter.start();
 
         // UI overlay sprites
@@ -233,9 +238,13 @@ export default class STPView {
         // Timer HUD
         if (this.timercounter && this.timerText) {
             this.timerText.setText('Time: ' + this.timercounter.getCurTime());
-            this.bestTimeText.setText(
-                'Best: ' + this.timercounter.gettime(this.save.getCurrentLevel())
-            );
+            if (this.isEditorPlay) {
+                this.bestTimeText.setText('');
+            } else {
+                this.bestTimeText.setText(
+                    'Best: ' + this.timercounter.gettime(this.currentLevelName)
+                );
+            }
         }
         this._renderPauseHud();
 

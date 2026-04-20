@@ -151,11 +151,6 @@ export default class AnimationManager {
     }
 
     _advanceToNextLevel() {
-        if (!this.display || !this.display.save) {
-            this.scene.scene.start('MenuScene');
-            return;
-        }
-
         if (this._isEditorPlay()) {
             if (this.display.timercounter) {
                 this.display.timercounter.stop();
@@ -164,6 +159,11 @@ export default class AnimationManager {
                 this.display.sound.stop();
             }
             this.scene.scene.start('LevelEditorScene', this.display.getEditorPlayEditorData());
+            return;
+        }
+
+        if (!this.display || !this.display.save) {
+            this.scene.scene.start('MenuScene');
             return;
         }
 
@@ -256,6 +256,9 @@ export default class AnimationManager {
     }
 
     _getCurrentLevelName() {
+        if (this.display && this.display.currentLevelName) {
+            return this.display.currentLevelName;
+        }
         if (this.display && this.display.save && this.display.save.getCurrentLevel) {
             return this.display.save.getCurrentLevel();
         }

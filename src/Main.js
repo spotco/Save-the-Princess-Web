@@ -389,20 +389,22 @@ class GameScene extends Phaser.Scene {
         const customData = data.customLevel || null;
 
         const sound = new SoundManager(this);
-        const save  = new SaveReader();
+        let save = null;
 
         let level;
         if (customData) {
-            // Custom level from the editor — no save-file state to load.
+            // Custom level from the editor — no campaign save state involved.
             level = new CustomLevel(this, customData);
         } else {
             // Normal campaign level — restore save progress.
+            save = new SaveReader();
             save.loadGame();
             level = createLevel(this, levelName);
         }
 
         this.stpview = new STPView(this, level, sound, save);
         this.stpview.isEditorPlay       = !!customData;
+        this.stpview.currentLevelName   = customData ? null : levelName;
         this.stpview.customLevelData    = customData;
         this.stpview.editorUndoStack    = data.editorUndoStack || null;
         this.stpview.editorRedoStack    = data.editorRedoStack || null;

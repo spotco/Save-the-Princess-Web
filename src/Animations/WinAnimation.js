@@ -66,12 +66,16 @@ export default class WinAnimation extends BasicAnimation {
         const display = this.manager.display;
         if (display && display.timercounter) {
             display.timercounter.stop();
-            display.timercounter.writetime(display.save.getCurrentLevel(), display.timercounter.abs);
             this.youTime = display.timercounter.getCurTime();
-            this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
+            if (display.isEditorPlay) {
+                this.bestTime = '';
+            } else {
+                display.timercounter.writetime(display.save.getCurrentLevel(), display.timercounter.abs);
+                this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
+            }
         } else {
             this.youTime = '0:00:00';
-            this.bestTime = '0:00:00';
+            this.bestTime = '';
         }
     }
 
@@ -124,7 +128,7 @@ export default class WinAnimation extends BasicAnimation {
             color: '#ffffff'
         }).setDepth(102);
 
-        this.bestText = this.scene.add.text(250, 90, 'BEST:' + this.bestTime, {
+        this.bestText = this.scene.add.text(250, 90, this.bestTime === '' ? '' : 'BEST:' + this.bestTime, {
             fontFamily: 'monospace',
             fontSize: '16px',
             color: '#ffffff'

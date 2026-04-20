@@ -74,10 +74,14 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
         if (display && display.timercounter) {
             display.timercounter.stop();
             this.youTime = display.timercounter.getCurTime();
-            if (!this.skipSaveTime) {
+            if (display.isEditorPlay) {
+                this.bestTime = '';
+            } else if (!this.skipSaveTime) {
                 display.timercounter.writetime(display.save.getCurrentLevel(), display.timercounter.abs);
+                this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
+            } else {
+                this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
             }
-            this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
         }
     }
 
@@ -130,7 +134,7 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
             color: '#ffffff'
         }).setDepth(103);
 
-        this.bestText = this.scene.add.text(250, 90, 'BEST:' + this.bestTime, {
+        this.bestText = this.scene.add.text(250, 90, this.bestTime === '' ? '' : 'BEST:' + this.bestTime, {
             fontFamily: 'monospace',
             fontSize: '16px',
             color: '#ffffff'
