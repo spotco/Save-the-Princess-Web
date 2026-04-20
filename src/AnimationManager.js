@@ -152,6 +152,7 @@ export default class AnimationManager {
 
     _advanceToNextLevel() {
         if (this._isEditorPlay()) {
+            this._coverSceneForTransition();
             if (this.display.timercounter) {
                 this.display.timercounter.stop();
             }
@@ -203,6 +204,7 @@ export default class AnimationManager {
 
     _returnToTitle() {
         if (this._isEditorPlay()) {
+            this._coverSceneForTransition();
             if (this.display && this.display.sound) {
                 this.display.sound.stop();
             }
@@ -237,6 +239,7 @@ export default class AnimationManager {
         }
 
         if (this._isEditorPlay()) {
+            this._coverSceneForTransition();
             this.scene.scene.start('LevelEditorScene', this.display.getEditorPlayEditorData());
             return;
         }
@@ -253,6 +256,12 @@ export default class AnimationManager {
         if (overlay) {
             overlay.style.display = 'none';
         }
+    }
+
+    _coverSceneForTransition() {
+        this.scene.add.rectangle(0, 0, 625, 625, 0x000000)
+            .setOrigin(0, 0)
+            .setDepth(1000);
     }
 
     _getCurrentLevelName() {
