@@ -468,11 +468,12 @@ class GameScene extends Phaser.Scene {
 //   container.setTargetFrameRate(60)
 const stpGame = new Phaser.Game({
     type:            Phaser.WEBGL,
+    antialias:       true,
     parent:          'game-container',
     width:           625,
     height:          625,
     backgroundColor: '#000000',
-    pixelArt:        true,   // disables antialiasing + enables roundPixels; keeps pixel fonts crisp
+    pixelArt:        true,
     fps:             { target: 60, forceSetTimeOut: false },
     scale: {
         mode:       Phaser.Scale.FIT,

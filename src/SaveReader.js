@@ -1,5 +1,6 @@
 // Mirrors SaveReader.java
 // Replaces file-based save.dat with localStorage (key: "stpsave")
+// In the web port, storage tracks only the highest unlocked level.
 
 export default class SaveReader {
     constructor() {
@@ -10,8 +11,6 @@ export default class SaveReader {
 
     newGame() {
         this.clvl = 0;
-        this.maxlvl = 0;
-        this.writeSaveCurrent(this.getHighestUnlockedLevel());
     }
 
     loadGame() {
@@ -21,7 +20,6 @@ export default class SaveReader {
         if (saved !== null) {
             const idx = this.levellist.indexOf(saved);
             if (idx !== -1) {
-                this.clvl = idx;
                 this.maxlvl = idx;
             }
         }

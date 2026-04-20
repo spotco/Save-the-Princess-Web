@@ -495,6 +495,9 @@ export default class LevelEditorScene extends Phaser.Scene {
             const btn = this._makeButton(i * (aBtnW + aBtnGap), aRow, aBtnW, 26, label, 7, fn);
             if (label === 'PTR:ON') {
                 this.pointerToggleButton = btn;
+            } else if (label === 'PLAY') {
+                this.add.text(btn.bg.x + (aBtnW / 2), aRow + 28, 'space', ts(5, C_TEXT))
+                    .setOrigin(0.5, 0);
             }
         });
 
@@ -518,8 +521,8 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.rectPreview.setVisible(false);
     }
 
-    // Keyboard shortcuts: ESC back, B/E/F/R/I tools, arrow-key screen pan,
-    // Ctrl+S save.
+    // Keyboard shortcuts: ESC back, B/E/F/R/I tools, SPACE play, arrow-key
+    // screen pan, Ctrl+S save.
     _setupKeyboard() {
         this.input.mouse.disableContextMenu();
         this.input.keyboard.on('keydown-ESC', () => this._actionBack());
@@ -530,6 +533,10 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-R', () => this._selectTool('rect'));
         this.input.keyboard.on('keydown-I', () => this._selectTool('pick'));
         this.input.keyboard.on('keydown-P', () => this._togglePointers());
+        this.input.keyboard.on('keydown-SPACE', (event) => {
+            event.preventDefault();
+            this._actionPlay();
+        });
 
         this.input.keyboard.on('keydown-S', (event) => {
             if (event.ctrlKey) {
@@ -1092,6 +1099,10 @@ export default class LevelEditorScene extends Phaser.Scene {
     }
 
     _actionNew() {
+        if (!window.confirm('Discard the current editor level and create a new blank level?')) {
+            this._setStatus('New level cancelled.');
+            return;
+        }
         this.levelData = this._makeBlankLevel();
         this._onLevelLoaded();
         this._setStatus('Created blank level.');
