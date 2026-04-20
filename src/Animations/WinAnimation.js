@@ -1,6 +1,7 @@
 // Mirrors WinAnimation.java
 
 import BasicAnimation from './BasicAnimation.js';
+import TimerCounter from '../TimerCounter.js';
 
 export default class WinAnimation extends BasicAnimation {
 
@@ -64,19 +65,32 @@ export default class WinAnimation extends BasicAnimation {
 
     _captureTime() {
         const display = this.manager.display;
+        const levelName = _getCurrentLevelName(display);
+        this.capturedLevelName = levelName;
+        this.capturedBestTimeRaw = null;
         if (display && display.timercounter) {
             display.timercounter.stop();
             this.youTime = display.timercounter.getCurTime();
             if (display.isEditorPlay) {
                 this.bestTime = '';
+            } else if (levelName !== null) {
+                this.capturedBestTimeRaw = display.timercounter.gettimeraw(levelName);
+                display.timercounter.writetime(levelName, display.timercounter.abs);
+                this.bestTime = display.timercounter.gettime(levelName);
             } else {
-                display.timercounter.writetime(display.save.getCurrentLevel(), display.timercounter.abs);
-                this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
+                this.bestTime = '';
             }
         } else {
             this.youTime = '0:00:00';
             this.bestTime = '';
         }
+    }
+
+    restoreCapturedBestTime() {
+        if (this.capturedLevelName === null || this.capturedBestTimeRaw === null) {
+            return;
+        }
+        TimerCounter.setSavedTimeRaw(this.capturedLevelName, this.capturedBestTimeRaw);
     }
 
     _createAnimations() {
@@ -178,4 +192,14 @@ export default class WinAnimation extends BasicAnimation {
             sprite.destroy();
         }
     }
+}
+
+function _getCurrentLevelName(display) {
+    if (display && display.currentLevelName) {
+        return display.currentLevelName;
+    }
+    if (display && display.save && display.save.getCurrentLevel) {
+        return display.save.getCurrentLevel();
+    }
+    return null;
 }

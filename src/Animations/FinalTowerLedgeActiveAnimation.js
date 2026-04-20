@@ -1,6 +1,7 @@
 // Mirrors FinalTowerLedgeActiveAnimation.java
 
 import BasicAnimation from './BasicAnimation.js';
+import TimerCounter from '../TimerCounter.js';
 
 export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
 
@@ -71,18 +72,34 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
 
     _captureTime() {
         const display = this.manager.display;
+        const levelName = _getCurrentLevelName(display);
+        this.capturedLevelName = levelName;
+        this.capturedBestTimeRaw = null;
         if (display && display.timercounter) {
             display.timercounter.stop();
             this.youTime = display.timercounter.getCurTime();
             if (display.isEditorPlay) {
                 this.bestTime = '';
+            } else if (levelName === null) {
+                this.bestTime = '';
             } else if (!this.skipSaveTime) {
-                display.timercounter.writetime(display.save.getCurrentLevel(), display.timercounter.abs);
-                this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
+                this.capturedBestTimeRaw = display.timercounter.gettimeraw(levelName);
+                this.manager.pendingDebugBestTimeRestore = () => {
+                    TimerCounter.setSavedTimeRaw(levelName, this.capturedBestTimeRaw);
+                };
+                display.timercounter.writetime(levelName, display.timercounter.abs);
+                this.bestTime = display.timercounter.gettime(levelName);
             } else {
-                this.bestTime = display.timercounter.gettime(display.save.getCurrentLevel());
+                this.bestTime = display.timercounter.gettime(levelName);
             }
         }
+    }
+
+    restoreCapturedBestTime() {
+        if (this.capturedLevelName === null || this.capturedBestTimeRaw === null) {
+            return;
+        }
+        TimerCounter.setSavedTimeRaw(this.capturedLevelName, this.capturedBestTimeRaw);
     }
 
     _createAnimations() {
@@ -163,6 +180,16 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
             sprite.destroy();
         }
     }
+}
+
+function _getCurrentLevelName(display) {
+    if (display && display.currentLevelName) {
+        return display.currentLevelName;
+    }
+    if (display && display.save && display.save.getCurrentLevel) {
+        return display.save.getCurrentLevel();
+    }
+    return null;
 }
 
 function _rectsIntersect(a, b) {

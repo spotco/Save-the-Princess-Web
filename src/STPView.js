@@ -112,7 +112,6 @@ export default class STPView {
         this.keys = this.scene.input.keyboard.addKeys({
             esc:   Phaser.Input.Keyboard.KeyCodes.ESC,
             h:     Phaser.Input.Keyboard.KeyCodes.H,
-            n:     Phaser.Input.Keyboard.KeyCodes.N,
             up:    Phaser.Input.Keyboard.KeyCodes.UP,
             down:  Phaser.Input.Keyboard.KeyCodes.DOWN,
             enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
@@ -418,10 +417,6 @@ export default class STPView {
                 this.debugGraphics.clear();
             }
         }
-        if (K(this.keys.n)) {
-            this._skipLevel();
-            return true;
-        }
 
         return false;
     }
@@ -638,6 +633,15 @@ export default class STPView {
         );
     }
 
+    debugSkipLevel() {
+        if (this.animationManager && this.animationManager.debugReturnToMenu) {
+            if (this.animationManager.debugReturnToMenu()) {
+                return;
+            }
+        }
+        this._skipLevel();
+    }
+
     _skipLevel() {
         if (this.isEditorPlay) {
             if (this.timercounter) {
@@ -650,7 +654,7 @@ export default class STPView {
             return;
         }
 
-        const currentLevelName = this.save.getCurrentLevel();
+        const currentLevelName = this.currentLevelName || this.save.getCurrentLevel();
 
         if (currentLevelName === 'Level6') {
             if (this.animationManager) {

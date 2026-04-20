@@ -43,6 +43,8 @@ const LOADER_PANEL_X = 90;
 const LOADER_PANEL_Y = 155;
 const LOADER_PANEL_W = 445;
 const LOADER_PANEL_H = 315;
+const LOAD_ENTRY_START_Y = 195;
+const LOAD_ENTRY_SPACING = 42;
 
 export default class Menu {
     constructor(scene, sound, save) {
@@ -53,12 +55,14 @@ export default class Menu {
         this.inmenuimg           = true;
         this.inloaderimg         = false;
         this.inTimesScreen       = false;  // sub-state: times overlay is showing
+        this.inLoadScreen        = false;
         this.loaderImgMenuStatus = 0;      // index of selected entry in this.entries
         this.visibleStart        = 0;      // scroll window: first visible entry index
         this.counter             = 0;
         this.displaypress        = false;
         this.timestatinfo        = new TimerCounter(null);
         this.inputMode           = 'keyboard';
+        this.loadLevelCount      = 0;
     }
 
     create() {
@@ -132,7 +136,7 @@ export default class Menu {
 
             // Hover: select this entry if it isn't already selected.
             entry.textObj.on('pointerover', () => {
-                if (!this.inloaderimg || this.inTimesScreen) return;
+                if (!this.inloaderimg || this.inTimesScreen || this.inLoadScreen) return;
                 if (this.loaderImgMenuStatus !== i) {
                     this.loaderImgMenuStatus = i;
                     this._scrollToSelected();
@@ -144,7 +148,7 @@ export default class Menu {
             // Click / tap: select then activate.
             entry.textObj.on('pointerdown', (pointer) => {
                 this._setInputModeFromPointer(pointer);
-                if (!this.inloaderimg || this.inTimesScreen) return;
+                if (!this.inloaderimg || this.inTimesScreen || this.inLoadScreen) return;
                 if (this.loaderImgMenuStatus !== i) {
                     this.loaderImgMenuStatus = i;
                     this._updateCursorPos();
@@ -152,6 +156,43 @@ export default class Menu {
                 this.sound.sfx('menuchange');
                 entry.action();
             });
+        });
+
+        this.loadEntries = this.save.levellist.slice(0, this.save.levellist.length - 1).map((levelName, i) => {
+            const entry = {
+                levelName,
+                label: 'LEVEL ' + (i + 1),
+                action: () => this._actionLoadSpecificLevel(levelName)
+            };
+
+            entry.textObj = s.add.text(
+                ENTRY_CENTER_X,
+                LOAD_ENTRY_START_Y + i * LOAD_ENTRY_SPACING,
+                entry.label,
+                ENTRY_LABEL_STYLE
+            ).setOrigin(0, 0).setVisible(false);
+            this._centerTextOnPixel(entry.textObj, ENTRY_CENTER_X, LOAD_ENTRY_START_Y + i * LOAD_ENTRY_SPACING);
+
+            entry.textObj.setInteractive({ useHandCursor: true });
+            entry.textObj.on('pointerover', () => {
+                if (!this.inloaderimg || this.inTimesScreen || !this.inLoadScreen || i >= this.loadLevelCount) return;
+                if (this.loaderImgMenuStatus !== i) {
+                    this.loaderImgMenuStatus = i;
+                    this._updateCursorPos();
+                    this.sound.sfx('menuchange');
+                }
+            });
+            entry.textObj.on('pointerdown', (pointer) => {
+                this._setInputModeFromPointer(pointer);
+                if (!this.inloaderimg || this.inTimesScreen || !this.inLoadScreen || i >= this.loadLevelCount) return;
+                if (this.loaderImgMenuStatus !== i) {
+                    this.loaderImgMenuStatus = i;
+                    this._updateCursorPos();
+                }
+                this.sound.sfx('menuchange');
+                entry.action();
+            });
+            return entry;
         });
 
         // Cursor arrow — X is fixed, Y tracks the selected entry.
@@ -217,6 +258,33 @@ export default class Menu {
                 return;
             }
 
+            if (this.inLoadScreen) {
+                if (K(k.down)) {
+                    this._setInputMode('keyboard');
+                    if (this.loaderImgMenuStatus < this.loadLevelCount - 1) {
+                        this.loaderImgMenuStatus++;
+                        this._updateCursorPos();
+                        this.sound.sfx('menuchange');
+                    }
+                } else if (K(k.up)) {
+                    this._setInputMode('keyboard');
+                    if (this.loaderImgMenuStatus > 0) {
+                        this.loaderImgMenuStatus--;
+                        this._updateCursorPos();
+                        this.sound.sfx('menuchange');
+                    }
+                } else if (K(k.esc)) {
+                    this._setInputMode('keyboard');
+                    this.sound.sfx('menuchange');
+                    this._dismissLoadScreen();
+                } else if (K(k.space) || K(k.enter)) {
+                    this._setInputMode('keyboard');
+                    this.sound.sfx('menuchange');
+                    this.loadEntries[this.loaderImgMenuStatus].action();
+                }
+                return;
+            }
+
             if (K(k.down)) {
                 this._setInputMode('keyboard');
                 if (this.loaderImgMenuStatus < this.entries.length - 1) {
@@ -254,6 +322,11 @@ export default class Menu {
 
     _actionLoadGame() {
         this.save.loadGame();
+        this._showLoadScreen();
+    }
+
+    _actionLoadSpecificLevel(levelName) {
+        this.save.setCurrentLevel(levelName);
         this._loadGame();
     }
 
@@ -283,26 +356,58 @@ export default class Menu {
         this.cursorImg.setVisible(true);
     }
 
-    _switchToLoader() {
-        this.inmenuimg   = false;
-        this.inloaderimg = true;
-        // menuImg (castle background) stays visible — the loaderPanel sits on top.
-        this.pressText.setVisible(false);
-        this.loaderPanel.setVisible(true);
-        this.loaderTitleText.setVisible(true);
+    _showLoadScreen() {
+        this.inLoadScreen = true;
+        this.loadLevelCount = this.save.getLoadableLevels().length;
+        this.loaderImgMenuStatus = Math.max(0, this.loadLevelCount - 1);
+        this.loaderTitleText.setText('LOAD GAME');
+        this._centerTextOnPixel(this.loaderTitleText, ENTRY_CENTER_X, 173);
+        this._setEntriesVisible(false);
+        this._setLoadEntriesVisible(true);
+        this.cursorImg.setVisible(true);
+        this._updateCursorPos();
+    }
+
+    _dismissLoadScreen() {
+        this.inLoadScreen = false;
+        this.loaderImgMenuStatus = 1;
+        this.loaderTitleText.setText('SELECT');
+        this._centerTextOnPixel(this.loaderTitleText, ENTRY_CENTER_X, 173);
+        this._setLoadEntriesVisible(false);
         this._setEntriesVisible(true);
         this.cursorImg.setVisible(true);
         this._updateCursorPos();
     }
 
+    _switchToLoader() {
+        this.inmenuimg   = false;
+        this.inloaderimg = true;
+        this.inLoadScreen = false;
+        // menuImg (castle background) stays visible — the loaderPanel sits on top.
+        this.pressText.setVisible(false);
+        this.loaderPanel.setVisible(true);
+        this.loaderTitleText.setVisible(true);
+        this.loaderTitleText.setText('SELECT');
+        this._centerTextOnPixel(this.loaderTitleText, ENTRY_CENTER_X, 173);
+        this._setEntriesVisible(true);
+        this._setLoadEntriesVisible(false);
+        this.cursorImg.setVisible(true);
+        this._updateCursorPos();
+    }
+
     _switchToMenu() {
+        if (this.inLoadScreen) {
+            this.loaderImgMenuStatus = 1;
+        }
         this.inmenuimg     = true;
         this.inloaderimg   = false;
         this.inTimesScreen = false;
+        this.inLoadScreen  = false;
         this.loaderPanel.setVisible(false);
         this.loaderTitleText.setVisible(false);
         this.cursorImg.setVisible(false);
         this._setEntriesVisible(false);
+        this._setLoadEntriesVisible(false);
         this._setTimesVisible(false);
         this.menuImg.setVisible(true);
     }
@@ -320,13 +425,19 @@ export default class Menu {
         this._updateStartPromptText();
 
         this.loaderTitleText.setFontFamily('"Press Start 2P"');
-        this.loaderTitleText.setText('SELECT');
+        this.loaderTitleText.setText(this.inLoadScreen ? 'LOAD GAME' : 'SELECT');
         this._centerTextOnPixel(this.loaderTitleText, ENTRY_CENTER_X, 173);
 
         this.entries.forEach((entry, i) => {
             entry.textObj.setFontFamily('"Press Start 2P"');
             entry.textObj.setText(entry.label);
             this._centerTextOnPixel(entry.textObj, ENTRY_CENTER_X, ENTRY_START_Y + i * ENTRY_SPACING);
+        });
+
+        this.loadEntries.forEach((entry, i) => {
+            entry.textObj.setFontFamily('"Press Start 2P"');
+            entry.textObj.setText(entry.label);
+            this._centerTextOnPixel(entry.textObj, ENTRY_CENTER_X, LOAD_ENTRY_START_Y + i * LOAD_ENTRY_SPACING);
         });
     }
 
@@ -336,6 +447,13 @@ export default class Menu {
         this.entries.forEach((entry, i) => {
             const inWindow = (i >= this.visibleStart && i < windowEnd);
             entry.textObj.setVisible(visible && inWindow);
+        });
+        this._updateEntryColors();
+    }
+
+    _setLoadEntriesVisible(visible) {
+        this.loadEntries.forEach((entry, i) => {
+            entry.textObj.setVisible(visible && i < this.loadLevelCount);
         });
         this._updateEntryColors();
     }
@@ -352,9 +470,19 @@ export default class Menu {
 
     // Highlight the selected entry yellow; leave all others white.
     _updateEntryColors() {
-        this.entries.forEach((entry, i) => {
+        this.loadEntries.forEach((entry, i) => {
+            if (!this.inLoadScreen || i >= this.loadLevelCount) {
+                entry.textObj.setColor(COLOR_UNSELECTED);
+                return;
+            }
             entry.textObj.setColor(
                 i === this.loaderImgMenuStatus ? COLOR_SELECTED : COLOR_UNSELECTED
+            );
+        });
+
+        this.entries.forEach((entry, i) => {
+            entry.textObj.setColor(
+                !this.inLoadScreen && i === this.loaderImgMenuStatus ? COLOR_SELECTED : COLOR_UNSELECTED
             );
         });
     }
@@ -362,7 +490,9 @@ export default class Menu {
     // Move the cursor image to sit beside the currently selected entry.
     _updateCursorPos() {
         this._updateEntryColors();
-        const selectedEntry = this.entries[this.loaderImgMenuStatus];
+        const selectedEntry = this.inLoadScreen
+            ? this.loadEntries[this.loaderImgMenuStatus]
+            : this.entries[this.loaderImgMenuStatus];
         this.cursorImg.setY(selectedEntry.textObj.y);
     }
 
@@ -436,6 +566,7 @@ export default class Menu {
         this.inmenuimg           = true;
         this.inloaderimg         = false;
         this.inTimesScreen       = false;
+        this.inLoadScreen        = false;
         this.loaderImgMenuStatus = 0;
         this.counter             = 0;
         this.displaypress        = false;
@@ -443,6 +574,7 @@ export default class Menu {
         this.loaderTitleText.setVisible(false);
         this.cursorImg.setVisible(false);
         this._setEntriesVisible(false);
+        this._setLoadEntriesVisible(false);
         this._setTimesVisible(false);
         this.menuImg.setVisible(true);
         this.pressText.setVisible(false);
@@ -461,6 +593,7 @@ export default class Menu {
         this.loaderTitleText.setVisible(false);
         this.cursorImg.setVisible(false);
         this._setEntriesVisible(false);
+        this._setLoadEntriesVisible(false);
         this._setTimesVisible(false);
 
         if (this.animationManager) {
@@ -477,6 +610,7 @@ export default class Menu {
         this.loaderTitleText.setVisible(false);
         this.cursorImg.setVisible(false);
         this._setEntriesVisible(false);
+        this._setLoadEntriesVisible(false);
         this._setTimesVisible(false);
         this.menuImg.setVisible(true);
         this.pressText.setVisible(false);

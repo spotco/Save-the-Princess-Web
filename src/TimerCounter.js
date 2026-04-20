@@ -95,4 +95,29 @@ export default class TimerCounter {
         const min = Math.floor(sto / 6000);
         return `${min}:${String(sec).padStart(2,'0')}:${String(cs).padStart(2,'0')}`;
     }
+
+    static resetAllSavedTimes() {
+        const stats = {};
+        for (const k of Object.keys(REC_TIMES)) {
+            stats[k] = NO_TIME_RECORDED;
+        }
+        localStorage.setItem(LS_KEY, JSON.stringify(stats));
+    }
+
+    static setSavedTimeRaw(name, time) {
+        if (!(name in REC_TIMES)) {
+            return false;
+        }
+
+        const raw = localStorage.getItem(LS_KEY);
+        const stats = raw ? JSON.parse(raw) : {};
+        for (const k of Object.keys(REC_TIMES)) {
+            if (!(k in stats)) {
+                stats[k] = NO_TIME_RECORDED;
+            }
+        }
+        stats[name] = time;
+        localStorage.setItem(LS_KEY, JSON.stringify(stats));
+        return true;
+    }
 }

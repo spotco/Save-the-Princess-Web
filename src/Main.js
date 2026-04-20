@@ -15,6 +15,7 @@ import Level6            from './levels/Level6.js';
 import LevelEditorScene  from './editor/LevelEditorScene.js';
 import CustomLevel       from './levels/CustomLevel.js';
 import VirtualControls   from './VirtualControls.js';
+import DebugCommands     from './DebugCommands.js';
 
 // Single VirtualControls instance shared across all scene transitions.
 const virtualControls = new VirtualControls();
@@ -399,6 +400,7 @@ class GameScene extends Phaser.Scene {
             // Normal campaign level — restore save progress.
             save = new SaveReader();
             save.loadGame();
+            save.setCurrentLevel(levelName);
             level = createLevel(this, levelName);
         }
 
@@ -464,7 +466,7 @@ class GameScene extends Phaser.Scene {
 // Phaser 3 game config — mirrors STPView.main():
 //   container.setDisplayMode(625, 625, false)
 //   container.setTargetFrameRate(60)
-new Phaser.Game({
+const stpGame = new Phaser.Game({
     type:            Phaser.WEBGL,
     parent:          'game-container',
     width:           625,
@@ -480,3 +482,10 @@ new Phaser.Game({
     },
     scene:           [BootScene, MenuScene, GameScene, LevelEditorScene]
 });
+
+window.stpGame = stpGame;
+
+const debugCommands = new DebugCommands(stpGame);
+debugCommands.install();
+
+console.log('Welcome to Save-the-Princess-Web, call "debug_help()" for debug commands');

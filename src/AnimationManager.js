@@ -18,8 +18,8 @@ export default class AnimationManager {
         this.currentType      = null;
         this.altArg           = null;
         this.pointerSkipRequested = false;
+        this.pendingDebugBestTimeRestore = null;
         this.spaceKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-        this.nKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
 
         this.scene.input.on('pointerdown', () => {
             if (this.inAnimation) {
@@ -50,11 +50,6 @@ export default class AnimationManager {
             return;
         }
 
-        if (this._shouldReturnToMenuOnN()) {
-            this._returnToMenuImmediately();
-            return;
-        }
-
         if (this.currentAnimation.update) {
             this.currentAnimation.update(game);
         }
@@ -73,6 +68,7 @@ export default class AnimationManager {
     done() {
         const completedType = this.currentType;
         const completedAnimation = this.currentAnimation;
+        const completedAltArg = this.altArg;
 
         if (completedAnimation && completedAnimation.destroy) {
             completedAnimation.destroy();
@@ -91,9 +87,9 @@ export default class AnimationManager {
         } else if (completedType === 'knightBossInitAnimation') {
             this._activateKnightBoss();
         } else if (completedType === 'finalTowerLedge') {
-            this.startAnimation('creditscroll', null);
+            this.startAnimation('creditscroll', completedAltArg);
         } else if (completedType === 'creditscroll') {
-            this._returnToTitle();
+            this._returnToTitle(completedAltArg);
         } else if (completedType === 'titleScreenAnimation') {
             if (this.display && this.display.finishIntroAnimation) {
                 this.display.finishIntroAnimation();
@@ -150,7 +146,7 @@ export default class AnimationManager {
         }
     }
 
-    _advanceToNextLevel() {
+    _advanceToNextLevel(skipSaveTime = false) {
         if (this._isEditorPlay()) {
             this._coverSceneForTransition();
             if (this.display.timercounter) {
@@ -169,15 +165,18 @@ export default class AnimationManager {
         }
 
         const levelName = this._getCurrentLevelName();
-        if (this.display.timercounter && levelName !== null) {
+        if (!skipSaveTime && this.display.timercounter && levelName !== null) {
             this.display.timercounter.stop();
             this.display.timercounter.writetime(levelName, this.display.timercounter.abs);
+        } else if (this.display.timercounter) {
+            this.display.timercounter.stop();
         }
         if (this.display.sound) {
             this.display.sound.stop();
         }
+        this.pendingDebugBestTimeRestore = null;
 
-        this.display.save.nextLevel();
+        this.display.save.completeLevel();
         const nextLevelName = this.display.save.getCurrentLevel();
 
         if (nextLevelName === 'End') {
@@ -202,7 +201,7 @@ export default class AnimationManager {
         }
     }
 
-    _returnToTitle() {
+    _returnToTitle(altArg) {
         if (this._isEditorPlay()) {
             this._coverSceneForTransition();
             if (this.display && this.display.sound) {
@@ -213,15 +212,12 @@ export default class AnimationManager {
         }
 
         if (this.display && this.display.save && this.display.save.getCurrentLevel &&
-                this.display.save.getCurrentLevel() !== 'End') {
-            this.display.save.nextLevel();
+                this.display.save.getCurrentLevel() !== 'End' &&
+                !(altArg && altArg.skipSaveTime === true)) {
+            this.display.save.completeLevel();
         }
+        this.pendingDebugBestTimeRestore = null;
         this.scene.scene.start('MenuScene', { playIntro: true });
-    }
-
-    _shouldReturnToMenuOnN() {
-        return (this.currentType === 'finalTowerLedge' || this.currentType === 'creditscroll') &&
-            Phaser.Input.Keyboard.JustDown(this.nKey);
     }
 
     _returnToMenuImmediately() {
@@ -247,6 +243,38 @@ export default class AnimationManager {
         this.scene.scene.start('MenuScene', { playIntro: false });
     }
 
+    debugReturnToMenu() {
+        if (!this.inAnimation) {
+            return false;
+        }
+
+        if (this.currentType === 'winAnimation') {
+            if (this.currentAnimation && this.currentAnimation.restoreCapturedBestTime) {
+                this.currentAnimation.restoreCapturedBestTime();
+            }
+            if (this.currentAnimation && this.currentAnimation.destroy) {
+                this.currentAnimation.destroy();
+            }
+            this.inAnimation      = false;
+            this.currentAnimation = null;
+            this.currentType      = null;
+            this.altArg           = null;
+            this.pointerSkipRequested = false;
+            this._advanceToNextLevel(true);
+            return true;
+        }
+
+        if (this.currentType !== 'finalTowerLedge' && this.currentType !== 'creditscroll') {
+            return false;
+        }
+        if (this.currentAnimation && this.currentAnimation.restoreCapturedBestTime) {
+            this.currentAnimation.restoreCapturedBestTime();
+        }
+        this._restorePendingDebugBestTime();
+        this._returnToMenuImmediately();
+        return true;
+    }
+
     _hideVirtualControls() {
         if (window.stpVirtualControls && window.stpVirtualControls.hide) {
             window.stpVirtualControls.hide();
@@ -262,6 +290,15 @@ export default class AnimationManager {
         this.scene.add.rectangle(0, 0, 625, 625, 0x000000)
             .setOrigin(0, 0)
             .setDepth(1000);
+    }
+
+    _restorePendingDebugBestTime() {
+        if (!this.pendingDebugBestTimeRestore) {
+            return;
+        }
+        const restore = this.pendingDebugBestTimeRestore;
+        this.pendingDebugBestTimeRestore = null;
+        restore();
     }
 
     _getCurrentLevelName() {
