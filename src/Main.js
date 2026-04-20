@@ -426,13 +426,7 @@ class GameScene extends Phaser.Scene {
                     return;
                 }
             }
-            const event = pointer.event || {};
-            if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
-                const pointerId = Number.isFinite(event.pointerId) ? event.pointerId : pointer.id;
-                virtualControls.showAtAndTrack(pointerId, event.clientX, event.clientY);
-            } else if (!virtualControls.isVisible()) {
-                virtualControls.show();
-            }
+            virtualControls.showAtPointerAndTrack(pointer);
         });
         this.input.on('pointerup', () => {
             if (this.stpview) {
@@ -470,10 +464,17 @@ class GameScene extends Phaser.Scene {
 //   container.setTargetFrameRate(60)
 new Phaser.Game({
     type:            Phaser.WEBGL,
+    parent:          'game-container',
     width:           625,
     height:          625,
     backgroundColor: '#000000',
     pixelArt:        true,   // disables antialiasing + enables roundPixels; keeps pixel fonts crisp
     fps:             { target: 60, forceSetTimeOut: false },
+    scale: {
+        mode:       Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width:      625,
+        height:     625
+    },
     scene:           [BootScene, MenuScene, GameScene, LevelEditorScene]
 });

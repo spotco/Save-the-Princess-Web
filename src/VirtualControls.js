@@ -52,17 +52,20 @@ export default class VirtualControls {
         this._visible = true;
     }
 
-    showAt(clientX, clientY) {
+    showAtPointerAndTrack(pointer) {
         if (!this._overlay) return;
         const canvasRect = this._syncOverlayToCanvas();
-        this._moveDpadTo(clientX, clientY, canvasRect);
+        const point = this._pointerToCanvasPoint(pointer, canvasRect);
+        if (!point) {
+            this.show();
+            return;
+        }
+
+        this._moveDpadToCanvasPoint(point.x, point.y, canvasRect);
         this._overlay.style.display = 'block';
         this._visible = true;
-    }
 
-    showAtAndTrack(pointerId, clientX, clientY) {
-        this.showAt(clientX, clientY);
-        if (!this._visible) return;
+        const pointerId = this._pointerId(pointer);
         if (Number.isFinite(pointerId)) {
             this._activePointers.set(pointerId, null);
         }
@@ -100,7 +103,9 @@ export default class VirtualControls {
         ov.id = 'virtual-controls';
         ov.style.cssText =
             'position:fixed;top:0;left:0;width:625px;height:625px;' +
-            'pointer-events:none;z-index:70;display:none;';
+            'pointer-events:none;z-index:70;display:none;' +
+            'user-select:none;-webkit-user-select:none;-ms-user-select:none;' +
+            '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;';
         this._overlay = ov;
 
         // D-pad - 3x3 button cross, moved to the player's click / touch point.
@@ -109,7 +114,9 @@ export default class VirtualControls {
             'position:absolute;' +
             `bottom:${PAD_EDGE}px;left:${PAD_EDGE}px;` +
             `width:${PAD_SIZE}px;height:${PAD_SIZE}px;` +
-            'pointer-events:auto;touch-action:none;';
+            'pointer-events:auto;touch-action:none;' +
+            'user-select:none;-webkit-user-select:none;-ms-user-select:none;' +
+            '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;';
         this._dpad = dpad;
         ov.appendChild(dpad);
 
@@ -148,7 +155,8 @@ export default class VirtualControls {
             'color:rgba(255,255,255,0.85);font-size:26px;line-height:1;' +
             // pointer-events:none - the parent dpad div handles all pointer events
             'pointer-events:none;touch-action:none;' +
-            'user-select:none;-webkit-user-select:none;';
+            'user-select:none;-webkit-user-select:none;-ms-user-select:none;' +
+            '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;';
         this._buttonEls.set(btn, def);
         parent.appendChild(btn);
         def._el = btn;   // back-reference for visual feedback
@@ -213,11 +221,9 @@ export default class VirtualControls {
         return rect;
     }
 
-    _moveDpadTo(clientX, clientY, canvasRect) {
+    _moveDpadToCanvasPoint(localX, localY, canvasRect) {
         if (!this._dpad) return;
         const rect = canvasRect || this._syncOverlayToCanvas();
-        const localX = clientX - rect.left;
-        const localY = clientY - rect.top;
         const maxLeft = Math.max(PAD_EDGE, rect.width  - PAD_SIZE - PAD_EDGE);
         const maxTop  = Math.max(PAD_EDGE, rect.height - PAD_SIZE - PAD_EDGE);
         const left = Math.min(Math.max(localX - PAD_SIZE / 2, PAD_EDGE), maxLeft);
@@ -225,6 +231,41 @@ export default class VirtualControls {
         this._dpad.style.left   = `${left}px`;
         this._dpad.style.top    = `${top}px`;
         this._dpad.style.bottom = 'auto';
+    }
+
+    _pointerToCanvasPoint(pointer, canvasRect) {
+        if (!pointer) return null;
+        const rect = canvasRect || this._syncOverlayToCanvas();
+        const baseWidth  = 625;
+        const baseHeight = 625;
+        if (Number.isFinite(pointer.x) && Number.isFinite(pointer.y)) {
+            return {
+                x: pointer.x * rect.width  / baseWidth,
+                y: pointer.y * rect.height / baseHeight
+            };
+        }
+
+        const event = pointer.event || {};
+        if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+
+        return null;
+    }
+
+    _pointerId(pointer) {
+        if (!pointer) return NaN;
+        const event = pointer.event || {};
+        if (Number.isFinite(event.pointerId)) {
+            return event.pointerId;
+        }
+        if (Number.isFinite(pointer.id)) {
+            return pointer.id;
+        }
+        return NaN;
     }
 
     _isPointerHeld(e) {

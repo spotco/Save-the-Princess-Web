@@ -20,5 +20,7 @@ Only add items here when they are outside the original source behavior or featur
 - [ ] Sprint button
 - [~] Touch screen / mouse controls *(in progress — Phase 1.5 for menus, Phase 3 for editor, Phase 6.5 for in-game virtual D-pad; see `PLAN.md`)*
 - [x] Show the in-game `seeme` / where-am-I prompt after 3 seconds with no player movement at level start, and after 20 seconds without player movement once movement has been observed in that level.
+- [x] Use one shared mouse/touch pointer placement path for the virtual D-pad so it appears at the input location while staying fully onscreen.
+- [x] Scale the fixed 625x625 Phaser canvas to fit smaller browser viewports without page scrollbars.
 - [ ] Investigate how save files work
 - [ ] Try AI gen some levels
