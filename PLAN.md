@@ -57,18 +57,13 @@ For other non-source features, see `ADDITIONS_FROM_SOURCE.md`.
       {
         "sx": 0, "sy": 0,
         "width": 25, "height": 25,
-        "tiles": [[0, 0, ...], ...],          // row-major, width*height GIDs
-        "tileProps": {                         // per-GID property overrides
-          "3": { "dog": "left" },
-          "17": { "wall": "true" }
-        }
+      "tiles": [[0, 0, ...], ...]           // row-major, width*height GIDs
       }
     ]
   }
   ```
-  `tileProps` mirrors the `<tile id="N"><properties>…</properties></tile>`
-  blocks in the original TMX. The runtime `Level._tileProp()` already reads
-  from a `Map<gid, propObj>`, so this maps 1:1.
+  Tile properties are not stored in JSON. On load, the runtime rebuilds
+  canonical `tileProps` from each screen's tileset list.
 - **No zip / no binary / no base64**. JSON arrays only. Keeps diffs sane.
 - **Runtime**: add `src/levels/CustomLevel.js` that accepts a parsed
   `.stplevel.json` object and builds `this.storedmap` in the same shape
@@ -297,8 +292,9 @@ key flags `STPView` already polls, so zero gameplay logic changes.
   `loaderImgMenuStatus`, don't drop existing methods, don't rewrite
   `Level.js` into idiomatic modern JS. Change as little structure as
   possible while swapping the data source / adding entries.
-- `Level._parseTMXInto()` stores `tileProps` as a `Map`. When serializing
-  to JSON, convert to a plain object and convert back on load.
+- `Level._parseTMXInto()` still reads TMX tile properties, but `.stplevel.json`
+  now omits them entirely. Loading always rebuilds canonical `tileProps`
+  from tileset metadata.
 - `Level.js` files are style-referenced when editing — inspect nearby
   methods first per `AGENTS.md` rules.
 - No new dependencies. JSON + Blob + File API are all built-in. Virtual

@@ -578,19 +578,20 @@ export default class LevelEditorScene extends Phaser.Scene {
     }
 
     _makeBlankLevel() {
+        const blankTilesets = [
+            { name: 'tileset1',   firstgid: 1  },
+            { name: 'guard1set',  firstgid: 26 },
+            { name: 'wizard1set', firstgid: 51 },
+        ];
         return {
             format: 'stplevel', version: 1,
             name: 'untitled', mapsong: 'main1',
             screensX: 1, screensY: 1, spawnScreen: [0, 0],
             screens: [{
                 sx: 0, sy: 0, width: 25, height: 25,
-                tilesets: [
-                    { name: 'tileset1',   firstgid: 1  },
-                    { name: 'guard1set',  firstgid: 26 },
-                    { name: 'wizard1set', firstgid: 51 },
-                ],
+                tilesets: blankTilesets,
                 tiles:     new Array(625).fill(0),
-                tileProps: {}
+                tileProps: StpLevelFormat.canonicalTilePropsForTilesets(blankTilesets)
             }]
         };
     }
@@ -598,6 +599,7 @@ export default class LevelEditorScene extends Phaser.Scene {
     _onLevelLoaded() {
         this.currentScreen = { sx: 0, sy: 0 };
         this.levelData.screens.forEach(s => this._normalizeScreenTilesets(s));
+        StpLevelFormat.normalizeLevel(this.levelData);
         this.undoStack     = [];
         this.redoStack     = [];
         this._strokeSnapshot = null;
@@ -1248,6 +1250,7 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.levelData.screensX = newScreensX;
         this.levelData.screensY = newScreensY;
         this.levelData.screens  = newScreens;
+        StpLevelFormat.normalizeLevel(this.levelData);
 
         if (this.currentScreen.sx >= newScreensX) this.currentScreen.sx = newScreensX - 1;
         if (this.currentScreen.sy >= newScreensY) this.currentScreen.sy = newScreensY - 1;
@@ -1261,17 +1264,18 @@ export default class LevelEditorScene extends Phaser.Scene {
     }
 
     _makeBlankScreen(sx, sy) {
+        const blankTilesets = [
+            { name: 'tileset1',   firstgid: 1  },
+            { name: 'guard1set',  firstgid: 26 },
+            { name: 'wizard1set', firstgid: 51 },
+        ];
         return {
             sx, sy,
             width: 25,
             height: 25,
-            tilesets: [
-                { name: 'tileset1',   firstgid: 1  },
-                { name: 'guard1set',  firstgid: 26 },
-                { name: 'wizard1set', firstgid: 51 },
-            ],
+            tilesets: blankTilesets,
             tiles: new Array(625).fill(0),
-            tileProps: {}
+            tileProps: StpLevelFormat.canonicalTilePropsForTilesets(blankTilesets)
         };
     }
 

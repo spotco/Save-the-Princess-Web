@@ -20,11 +20,7 @@
 //       "tilesets": [
 //         { "name": "tileset1", "firstgid": 1 }
 //       ],
-//       "tiles": [ 0, 1, 5, … ],          // flat row-major uint GID array
-//       "tileProps": {                     // gid (string key) → prop map
-//         "3": { "dog": "left" },
-//         "21": { "wall": "true" }
-//       }
+//       "tiles": [ 0, 1, 5, … ]           // flat row-major uint GID array
 //     }
 //   ]
 // }
@@ -37,31 +33,118 @@
 
 import TmxParser from './TmxParser.js';
 
+const CANONICAL_TILE_PROPS = {
+    tileset1: {
+        0:  { wall: 'true' },
+        1:  { wall: 'true' },
+        2:  { wall: 'true' },
+        3:  { dog: 'left' },
+        5:  { wall: 'true' },
+        6:  { wall: 'true' },
+        7:  { dog: 'right' },
+        8:  { wall: 'true' },
+        9:  { torch: 'true', wall: 'true' },
+        10: { dog: 'down' },
+        11: { dog: 'up' },
+        12: { wall: 'true' },
+        13: { wall: 'true' },
+        14: { wall: 'true' },
+        16: { princess: 'true' },
+        17: { wall: 'true' },
+        18: { wall: 'true' },
+        19: { wall: 'true' },
+        20: { player: 'true' },
+        21: { wall: 'true' },
+        22: { cratespawn: 'true' },
+        23: { wall: 'true' },
+        24: { wall: 'true' }
+    },
+    guard1set: {
+        0:  { guardspawn: 'right' },
+        1:  { guardspawn: 'up' },
+        2:  { guardpoint: 'right' },
+        3:  { guardpoint: 'left' },
+        4:  { door: 'closed' },
+        5:  { guardspawn: 'down' },
+        6:  { guardspawn: 'left' },
+        7:  { guardpoint: 'down' },
+        8:  { guardpoint: 'up' },
+        9:  { door: 'open' },
+        10: { doorbutton: 'true' },
+        12: { wall: 'true', window: 'true' },
+        13: { direction: 'right', exit: 'true', wall: 'true' },
+        14: { direction: 'left', exit: 'true', wall: 'true' },
+        15: { guardpoint: 'right', stop: 'true' },
+        16: { guardpoint: 'left', stop: 'true' },
+        17: { key: 'true', wall: 'true' },
+        18: { direction: 'up', exit: 'true', wall: 'true' },
+        20: { guardpoint: 'down', stop: 'true' },
+        21: { guardpoint: 'up', stop: 'true' },
+        22: { keydoor: 'true' },
+        23: { direction: 'down', exit: 'true' }
+    },
+    wizard1set: {
+        0:  { wizard: 'up' },
+        4:  { knightboss: 'true' },
+        5:  { wizard: 'right' },
+        10: { wizard: 'down' },
+        13: { final: 'true' },
+        15: { wizard: 'left' },
+        16: { knightbossdelayspawn: 'true' },
+        18: { final: 'true' },
+        20: { tracker: 'true' },
+        21: { bossactivate: 'true' },
+        22: { bossactivatespawn: 'true' },
+        24: { final: 'true' }
+    }
+};
+
 export default class StpLevelFormat {
+
+    static canonicalTilePropsForTilesets(tilesets) {
+        const tileProps = {};
+        for (const tileset of tilesets || []) {
+            const tilesetProps = CANONICAL_TILE_PROPS[tileset.name];
+            if (!tilesetProps) continue;
+            for (const [localId, props] of Object.entries(tilesetProps)) {
+                const gid = tileset.firstgid + parseInt(localId, 10);
+                tileProps[gid] = { ...props };
+            }
+        }
+        return tileProps;
+    }
+
+    static _screenForJson(screen) {
+        return {
+            sx:       screen.sx,
+            sy:       screen.sy,
+            width:    screen.width,
+            height:   screen.height,
+            tilesets: (screen.tilesets || []).map(ts => ({ name: ts.name, firstgid: ts.firstgid })),
+            tiles:    Array.from(screen.tiles || [])
+        };
+    }
+
+    static normalizeLevel(level) {
+        if (!level || !Array.isArray(level.screens)) return level;
+        for (const screen of level.screens) {
+            screen.tileProps = StpLevelFormat.canonicalTilePropsForTilesets(screen.tilesets);
+        }
+        return level;
+    }
 
     // --- Conversion from runtime map data ---
 
     // Build a screen entry from a parsed map data object
     // (as returned by TmxParser.parseTMX / Level.storedmap[sx][sy]).
     static _screenFromMapData(sx, sy, mapData) {
-        // Strip empty-name properties that Tiled sometimes emits.
-        const tileProps = {};
-        for (const [gid, props] of Object.entries(mapData.tileProps)) {
-            const filtered = {};
-            for (const [key, val] of Object.entries(props)) {
-                if (key !== '') filtered[key] = val;
-            }
-            if (Object.keys(filtered).length > 0) tileProps[gid] = filtered;
-        }
-
         return {
             sx,
             sy,
             width:    mapData.width,
             height:   mapData.height,
             tilesets: mapData.tilesets.map(ts => ({ name: ts.name, firstgid: ts.firstgid })),
-            tiles:    Array.from(mapData.tiles),
-            tileProps
+            tiles:    Array.from(mapData.tiles)
         };
     }
 
@@ -110,13 +193,23 @@ export default class StpLevelFormat {
     // --- Serialisation ---
 
     static toJsonString(level) {
-        return JSON.stringify(level, null, 2);
+        StpLevelFormat.normalizeLevel(level);
+        return JSON.stringify({
+            format:      level.format,
+            version:     level.version,
+            name:        level.name,
+            mapsong:     level.mapsong,
+            screensX:    level.screensX,
+            screensY:    level.screensY,
+            spawnScreen: level.spawnScreen,
+            screens:     level.screens.map(screen => StpLevelFormat._screenForJson(screen))
+        }, null, 2);
     }
 
     static fromJsonString(text) {
         const obj = JSON.parse(text);
         StpLevelFormat.validate(obj);
-        return obj;
+        return StpLevelFormat.normalizeLevel(obj);
     }
 
     // Throws a descriptive Error if the object is not a valid stplevel.
@@ -157,7 +250,7 @@ export default class StpLevelFormat {
                 firstgid: ts.firstgid
             }));
             storedmap[screen.sx][screen.sy] = {
-                tileProps: screen.tileProps,
+                tileProps: StpLevelFormat.canonicalTilePropsForTilesets(screen.tilesets),
                 tiles:     screen.tiles,
                 width:     screen.width,
                 height:    screen.height,

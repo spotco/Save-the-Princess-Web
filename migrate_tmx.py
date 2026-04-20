@@ -38,8 +38,7 @@ def parse_tsx(tsx_path):
 def parse_tileset_el(ts_el, img_dir):
     """
     Parse one <tileset> element (inline or external TSX reference).
-    Returns { name, firstgid, imageKey, tileProps }
-    where tileProps = { str(gid): { propName: propValue } }
+    Returns { name, firstgid, imageKey }.
     """
     firstgid = int(ts_el.attrib.get('firstgid', '1'))
     source   = ts_el.attrib.get('source', '')
@@ -52,24 +51,7 @@ def parse_tileset_el(ts_el, img_dir):
         img_el   = ts_el.find('image')
         img_src  = img_el.attrib.get('source', '') if img_el is not None else ''
         img_key  = tilemap_image_key(Path(img_src).stem)
-        tile_els = ts_el.findall('tile')
-
-    tile_props = {}
-    for tile_el in tile_els:
-        tile_id  = int(tile_el.attrib.get('id', '0'))
-        gid      = firstgid + tile_id
-        props    = {}
-        seen     = set()
-        for prop_el in tile_el.findall('properties/property'):
-            k = prop_el.attrib.get('name', '')
-            v = prop_el.attrib.get('value', '')
-            if k and k not in seen:
-                props[k] = v
-                seen.add(k)
-        if props:
-            tile_props[str(gid)] = props
-
-    return dict(name=name, firstgid=firstgid, imageKey=img_key, tileProps=tile_props)
+    return dict(name=name, firstgid=firstgid, imageKey=img_key)
 
 def decode_base64_gzip(b64_text):
     """Decode base64+gzip tile data → flat list of uint32 GIDs."""
@@ -85,18 +67,15 @@ def parse_tmx(tmx_path):
     height = int(root.attrib['height'])
 
     tilesets_out  = []
-    merged_props  = {}
 
     for ts_el in root.findall('tileset'):
         ts = parse_tileset_el(ts_el, IMG)
         tilesets_out.append({'name': ts['name'], 'firstgid': ts['firstgid']})
-        merged_props.update(ts['tileProps'])
 
     data_el = root.find('.//layer/data')
     tiles   = decode_base64_gzip(data_el.text)
 
-    return dict(width=width, height=height, tilesets=tilesets_out,
-                tiles=tiles, tileProps=merged_props)
+    return dict(width=width, height=height, tilesets=tilesets_out, tiles=tiles)
 
 # ---------------------------------------------------------------------------
 # Level definitions
@@ -162,8 +141,7 @@ def migrate(level_def):
     for (sx, sy), tmx_filename in level_def['tmx'].items():
         sd = parse_tmx(DATA / tmx_filename)
         screens.append(dict(sx=sx, sy=sy, width=sd['width'], height=sd['height'],
-                            tilesets=sd['tilesets'], tiles=sd['tiles'],
-                            tileProps=sd['tileProps']))
+                            tilesets=sd['tilesets'], tiles=sd['tiles']))
     # Consistent ordering: (sy, sx)
     screens.sort(key=lambda s: (s['sy'], s['sx']))
     return dict(format='stplevel', version=1,
