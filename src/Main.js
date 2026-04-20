@@ -468,7 +468,7 @@ class GameScene extends Phaser.Scene {
 //   container.setTargetFrameRate(60)
 const stpGame = new Phaser.Game({
     type:            Phaser.WEBGL,
-    antialias:       true,
+    antialias:       false,
     parent:          'game-container',
     width:           625,
     height:          625,

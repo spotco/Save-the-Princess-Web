@@ -1,6 +1,6 @@
 # Save the Princess - Completed Implementation Notes
 
-**Last Updated**: 2026-04-12
+**Last Updated**: 2026-04-19
 
 ---
 
@@ -223,3 +223,79 @@ Update 2026-04-19: Extended the in-game `seeme` / where-am-I prompt. It appears 
 Update 2026-04-19: Fixed virtual D-pad placement on touch screens. `GameScene` now passes the Phaser pointer directly to `VirtualControls.showAtPointerAndTrack()`, which uses one shared pointer-to-canvas coordinate path for mouse and touch, then clamps the D-pad fully inside the game canvas.
 
 Update 2026-04-19: Added viewport fitting for small screens. The page now hosts Phaser in `#game-container` and uses `Phaser.Scale.FIT` with `CENTER_BOTH` so the game keeps its 625x625 internal coordinate system while the displayed canvas scales down to fit phones and small browser windows. The page and container hide overflow so the fitted canvas never creates browser scrollbars.
+
+---
+
+## Completed Additions Migrated From PLAN.md
+
+Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
+
+### Addition Phase 1 — Menu list refactor (Phaser text only)
+- [x] Refactored `Menu.js` loader state around a single `entries` array.
+- [x] Added scroll-window infrastructure for future menu growth.
+- [x] Replaced baked-in loader text with Phaser text labels.
+- [x] Kept `loadercursor` tracking the selected entry from text positions.
+- [x] Added a `LEVEL EDITOR` main-menu entry.
+- [x] Registered a `LevelEditorScene` entry point in the scene list.
+- [x] Replaced the old index-3 Times-screen hack with `inTimesScreen`.
+
+### Addition Phase 1.5 — Menu pointer / touch support
+- [x] Added pointer input for the title screen, loader entries, Times screen, and editor stub.
+- [x] Unified mouse and touch through Phaser pointer events.
+
+### Addition Phase 2 — Level file format + import/export library
+- [x] Extracted TMX parsing into `src/editor/TmxParser.js`.
+- [x] Added `src/editor/StpLevelFormat.js` for custom-level JSON conversion and validation.
+- [x] Migrated bundled Level 1–6 data to `.stplevel.json`.
+- [x] Added `Level._loadStpLevelInto(path)` and switched `Level1`–`Level6` to load JSON.
+- [x] Removed runtime TMX loading from boot; legacy `.tmx` files remain as references.
+- [x] Later simplified the `.stplevel.json` format so JSON no longer persists `tileProps`; canonical tile properties are rebuilt from tilesets on load.
+
+### Addition Phase 3 — Editor scene skeleton
+- [x] Implemented `src/editor/LevelEditorScene.js`.
+- [x] Added the editor layout: map canvas, palette, screen tabs, resize buttons, and action bar.
+- [x] Added pointer-driven editing plus keyboard shortcuts for tools, navigation, and save.
+- [x] Replaced the import placeholder with bundled-level import flow and clearer status/error feedback.
+
+### Addition Phase 3.5 — Editor pointer-marker overlay
+- [x] Added editor-only pointer-label visualization based on the historical pointer-marked art.
+- [x] Added `PTR:ON` / `PTR:OFF` UI and `P` shortcut.
+- [x] Kept pointer markers editor-only and out of gameplay scenes.
+
+### Addition Phase 4 — Editing operations
+- [x] Implemented Paint, Erase, Fill, Rect, and Picker tools.
+
+### Addition Phase 5 — Save / load / play custom levels
+- [x] Added Save export via `Blob` download.
+- [x] Added Load import via hidden file input.
+- [x] Added import of bundled default levels into the editor.
+- [x] Added `Play` from the editor into `GameScene` with custom level data.
+- [x] Added `GameScene` support for either campaign levels or a parsed custom level object.
+
+### Addition Phase 6 — `CustomLevel` runtime
+- [x] Added `src/levels/CustomLevel.js`.
+- [x] Reused base `Level` object/enemy/static pipelines for custom levels.
+- [x] Kept `Level1`–`Level6` classes intact.
+
+### Addition Phase 6.5 — In-game pause menu
+- [x] Replaced the old pause text with a loader-style pause menu.
+- [x] Added Resume, Reset, and Exit actions with campaign/editor-aware exit behavior.
+- [x] Kept debug keys unchanged.
+
+### Addition Phase 6.75 — In-game virtual controls (touch / mouse)
+- [x] Added a DOM-overlay virtual D-pad for click/touch play.
+- [x] Added shared pointer placement, multi-touch handling, and keyboard-aware hide/show behavior.
+- [x] Added touch/click animation skipping, input-aware title prompt text, and outside-click loader dismissal.
+- [x] Added fitted small-screen viewport scaling without browser scrollbars.
+
+### Addition Phase 7 — Polish / stretch
+- [x] Added undo / redo in the editor.
+
+### Addition Notes (2026-04-19)
+
+- Added editor-play data preservation safeguards so death/crush restarts and editor exits keep the same custom level/session data instead of falling back to campaign save flow.
+- Made editor session persistence explicit across title/menu exits and editor-play round trips, including screen/tool/palette/pointer-label/undo-redo state.
+- Extended the in-game `seeme` / where-am-I prompt with idle-time triggers after level start and after later inactivity.
+- Fixed touch virtual D-pad placement by routing mouse/touch through one shared pointer-to-canvas path.
+- Added default-level load flow and console debug commands during editor work.
+- Stopped persisting `tileProps` in custom-level JSON. Bundled levels and editor exports now serialize only tiles/tilesets, and canonical tile properties are reconstructed on load.

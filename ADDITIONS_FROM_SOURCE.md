@@ -10,17 +10,37 @@ Only add items here when they are outside the original source behavior or featur
 
 ---
 
-## Proposed Additions
+## Completed Additions
 
-- [~] Tile map level editor and save to file *(in progress — see `PLAN.md`)*
-- [~] Load level from file *(in progress — bundled with the editor feature)*
-- [~] Main menu with additional options *(in progress — scrollable list menu, all labels rendered as Phaser text instead of baked-in images, hosts the Level Editor entry; see `PLAN.md`)*
-- [~] Migrate default Level 1–6 data from TMX to `.stplevel.json` *(in progress — runtime reads the new JSON files; TMX kept only as historical reference; see `PLAN.md`)*
-- [ ] Save point feature
-- [ ] Sprint button
-- [~] Touch screen / mouse controls *(in progress — Phase 1.5 for menus, Phase 3 for editor, Phase 6.5 for in-game virtual D-pad; see `PLAN.md`)*
+- [x] Tile map level editor with paint/erase/fill/rect/picker tools, screen tabs, grid resize, undo/redo, default-level import, file load/save, and custom-level play mode.
+- [x] Main menu additions and refactor: scrollable list-driven loader, all labels rendered with Phaser text, and a `LEVEL EDITOR` entry.
+- [x] Touch screen / mouse support across the menu, gameplay, and editor, including the in-game virtual D-pad.
+- [x] In-game pause menu with campaign/editor-aware Exit behavior.
+- [x] Migrate default Level 1–6 data from TMX to `.stplevel.json`; TMX remains in the repo as historical reference only.
+- [x] Store only tiles/tilesets in `.stplevel.json`; rebuild canonical `tileProps` on load for bundled levels and editor-imported/exported levels.
+- [x] Persist the editor session across title/menu exits and editor-play round trips, including current screen, selected tool, palette selection/scroll, pointer-label visibility, and undo/redo state.
+- [x] Preserve editor-play custom level data across death/crush resets, win/final exits, pause-menu returns, and debug skip paths.
 - [x] Show the in-game `seeme` / where-am-I prompt after 3 seconds with no player movement at level start, and after 20 seconds without player movement once movement has been observed in that level.
 - [x] Use one shared mouse/touch pointer placement path for the virtual D-pad so it appears at the input location while staying fully onscreen.
 - [x] Scale the fixed 625x625 Phaser canvas to fit smaller browser viewports without page scrollbars.
-- [ ] Investigate how save files work
+- [x] Add an editor-only pointer-marker overlay toggle using the historical pointer-marked tileset art.
+- [x] Add default-level load flow and console debug commands for editor/custom-level work.
+- [x] Investigate how save files work.
+
+## Human bugs (agents ignore for now)
+
+exit right is a wall (or behaving as one), fix
+	(test level6)
+	
+set starting level in editor
+
+window tiles 1 offset from normal walls
+
+show developer best in times window
+
+## Proposed Additions
+
+- [ ] Save point feature
+- [ ] (Manual) Add savepoints to the levels
+- [ ] Sprint button
 - [ ] Try AI gen some levels
