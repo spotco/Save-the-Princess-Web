@@ -28,21 +28,30 @@ export default class Exit {
 
     update(game) {
         if (_rectsIntersect(game.player.hitbox, this.hitbox)) {
+            let nextLocationX = game.level.locationx;
+            let nextLocationY = game.level.locationy;
+            let nextPlayerX   = game.player.x;
+            let nextPlayerY   = game.player.y;
+
             if (this.direction === 'up') {
-                game.player.y = 591;
-                game.level.locationy++;
+                nextPlayerY = 591;
+                nextLocationY++;
             } else if (this.direction === 'down') {
-                game.player.y = 9;
-                game.level.locationy--;
+                nextPlayerY = 9;
+                nextLocationY--;
             } else if (this.direction === 'left') {
-                game.player.x = 591;
-                game.level.locationx--;
+                nextPlayerX = 591;
+                nextLocationX--;
             } else if (this.direction === 'right') {
-                game.player.x = 9;
-                game.level.locationx++;
+                nextPlayerX = 9;
+                nextLocationX++;
             }
-            game.changeloc();
-            game.player.inithitbox();
+
+            if (game.changeloc(nextLocationX, nextLocationY)) {
+                game.player.x = nextPlayerX;
+                game.player.y = nextPlayerY;
+                game.player.inithitbox();
+            }
         }
     }
 

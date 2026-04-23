@@ -299,3 +299,9 @@ Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 - Fixed touch virtual D-pad placement by routing mouse/touch through one shared pointer-to-canvas path.
 - Added default-level load flow and console debug commands during editor work.
 - Stopped persisting `tileProps` in custom-level JSON. Bundled levels and editor exports now serialize only tiles/tilesets, and canonical tile properties are reconstructed on load.
+
+### Fix Notes (2026-04-23)
+
+- Added guarded exit screen transitions so attempts to enter missing map coordinates log the missing `(x, y)` and leave the current screen active instead of crashing.
+- Removed stale runtime wall flags from right, left, and up exit tile metadata so those exits can be entered like the down exit.
+- Removed the stale runtime wall flag from key tile metadata; key doors remain Java-faithful by adding/removing their blocking static from `KeyDoor`.

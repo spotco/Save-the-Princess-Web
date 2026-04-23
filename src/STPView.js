@@ -122,16 +122,25 @@ export default class STPView {
 
     // Load lists and rebuild tilemap for the current locationx/locationy.
     // Mirrors STPGame.changeloc().
-    changeloc() {
+    changeloc(mapX = this.level.locationx, mapY = this.level.locationy) {
+        if (!this._hasScreenLocation(mapX, mapY)) {
+            console.log('Map coordinates do not exist:', mapX, mapY);
+            return false;
+        }
+
         // Hide sprites from the outgoing screen's entities
         for (const e of this.enemyList)  { if (e.hide) e.hide(); }
         for (const o of this.objectList) { if (o.hide) o.hide(); }
+
+        this.level.locationx = mapX;
+        this.level.locationy = mapY;
 
         const lc = this.level.masterList[this.level.locationx][this.level.locationy];
         this.staticsList = lc.staticslist;
         this.enemyList   = lc.enemylist;
         this.objectList  = lc.objectlist;
         this._rebuildTilemap(this.level.locationx, this.level.locationy);
+        return true;
     }
 
     // Called every frame from GameScene.update(time, delta).
@@ -210,6 +219,15 @@ export default class STPView {
                 }
             }
         }
+    }
+
+    _hasScreenLocation(mapX, mapY) {
+        return this.level.masterList &&
+               this.level.masterList[mapX] &&
+               this.level.masterList[mapX][mapY] &&
+               this.level.storedmap &&
+               this.level.storedmap[mapX] &&
+               this.level.storedmap[mapX][mapY];
     }
 
     // Update all Phaser display object positions.
