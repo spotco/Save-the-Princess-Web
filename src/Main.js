@@ -171,6 +171,12 @@ class BootScene extends Phaser.Scene {
         this.load.image('help',     'img/misc/help.png');
         this.load.image('notice',   'img/misc/notice.png');
         this.load.image('question', 'img/misc/question.png');
+        this.load.image('savepoint',    'img/misc/savepoint.png');
+        this.load.image('savepoint0',   'img/misc/savepoint0.png');
+        this.load.image('savepoint1',   'img/misc/savepoint1.png');
+        this.load.image('savepoint2',   'img/misc/savepoint2.png');
+        this.load.image('savepoint3',   'img/misc/savepoint3.png');
+        this.load.image('savepointdim', 'img/misc/savepointdim.png');
         this.load.image('seeme',    'img/misc/seeme.png');
         // Key animation frames (key.png is frame 0, then key1-key5)
         this.load.image('key0', 'img/misc/key/key.png');

@@ -132,7 +132,6 @@ export default class STPView {
         this.debugGraphics = this.scene.add.graphics().setDepth(25);
         this.keys = this.scene.input.keyboard.addKeys({
             esc:   Phaser.Input.Keyboard.KeyCodes.ESC,
-            h:     Phaser.Input.Keyboard.KeyCodes.H,
             up:    Phaser.Input.Keyboard.KeyCodes.UP,
             down:  Phaser.Input.Keyboard.KeyCodes.DOWN,
             enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
@@ -504,7 +503,7 @@ export default class STPView {
                 type: 'SavePoint',
                 x: object.x, y: object.y,
                 activated: object === activeSavePoint ? true : object.activated,
-                glowCounter: object._glowCounter
+                animTimer: object._animTimer
             };
         }
         return null;
@@ -607,7 +606,7 @@ export default class STPView {
         } else if (state.type === 'SavePoint') {
             object = new SavePoint(state.x, state.y, this.scene);
             object.activated = state.activated;
-            object._glowCounter = state.glowCounter;
+            object._animTimer = state.animTimer || 0;
         }
         return object;
     }
@@ -847,13 +846,6 @@ export default class STPView {
                 this._pauseMenuConfirm();
             }
             return false;
-        }
-
-        if (K(this.keys.h)) {
-            this.displayHitboxes = !this.displayHitboxes;
-            if (!this.displayHitboxes && this.debugGraphics) {
-                this.debugGraphics.clear();
-            }
         }
 
         return false;

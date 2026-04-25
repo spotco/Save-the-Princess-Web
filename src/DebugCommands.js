@@ -13,6 +13,7 @@ export default class DebugCommands {
         window.get_saved_max_level = this.get_saved_max_level.bind(this);
         window.set_saved_max_level = this.set_saved_max_level.bind(this);
         window.reset_best_times = this.reset_best_times.bind(this);
+        window.toggle_hitboxes = this.toggle_hitboxes.bind(this);
     }
 
     debug_help() {
@@ -22,7 +23,8 @@ export default class DebugCommands {
             'skip_level() - Skip the current level or exit the ending sequence.',
             'get_saved_max_level() - Print the current saved max level.',
             'set_saved_max_level(level) - Set the saved max level. Accepts 1-6, Level1-Level6, or End.',
-            'reset_best_times() - Reset all saved best times.'
+            'reset_best_times() - Reset all saved best times.',
+            'toggle_hitboxes() - Toggle gameplay hitbox overlays.'
         ];
         lines.forEach((line) => console.log(line));
         return lines;
@@ -62,6 +64,22 @@ export default class DebugCommands {
         TimerCounter.resetAllSavedTimes();
         console.log('All saved best times reset.');
         return true;
+    }
+
+    toggle_hitboxes() {
+        const gameScene = this._getActiveGameScene();
+        if (gameScene === null || !gameScene.stpview || !gameScene.isReady) {
+            console.log('toggle_hitboxes(): no active gameplay scene.');
+            return false;
+        }
+
+        const stpview = gameScene.stpview;
+        stpview.displayHitboxes = !stpview.displayHitboxes;
+        if (!stpview.displayHitboxes && stpview.debugGraphics) {
+            stpview.debugGraphics.clear();
+        }
+        console.log('Hitboxes:', stpview.displayHitboxes ? 'on' : 'off');
+        return stpview.displayHitboxes;
     }
 
     _getActiveGameScene() {

@@ -7,10 +7,12 @@ export default class SavePoint {
         this.x = x;
         this.y = y;
         this.activated = false;
-        this.hitbox = { x: x + 3, y: y + 3, width: 19, height: 19 };
+        this.hitbox = { x: x + 7, y: y + 7, width: 11, height: 11 };
 
-        this._glowCounter = 0;
-        this._sprite = scene.add.graphics().setDepth(5);
+        this._animTimer  = 0;
+        this._FRAME_DUR  = 10;
+        this._NUM_FRAMES = 4;
+        this.sprite = scene.add.image(x, y, 'savepoint').setOrigin(0, 0).setDepth(5);
     }
 
     update(game) {
@@ -27,37 +29,19 @@ export default class SavePoint {
     }
 
     render() {
-        this._glowCounter++;
-        this._sprite.clear();
-
+        this._animTimer++;
+        this.sprite.setVisible(true);
+        this.sprite.setPosition(this.x, this.y);
         if (this.activated) {
-            this._drawDiamond(0x114477, 0x3377aa, 0.65);
+            this.sprite.setTexture('savepointdim');
         } else {
-            const glow = 0.35 + Math.sin(this._glowCounter / 10) * 0.15;
-            this._sprite.fillStyle(0x33ccff, glow);
-            this._sprite.fillCircle(this.x + 12, this.y + 12, 12);
-            this._drawDiamond(0x00aaff, 0xaaddff, 1);
+            const frame = Math.floor(this._animTimer / this._FRAME_DUR) % this._NUM_FRAMES;
+            this.sprite.setTexture('savepoint' + frame);
         }
-        this._sprite.setVisible(true);
     }
 
     hide() {
-        this._sprite.setVisible(false);
-    }
-
-    _drawDiamond(fillColor, lineColor, alpha) {
-        const cx = this.x + 12;
-        const cy = this.y + 12;
-        this._sprite.fillStyle(fillColor, alpha);
-        this._sprite.lineStyle(1, lineColor, alpha);
-        this._sprite.beginPath();
-        this._sprite.moveTo(cx, this.y + 2);
-        this._sprite.lineTo(this.x + 22, cy);
-        this._sprite.lineTo(cx, this.y + 22);
-        this._sprite.lineTo(this.x + 2, cy);
-        this._sprite.closePath();
-        this._sprite.fillPath();
-        this._sprite.strokePath();
+        this.sprite.setVisible(false);
     }
 }
 
