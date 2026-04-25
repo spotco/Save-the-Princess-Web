@@ -22,6 +22,7 @@ import Tracker                   from '../other/Tracker.js';
 import KnightBossInitialActivate from '../other/KnightBossInitialActivate.js';
 import KnightBossSpawn           from '../other/KnightBossSpawn.js';
 import FinalCutscene             from '../other/FinalCutscene.js';
+import SavePoint                 from '../other/SavePoint.js';
 
 export default class Level {
 
@@ -195,6 +196,9 @@ export default class Level {
                 }
                 if (this._tileProp(mapX, mapY, x, y, 'final') === 'true') {
                     stolist.push(new FinalCutscene(x * 25, y * 25));
+                }
+                if (this._tileProp(mapX, mapY, x, y, 'savepoint') === 'true') {
+                    stolist.push(new SavePoint(x * 25, y * 25, this.scene));
                 }
             }
         }

@@ -1,6 +1,6 @@
 # Additions From Source
 
-**Last Updated**: 2026-04-19
+**Last Updated**: 2026-04-25
 
 ---
 
@@ -26,6 +26,7 @@ Only add items here when they are outside the original source behavior or featur
 - [x] Add an editor-only pointer-marker overlay toggle using the historical pointer-marked tileset art.
 - [x] Add default-level load flow and console debug commands for editor/custom-level work.
 - [x] Investigate how save files work.
+- [x] Save point feature: `tileset1` bottom-right tile is now an `SV` editor tile and runtime checkpoint object. First touch activates a dim blue diamond and captures a full in-memory level snapshot; enemy/crush deaths restore that snapshot, while pause-menu Reset still restarts the level from its original state.
 
 ## Human bugs (agents ignore for now)
 
@@ -40,7 +41,6 @@ show developer best in times window
 
 ## Proposed Additions
 
-- [ ] Save point feature
 - [ ] (Manual) Add savepoints to the levels
 - [ ] Sprint button
 - [ ] Try AI gen some levels

@@ -57,7 +57,7 @@ const CANONICAL_TILE_PROPS = {
         21: { wall: 'true' },
         22: { cratespawn: 'true' },
         23: { wall: 'true' },
-        24: { wall: 'true' }
+        24: { savepoint: 'true' }
     },
     guard1set: {
         0:  { guardspawn: 'right' },

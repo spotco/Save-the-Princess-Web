@@ -129,6 +129,12 @@ export default class AnimationManager {
     }
 
     _restartCurrentLevel() {
+        if (this.display &&
+                this.display.restoreSavePointIfAvailable &&
+                this.display.restoreSavePointIfAvailable()) {
+            return;
+        }
+
         if (this.display && this.display.sound) {
             this.display.sound.stop();
         }

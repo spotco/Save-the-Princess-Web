@@ -36,7 +36,7 @@ const TILESET_LABELS  = { tileset1: 'TILES', guard1set: 'GUARDS', wizard1set: 'W
 // Keys are localId (0-based within each tileset sheet).
 // Color matches semantic category: orange=dog, red=guard spawn, orange=guard point,
 // cyan=door, yellow=exit, gold=key, green=player, pink=princess, tan=crate,
-// purple=wizard, red=boss, blue=tracker.
+// blue=save point, purple=wizard, red=boss, blue=tracker.
 const POINTER_LABELS = {
     tileset1: {
         3:  { text: '\u2190D', color: '#ff8800' },   // dog left
@@ -46,6 +46,7 @@ const POINTER_LABELS = {
         16: { text: 'PR',      color: '#ff88ff' },   // princess
         20: { text: 'PL',      color: '#88ff00' },   // player spawn
         22: { text: 'CR',      color: '#ccaa77' },   // crate spawn
+        24: { text: 'SV',      color: '#44ccff' },   // save point
     },
     guard1set: {
         0:  { text: 'G\u2192', color: '#ff4444' },   // guardspawn right
@@ -110,7 +111,7 @@ const TILE_NAMES = {
         21: 'Wall (bottom-lit cap)',
         22: 'Crate spawn',
         23: 'Wall (right-lit cap)',
-        24: 'Wall (black fill)',
+        24: 'Save point',
     },
     guard1set: {
         0:  'Guard spawn \u2192',   1:  'Guard spawn \u2191',   2:  'Guard point \u2192',

@@ -230,6 +230,15 @@ Update 2026-04-19: Added viewport fitting for small screens. The page now hosts 
 
 Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 
+### Addition Phase 8 — Save points
+- [x] Verified `tileset1` local tile `24` was unused in all bundled `.stplevel.json` levels.
+- [x] Replaced that tile's old canonical wall behavior with `{ savepoint: 'true' }`.
+- [x] Added `SavePoint` as a non-source runtime object with glowing inactive and dim activated blue diamond states.
+- [x] Added editor pointer label `SV` and palette name `Save point`.
+- [x] Added checkpoint capture on first save point touch only.
+- [x] Death and crush animation restarts now restore the captured checkpoint snapshot when one exists.
+- [x] Pause-menu Reset still clears the checkpoint and rebuilds the level from the original spawn.
+
 ### Addition Phase 1 — Menu list refactor (Phaser text only)
 - [x] Refactored `Menu.js` loader state around a single `entries` array.
 - [x] Added scroll-window infrastructure for future menu growth.

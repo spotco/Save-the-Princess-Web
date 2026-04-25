@@ -142,8 +142,7 @@
  </tile>
  <tile id="24">
   <properties>
-   <property name="wall" value="true"/>
-   <property name="wall" value="true"/>
+   <property name="savepoint" value="true"/>
   </properties>
  </tile>
 </tileset>

@@ -1,6 +1,6 @@
 # Save the Princess - Active Development Plan
 
-**Last Updated**: 2026-04-19
+**Last Updated**: 2026-04-25
 
 ---
 
@@ -8,9 +8,9 @@
 
 No active implementation phase is currently tracked here.
 
-The completed editor, custom-level, menu/input, and JSON-format work that had
-been living in this file was migrated to `PLAN_COMPLETED.md` on 2026-04-19 so
-`PLAN.md` can go back to tracking active and upcoming work only.
+The save point feature was completed on 2026-04-25 and moved to
+`PLAN_COMPLETED.md`. Non-source feature tracking was updated in
+`ADDITIONS_FROM_SOURCE.md`.
 
 ---
 

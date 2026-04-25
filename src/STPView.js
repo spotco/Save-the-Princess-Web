@@ -4,6 +4,26 @@
 import Player       from './Player.js';
 import TimerCounter from './TimerCounter.js';
 import AnimationManager from './AnimationManager.js';
+import Dog         from './enemy/Dog.js';
+import Guard       from './enemy/Guard.js';
+import Wizard      from './enemy/Wizard.js';
+import KnightBoss  from './enemy/KnightBoss.js';
+import Fireball    from './enemy/Fireball.js';
+import Door        from './other/Door.js';
+import DoorButton  from './other/DoorButton.js';
+import Key         from './other/Key.js';
+import KeyDoor     from './other/KeyDoor.js';
+import Exit        from './other/Exit.js';
+import GuardPath   from './other/GuardPath.js';
+import Crate       from './other/Crate.js';
+import Princess    from './other/Princess.js';
+import Torch       from './other/Torch.js';
+import Window      from './other/Window.js';
+import Tracker     from './other/Tracker.js';
+import KnightBossInitialActivate from './other/KnightBossInitialActivate.js';
+import KnightBossSpawn           from './other/KnightBossSpawn.js';
+import FinalCutscene             from './other/FinalCutscene.js';
+import SavePoint                 from './other/SavePoint.js';
 
 export default class STPView {
 
@@ -28,6 +48,7 @@ export default class STPView {
         this.timercounter = null;
         this.animationManager = new AnimationManager(this.scene, this);
         this.displayHitboxes = false;
+        this.savePointSnapshot = null;
 
         // Editor-play mode: set by GameScene after construction.
         // When true, Exit returns to LevelEditorScene instead of MenuScene.
@@ -228,6 +249,405 @@ export default class STPView {
                this.level.storedmap &&
                this.level.storedmap[mapX] &&
                this.level.storedmap[mapX][mapY];
+    }
+
+    saveCurrentStateAtSavePoint(savePoint) {
+        this.savePointSnapshot = this._captureSavePointSnapshot(savePoint);
+    }
+
+    restoreSavePointIfAvailable() {
+        if (!this.savePointSnapshot) {
+            return false;
+        }
+
+        const snapshot = this.savePointSnapshot;
+
+        this._destroyAllScreenEntities();
+        this.enemyList = [];
+        this.objectList = [];
+        this.level.locationx = snapshot.locationx;
+        this.level.locationy = snapshot.locationy;
+        this.level.masterList = [];
+
+        for (let sx = 0; sx < snapshot.screens.length; sx++) {
+            this.level.masterList[sx] = [];
+            for (let sy = 0; sy < snapshot.screens[sx].length; sy++) {
+                const screen = snapshot.screens[sx][sy];
+                this.level.masterList[sx][sy] = {
+                    staticslist: screen.staticslist.map(r => ({ ...r })),
+                    enemylist:   screen.enemylist
+                        .map(state => this._createEnemyFromState(state))
+                        .filter(e => e !== null),
+                    objectlist:  screen.objectlist
+                        .map(state => this._createObjectFromState(state))
+                        .filter(o => o !== null)
+                };
+            }
+        }
+
+        this._hideAllScreenEntities();
+
+        this.player.x             = snapshot.player.x;
+        this.player.y             = snapshot.player.y;
+        this.player.haskey        = snapshot.player.haskey;
+        this.player.lastdirection = snapshot.player.lastdirection;
+        this.player.currentAnim   = snapshot.player.currentAnim;
+        this.player.inithitbox();
+
+        if (this.timercounter) {
+            this.timercounter.abs    = snapshot.timer.abs;
+            this.timercounter.tenms  = snapshot.timer.tenms;
+            this.timercounter.sec    = snapshot.timer.sec;
+            this.timercounter.min    = snapshot.timer.min;
+            this.timercounter._accum = snapshot.timer.accum;
+            this.timercounter.start();
+        }
+
+        this.seeme                 = snapshot.seeme;
+        this.seemecounter          = snapshot.seemecounter;
+        this.seemeIdleElapsed      = snapshot.seemeIdleElapsed;
+        this.seemeHasObservedInput = snapshot.seemeHasObservedInput;
+
+        this.changeloc();
+        this._render();
+        return true;
+    }
+
+    _captureSavePointSnapshot(savePoint) {
+        const screens = [];
+        for (let sx = 0; sx < this.level.masterList.length; sx++) {
+            screens[sx] = [];
+            for (let sy = 0; sy < this.level.masterList[sx].length; sy++) {
+                const lc = this.level.masterList[sx][sy];
+                screens[sx][sy] = {
+                    staticslist: lc.staticslist.map(r => ({ ...r })),
+                    enemylist:   lc.enemylist.map(e => this._serializeEnemy(e)).filter(e => e !== null),
+                    objectlist:  lc.objectlist.map(o => this._serializeObject(o, savePoint)).filter(o => o !== null)
+                };
+            }
+        }
+
+        return {
+            locationx: this.level.locationx,
+            locationy: this.level.locationy,
+            player: {
+                x:             this.player.x,
+                y:             this.player.y,
+                haskey:        this.player.haskey,
+                lastdirection: this.player.lastdirection,
+                currentAnim:   this.player.currentAnim
+            },
+            timer: {
+                abs:   this.timercounter ? this.timercounter.abs : 0,
+                tenms: this.timercounter ? this.timercounter.tenms : 0,
+                sec:   this.timercounter ? this.timercounter.sec : 0,
+                min:   this.timercounter ? this.timercounter.min : 0,
+                accum: this.timercounter ? this.timercounter._accum : 0
+            },
+            seeme:                 this.seeme,
+            seemecounter:          this.seemecounter,
+            seemeIdleElapsed:      this.seemeIdleElapsed,
+            seemeHasObservedInput: this.seemeHasObservedInput,
+            screens
+        };
+    }
+
+    _serializeEnemy(enemy) {
+        if (enemy instanceof Dog) {
+            return {
+                type: 'Dog',
+                x: enemy.x, y: enemy.y,
+                orientation: enemy.orientation,
+                counter: enemy.counter,
+                notice: enemy.notice,
+                noticereturn: enemy.noticereturn
+            };
+        }
+        if (enemy instanceof Guard) {
+            return {
+                type: 'Guard',
+                x: enemy.x, y: enemy.y,
+                orientation: enemy.orientation,
+                counter: enemy.counter,
+                chase: enemy.chase,
+                questioncounter: enemy.questioncounter,
+                stuckcounter: enemy.stuckcounter
+            };
+        }
+        if (enemy instanceof Wizard) {
+            return {
+                type: 'Wizard',
+                x: enemy.x, y: enemy.y,
+                orientation: enemy.orientation,
+                isfiring: enemy.isfiring,
+                fireballtimer: enemy.fireballtimer
+            };
+        }
+        if (enemy instanceof Fireball) {
+            return {
+                type: 'Fireball',
+                x: enemy.x, y: enemy.y,
+                orientation: enemy.orientation,
+                extraspdcounter: enemy._extraspdcounter
+            };
+        }
+        if (enemy instanceof KnightBoss) {
+            return {
+                type: 'KnightBoss',
+                x: enemy.x, y: enemy.y,
+                basicx: enemy.basicx,
+                basicy: enemy.basicy,
+                orientation: enemy.orientation,
+                activated: enemy.activated,
+                hastarget: enemy.hastarget,
+                oldtarget: enemy.oldtarget,
+                stobx: enemy.stobx,
+                stoby: enemy.stoby,
+                emotecounter: enemy.emotecounter
+            };
+        }
+        return null;
+    }
+
+    _serializeObject(object, activeSavePoint) {
+        if (object instanceof Door) {
+            return {
+                type: 'Door',
+                x: object.x, y: object.y,
+                isClosed: object.isClosed,
+                hasAddedRect: object._hasAddedRect
+            };
+        }
+        if (object instanceof DoorButton) {
+            return {
+                type: 'DoorButton',
+                x: object.x, y: object.y,
+                isStep: object._isStep
+            };
+        }
+        if (object instanceof Key) {
+            return {
+                type: 'Key',
+                x: object.x, y: object.y,
+                animTimer: object._animTimer
+            };
+        }
+        if (object instanceof KeyDoor) {
+            return {
+                type: 'KeyDoor',
+                x: object.x, y: object.y,
+                isActive: object._isActive,
+                hasAddedStatic: object._hasAddedStatic
+            };
+        }
+        if (object instanceof Exit) {
+            return {
+                type: 'Exit',
+                x: object.x, y: object.y,
+                direction: object.direction,
+                arrowDisplay: object._arrowDisplay
+            };
+        }
+        if (object instanceof GuardPath) {
+            return {
+                type: 'GuardPath',
+                x: object.hitbox.x, y: object.hitbox.y,
+                orientation: object.orientation,
+                isStop: object.isStop
+            };
+        }
+        if (object instanceof Crate) {
+            return { type: 'Crate', x: object.x, y: object.y };
+        }
+        if (object instanceof Princess) {
+            return {
+                type: 'Princess',
+                x: object.x, y: object.y,
+                animTimer: object._animTimer
+            };
+        }
+        if (object instanceof Torch) {
+            return {
+                type: 'Torch',
+                x: object.x, y: object.y,
+                animTimer: object._animTimer
+            };
+        }
+        if (object instanceof Window) {
+            return {
+                type: 'Window',
+                x: object.x, y: object.y,
+                animTimer: object._animTimer
+            };
+        }
+        if (object instanceof Tracker) {
+            return {
+                type: 'Tracker',
+                knightinitialpathset: object.knightinitialpathset,
+                nodemap: object.nodemap.map(column => column.map(node => ({
+                    activated: node.activated,
+                    steptime:  node.steptime
+                })))
+            };
+        }
+        if (object instanceof KnightBossSpawn) {
+            return { type: 'KnightBossSpawn', x: object.x, y: object.y };
+        }
+        if (object instanceof KnightBossInitialActivate) {
+            return { type: 'KnightBossInitialActivate', x: object.x, y: object.y };
+        }
+        if (object instanceof FinalCutscene) {
+            return { type: 'FinalCutscene', x: object.x, y: object.y };
+        }
+        if (object instanceof SavePoint) {
+            return {
+                type: 'SavePoint',
+                x: object.x, y: object.y,
+                activated: object === activeSavePoint ? true : object.activated,
+                glowCounter: object._glowCounter
+            };
+        }
+        return null;
+    }
+
+    _createEnemyFromState(state) {
+        let enemy = null;
+        if (state.type === 'Dog') {
+            enemy = new Dog(state.orientation, state.x, state.y, this.scene);
+            enemy.x = state.x; enemy.y = state.y;
+            enemy.counter = state.counter;
+            enemy.notice = state.notice;
+            enemy.noticereturn = state.noticereturn;
+            enemy._setHitbox();
+        } else if (state.type === 'Guard') {
+            enemy = new Guard(state.orientation, state.x, state.y, this.scene);
+            enemy.x = state.x; enemy.y = state.y;
+            enemy.counter = state.counter;
+            enemy.chase = state.chase;
+            enemy.questioncounter = state.questioncounter;
+            enemy.stuckcounter = state.stuckcounter;
+            enemy._setHitbox();
+        } else if (state.type === 'Wizard') {
+            enemy = new Wizard(state.x, state.y, state.orientation, this.scene);
+            enemy.isfiring = state.isfiring;
+            enemy.fireballtimer = state.fireballtimer;
+            enemy.imgupdate();
+        } else if (state.type === 'Fireball') {
+            enemy = new Fireball(state.x, state.y, state.orientation, this.scene);
+            enemy._extraspdcounter = state.extraspdcounter;
+            enemy._hitboxupdate();
+        } else if (state.type === 'KnightBoss') {
+            enemy = new KnightBoss(state.x + 2, state.y + 28, state.basicx, state.basicy, state.activated, this.scene);
+            enemy.x = state.x; enemy.y = state.y;
+            enemy.basicx = state.basicx;
+            enemy.basicy = state.basicy;
+            enemy.orientation = state.orientation;
+            enemy.activated = state.activated;
+            enemy.hastarget = state.hastarget;
+            enemy.oldtarget = state.oldtarget;
+            enemy.stobx = state.stobx;
+            enemy.stoby = state.stoby;
+            enemy.emotecounter = state.emotecounter;
+            enemy.hasGetTracker = false;
+            enemy.tracker = null;
+            enemy._makeHitboxes();
+        }
+        return enemy;
+    }
+
+    _createObjectFromState(state) {
+        let object = null;
+        if (state.type === 'Door') {
+            object = new Door(state.isClosed, state.x, state.y, this.scene);
+            object._hasAddedRect = state.hasAddedRect;
+        } else if (state.type === 'DoorButton') {
+            object = new DoorButton(state.x, state.y, this.scene);
+            object._isStep = state.isStep;
+        } else if (state.type === 'Key') {
+            object = new Key(state.x - 8, state.y - 3, this.scene);
+            object._animTimer = state.animTimer;
+        } else if (state.type === 'KeyDoor') {
+            object = new KeyDoor(state.x, state.y, this.scene);
+            object._isActive = state.isActive;
+            object._hasAddedStatic = state.hasAddedStatic;
+            object.sprite.setVisible(state.isActive);
+        } else if (state.type === 'Exit') {
+            object = new Exit(state.x, state.y, state.direction, this.scene);
+            object._arrowDisplay = state.arrowDisplay;
+        } else if (state.type === 'GuardPath') {
+            object = new GuardPath(state.orientation, state.x, state.y, state.isStop);
+        } else if (state.type === 'Crate') {
+            object = new Crate(state.x - 3, state.y - 3, this.scene);
+            object.x = state.x; object.y = state.y;
+            object._createPushBoxes();
+        } else if (state.type === 'Princess') {
+            object = new Princess(state.x - 6, state.y + 8, this.scene);
+            object._animTimer = state.animTimer;
+        } else if (state.type === 'Torch') {
+            object = new Torch(state.x, state.y, this.scene);
+            object._animTimer = state.animTimer;
+        } else if (state.type === 'Window') {
+            object = new Window(state.x, state.y, this.scene);
+            object._animTimer = state.animTimer;
+        } else if (state.type === 'Tracker') {
+            object = new Tracker();
+            object.knightinitialpathset = state.knightinitialpathset;
+            for (let x = 0; x < 25; x++) {
+                for (let y = 0; y < 25; y++) {
+                    object.nodemap[x][y].activated = state.nodemap[x][y].activated;
+                    object.nodemap[x][y].steptime  = state.nodemap[x][y].steptime;
+                }
+            }
+        } else if (state.type === 'KnightBossSpawn') {
+            object = new KnightBossSpawn(state.x, state.y);
+        } else if (state.type === 'KnightBossInitialActivate') {
+            object = new KnightBossInitialActivate(state.x, state.y);
+        } else if (state.type === 'FinalCutscene') {
+            object = new FinalCutscene(state.x, state.y);
+        } else if (state.type === 'SavePoint') {
+            object = new SavePoint(state.x, state.y, this.scene);
+            object.activated = state.activated;
+            object._glowCounter = state.glowCounter;
+        }
+        return object;
+    }
+
+    _destroyAllScreenEntities() {
+        if (!this.level.masterList) {
+            return;
+        }
+
+        const seen = new Set();
+        for (const column of this.level.masterList) {
+            for (const cell of column) {
+                for (const e of cell.enemylist) {
+                    this._destroyEntityDisplay(e, seen);
+                }
+                for (const o of cell.objectlist) {
+                    this._destroyEntityDisplay(o, seen);
+                }
+            }
+        }
+    }
+
+    _destroyEntityDisplay(entity, seen) {
+        if (!entity) {
+            return;
+        }
+        const keys = [
+            'sprite', 'haskeySprite', 'barsSprite',
+            '_sprite', '_spriteUp', '_spriteDown', '_pointer',
+            'emoteSprite', 'noticeSprite', 'questionSprite', 'helpSprite',
+            'emote2Sprite'
+        ];
+        for (const key of keys) {
+            const displayObject = entity[key];
+            if (displayObject && displayObject.destroy && !seen.has(displayObject)) {
+                seen.add(displayObject);
+                displayObject.destroy();
+                entity[key] = null;
+            }
+        }
     }
 
     // Update all Phaser display object positions.
@@ -573,7 +993,11 @@ export default class STPView {
     // skips the async asset-load step since storedmap is already populated.
     _resetLevel() {
         this._closePauseMenu();
+        this.savePointSnapshot = null;
 
+        this._destroyAllScreenEntities();
+        this.enemyList = [];
+        this.objectList = [];
         this.level.locationx = 0;
         this.level.locationy = 0;
         this.level.createMasterList();
