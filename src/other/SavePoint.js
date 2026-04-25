@@ -18,6 +18,7 @@ export default class SavePoint {
     update(game) {
         if (!this.activated && _rectsIntersect(game.player.hitbox, this.hitbox)) {
             this.activated = true;
+            game.sound.sfx('getkey');
             if (game.saveCurrentStateAtSavePoint) {
                 game.saveCurrentStateAtSavePoint(this);
             }

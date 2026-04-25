@@ -6,6 +6,7 @@ export default class SoundManager {
         this.scene = scene;
         this.current = null;
         this._currentId = null;
+        this._currentLoop = true;
     }
 
     // Stop current music and start new track by ID.
@@ -16,6 +17,7 @@ export default class SoundManager {
             this.current = null;
         }
         this._currentId = id;
+        this._currentLoop = loop;
         this.current = this.scene.sound.add(id, { loop: loop });
         this.current.play();
     }
@@ -32,5 +34,13 @@ export default class SoundManager {
     // Play a one-shot sound effect by ID.
     sfx(id) {
         this.scene.sound.play(id);
+    }
+
+    getCurrentId() {
+        return this._currentId;
+    }
+
+    getCurrentLoop() {
+        return this._currentLoop;
     }
 }

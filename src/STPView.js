@@ -301,6 +301,9 @@ export default class STPView {
             this.timercounter._accum = snapshot.timer.accum;
             this.timercounter.start();
         }
+        if (this.sound) {
+            this.sound.play(snapshot.musicId || this.level.mapsong, snapshot.musicLoop !== false);
+        }
 
         this.seeme                 = snapshot.seeme;
         this.seemecounter          = snapshot.seemecounter;
@@ -347,8 +350,24 @@ export default class STPView {
             seemecounter:          this.seemecounter,
             seemeIdleElapsed:      this.seemeIdleElapsed,
             seemeHasObservedInput: this.seemeHasObservedInput,
+            musicId:               this._currentMusicId(),
+            musicLoop:             this._currentMusicLoop(),
             screens
         };
+    }
+
+    _currentMusicId() {
+        if (this.sound && this.sound.getCurrentId) {
+            return this.sound.getCurrentId() || this.level.mapsong;
+        }
+        return this.level.mapsong;
+    }
+
+    _currentMusicLoop() {
+        if (this.sound && this.sound.getCurrentLoop) {
+            return this.sound.getCurrentLoop();
+        }
+        return true;
     }
 
     _serializeEnemy(enemy) {
