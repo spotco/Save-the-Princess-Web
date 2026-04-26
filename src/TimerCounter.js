@@ -4,12 +4,12 @@
 
 // Developer record times in centiseconds (abs units)
 const REC_TIMES = {
-    Level1: 4595,
-    Level2: 5439,
-    Level3: 5857,
-    Level4: 24093,
-    Level5: 19102,
-    Level6: 12583,
+    Level1: 5095,
+    Level2: 5939,
+    Level3: 6357,
+    Level4: 24593,
+    Level5: 19602,
+    Level6: 13083,
 };
 
 const LS_KEY = 'stptimes';
