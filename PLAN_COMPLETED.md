@@ -318,3 +318,4 @@ Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 ### Fix Notes (2026-04-26)
 
 - Editor-play `finalTowerLedge` completion now returns directly to the preserved `LevelEditorScene` session; normal campaign play still continues from the ledge into the credits scroll.
+- Rebuilt the Times screen with Phaser text rows for level labels, player best times, and developer best times; unfinished levels display `none`, and player times turn green only when they beat the developer record.

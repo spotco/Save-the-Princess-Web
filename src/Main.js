@@ -130,7 +130,6 @@ class BootScene extends Phaser.Scene {
         this.load.image('loadercursor',  'img/menu/loadercursor.png');
         this.load.image('menunew',       'img/menu/menunew.png');
         this.load.image('space2start',   'img/menu/space2start.png');
-        this.load.image('timesmenu',     'img/menu/timesmenu.png');
         this.load.image('CAUGHT',        'img/menu/CAUGHT.png');
         this.load.image('OUCH',          'img/menu/OUCH.png');
         this.load.image('dogkiller',     'img/menu/dogkiller.png');

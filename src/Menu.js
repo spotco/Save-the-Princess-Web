@@ -46,6 +46,30 @@ const LOADER_PANEL_H = 315;
 const LOAD_ENTRY_START_Y = 195;
 const LOAD_ENTRY_SPACING = 42;
 
+const TIMES_PANEL_X = 62;
+const TIMES_PANEL_Y = 82;
+const TIMES_PANEL_W = 501;
+const TIMES_PANEL_H = 500;
+const TIMES_ROW_START_Y = 170;
+const TIMES_ROW_SPACING = 48;
+const TIMES_LEVEL_X = 105;
+const TIMES_YOUR_X = 280;
+const TIMES_DEV_X = 430;
+
+const TIMES_LABEL_STYLE = {
+    fontFamily: '"Press Start 2P"',
+    fontSize:   '10px',
+    color:      '#ffff00',
+    resolution: TEXT_RESOLUTION,
+};
+
+const TIMES_VALUE_STYLE = {
+    fontFamily: '"Press Start 2P"',
+    fontSize:   '10px',
+    color:      '#ffff00',
+    resolution: TEXT_RESOLUTION,
+};
+
 export default class Menu {
     constructor(scene, sound, save) {
         this.scene = scene;
@@ -201,11 +225,10 @@ export default class Menu {
                               .setVisible(false);
 
         // --- Times screen ---
-        this.timesmenuImg = s.add.image(0, 0, 'timesmenu').setOrigin(0, 0);
-        this.timesmenuImg.setVisible(false);
-        // Tap / click anywhere on the times screen dismisses it.
-        this.timesmenuImg.setInteractive();
-        this.timesmenuImg.on('pointerdown', (pointer) => {
+        this.timesDismissZone = s.add.rectangle(0, 0, 625, 625, 0x000000, 0)
+            .setOrigin(0, 0)
+            .setVisible(false);
+        this.timesDismissZone.on('pointerdown', (pointer) => {
             this._setInputModeFromPointer(pointer);
             if (this.inTimesScreen) {
                 this.sound.sfx('menuchange');
@@ -213,11 +236,36 @@ export default class Menu {
             }
         });
 
-        const timeY = [135, 165, 194, 220, 250, 279];
-        this.timesTexts = timeY.map(y =>
-            s.add.text(300, y, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffff00', resolution: TEXT_RESOLUTION }).setVisible(false)
-        );
-        this.timesAllText = s.add.text(190, 305, '', {
+        this.timesPanel = s.add.graphics();
+        this.timesPanel.fillStyle(0x000000, 0.92);
+        this.timesPanel.fillRect(TIMES_PANEL_X, TIMES_PANEL_Y, TIMES_PANEL_W, TIMES_PANEL_H);
+        this.timesPanel.lineStyle(2, 0xffff00, 1);
+        this.timesPanel.strokeRect(TIMES_PANEL_X, TIMES_PANEL_Y, TIMES_PANEL_W, TIMES_PANEL_H);
+        this.timesPanel.setVisible(false);
+
+        this.timesTitleText = s.add.text(ENTRY_CENTER_X, 105, 'TIMES', {
+            fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888',
+            resolution: TEXT_RESOLUTION,
+        }).setOrigin(0, 0).setVisible(false);
+        this._centerTextOnPixel(this.timesTitleText, ENTRY_CENTER_X, 105);
+
+        this.timesHeaderTexts = [
+            s.add.text(TIMES_LEVEL_X, 138, 'level', TIMES_LABEL_STYLE).setVisible(false),
+            s.add.text(TIMES_YOUR_X, 138, 'your best', TIMES_LABEL_STYLE).setVisible(false),
+            s.add.text(TIMES_DEV_X, 138, 'dev best', TIMES_LABEL_STYLE).setVisible(false)
+        ];
+
+        this.timesRows = [];
+        for (let i = 0; i < 6; i++) {
+            const rowY = TIMES_ROW_START_Y + i * TIMES_ROW_SPACING;
+            this.timesRows.push({
+                levelText: s.add.text(TIMES_LEVEL_X, rowY, 'level ' + (i + 1), TIMES_VALUE_STYLE).setVisible(false),
+                yourText:  s.add.text(TIMES_YOUR_X, rowY, '', TIMES_VALUE_STYLE).setVisible(false),
+                devText:   s.add.text(TIMES_DEV_X, rowY, '', TIMES_VALUE_STYLE).setVisible(false)
+            });
+        }
+
+        this.timesAllText = s.add.text(105, 468, '', {
             fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffff00', resolution: TEXT_RESOLUTION,
         }).setVisible(false);
 
@@ -439,6 +487,19 @@ export default class Menu {
             entry.textObj.setText(entry.label);
             this._centerTextOnPixel(entry.textObj, ENTRY_CENTER_X, LOAD_ENTRY_START_Y + i * LOAD_ENTRY_SPACING);
         });
+
+        this.timesTitleText.setFontFamily('"Press Start 2P"');
+        this._centerTextOnPixel(this.timesTitleText, ENTRY_CENTER_X, 105);
+        this.timesHeaderTexts.forEach(textObj => {
+            textObj.setFontFamily('"Press Start 2P"');
+        });
+        this.timesRows.forEach((row, i) => {
+            row.levelText.setFontFamily('"Press Start 2P"');
+            row.yourText.setFontFamily('"Press Start 2P"');
+            row.devText.setFontFamily('"Press Start 2P"');
+            row.levelText.setText('level ' + (i + 1));
+        });
+        this.timesAllText.setFontFamily('"Press Start 2P"');
     }
 
     // Show or hide all entry text objects that fall within the scroll window.
@@ -497,8 +558,20 @@ export default class Menu {
     }
 
     _setTimesVisible(v) {
-        this.timesmenuImg.setVisible(v);
-        this.timesTexts.forEach(t => t.setVisible(v));
+        this.timesDismissZone.setVisible(v);
+        if (v) {
+            this.timesDismissZone.setInteractive();
+        } else {
+            this.timesDismissZone.disableInteractive();
+        }
+        this.timesPanel.setVisible(v);
+        this.timesTitleText.setVisible(v);
+        this.timesHeaderTexts.forEach(t => t.setVisible(v));
+        this.timesRows.forEach(row => {
+            row.levelText.setVisible(v);
+            row.yourText.setVisible(v);
+            row.devText.setVisible(v);
+        });
         this.timesAllText.setVisible(v);
     }
 
@@ -508,8 +581,14 @@ export default class Menu {
         levels.forEach((lvl, i) => {
             const raw = this.timestatinfo.gettimeraw(lvl);
             const isRecord = raw < this.timestatinfo.getRecTime(lvl);
-            this.timesTexts[i].setText(this.timestatinfo.gettime(lvl));
-            this.timesTexts[i].setColor(isRecord ? '#00ff00' : '#ffff00');
+            const row = this.timesRows[i];
+            row.levelText.setText('level ' + (i + 1));
+            row.yourText.setText(this.timestatinfo.hasRecordedTime(lvl)
+                ? this.timestatinfo.gettime(lvl)
+                : 'none');
+            row.yourText.setColor(isRecord ? '#00ff00' : '#ffff00');
+            row.devText.setText(this.timestatinfo.getRecTimeDisplay(lvl));
+            row.devText.setColor('#ffff00');
             if (isRecord) beatCount++;
         });
         this.timesAllText.setText(beatCount >= 6

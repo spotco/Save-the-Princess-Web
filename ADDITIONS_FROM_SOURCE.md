@@ -28,14 +28,11 @@ Only add items here when they are outside the original source behavior or featur
 - [x] Investigate how save files work.
 - [x] Save point feature: `tileset1` bottom-right tile is now an `SV` editor tile and runtime checkpoint object. First touch activates a dim blue diamond and captures a full in-memory level snapshot; enemy/crush deaths restore that snapshot, while pause-menu Reset still restarts the level from its original state.
 - [x] Editor-play final ledge exits now return directly to the editor session instead of continuing into the campaign credits.
+- [x] Times screen now renders level labels and best-time columns with Phaser text, including player best times, developer best times, `none` for unfinished levels, and green player times that beat developer records.
 
 ## Human bugs (agents ignore for now)
 
-show developer best in times window
-
 ## Proposed Additions
 
-- [ ] (Manual) Add savepoints to the levels
-- [ ] Sprint button
 - [ ] Try AI gen some levels
 - [ ] Try 3D rendered branch

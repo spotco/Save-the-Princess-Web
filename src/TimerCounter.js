@@ -72,6 +72,10 @@ export default class TimerCounter {
         return this.stats[name] || NO_TIME_RECORDED;
     }
 
+    hasRecordedTime(name) {
+        return !TimerCounter._isUnsetTime(this.gettimeraw(name));
+    }
+
     // Persist if new time beats stored best (mirrors writetime())
     writetime(name, time) {
         if (!(name in this.stats) || time < this.stats[name]) {
@@ -83,6 +87,10 @@ export default class TimerCounter {
     // Developer record time in centiseconds for a level
     getRecTime(name) {
         return REC_TIMES[name] || NO_TIME_RECORDED;
+    }
+
+    getRecTimeDisplay(name) {
+        return TimerCounter._formatTime(this.getRecTime(name));
     }
 
     static _isUnsetTime(sto) {
