@@ -65,6 +65,10 @@ export default class AnimationManager {
         }
     }
 
+    canUseVirtualControls() {
+        return this.inAnimation && this.currentType === 'finalTowerLedge';
+    }
+
     done() {
         const completedType = this.currentType;
         const completedAnimation = this.currentAnimation;

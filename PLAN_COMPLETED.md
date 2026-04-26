@@ -324,3 +324,4 @@ Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 - Added a gameplay-only window pointer listener so off-canvas page clicks can create the virtual joypad, while scene shutdown removes the listener.
 - Pause menu selection now accepts Space as well as Enter.
 - Developer best times were relaxed by 5 seconds per level.
+- Final tower ledge control now accepts A/D in addition to arrow keys, and the virtual joypad is allowed during that active ledge animation.

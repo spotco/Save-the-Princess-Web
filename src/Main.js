@@ -472,7 +472,8 @@ class GameScene extends Phaser.Scene {
     }
 
     _handleVirtualControlsPointerDown(pointer) {
-        if (this.stpview && this.stpview.animationManager && this.stpview.animationManager.inAnimation) {
+        if (this.stpview && this.stpview.animationManager && this.stpview.animationManager.inAnimation &&
+                !this.stpview.animationManager.canUseVirtualControls()) {
             virtualControls.hide();
             return;
         }

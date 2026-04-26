@@ -17,7 +17,9 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
         this.bestTime = '0:00:00';
         this.keys = this.scene.input.keyboard.addKeys({
             left:  Phaser.Input.Keyboard.KeyCodes.LEFT,
-            right: Phaser.Input.Keyboard.KeyCodes.RIGHT
+            right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+            a:     Phaser.Input.Keyboard.KeyCodes.A,
+            d:     Phaser.Input.Keyboard.KeyCodes.D
         });
 
         this._captureTime();
@@ -35,11 +37,11 @@ export default class FinalTowerLedgeActiveAnimation extends BasicAnimation {
     }
 
     update() {
-        if (this.keys.right.isDown) {
+        if (this.keys.right.isDown || this.keys.d.isDown) {
             this.playerx++;
             this.lastdir = true;
             this.currentanim = 'ledge_walkright';
-        } else if (this.keys.left.isDown) {
+        } else if (this.keys.left.isDown || this.keys.a.isDown) {
             this.playerx--;
             this.lastdir = false;
             this.currentanim = 'ledge_walkleft';
