@@ -33,6 +33,7 @@ Only add items here when they are outside the original source behavior or featur
 - [x] Virtual joypad can appear anywhere in the browser viewport instead of being constrained to the Phaser canvas.
 - [x] Off-canvas pointer input during gameplay can activate the virtual joypad; canvas input continues through Phaser's normal pointer path.
 - [x] Pause menu selection accepts Space as well as Enter.
+- [x] Added dev-only AI level generation helpers under `aigen/`: a canonical tile catalog, `.stplevel.json` validation/summary/comparison/scaffold tooling, and usage notes for future generated-level work.
 
 ## Human bugs (agents ignore for now)
 

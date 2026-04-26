@@ -325,3 +325,9 @@ Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 - Pause menu selection now accepts Space as well as Enter.
 - Developer best times were relaxed by 5 seconds per level.
 - Final tower ledge control now accepts A/D in addition to arrow keys, and the virtual joypad is allowed during that active ledge animation.
+
+### Addition Notes (2026-04-26)
+
+- Added `aigen/tile_catalog.json` as a canonical GID/local-ID/properties reference for AI-assisted `.stplevel.json` generation.
+- Added `aigen/stplevel_tools.py` for stdlib-only validation, semantic summaries, ASCII map dumps, reference/candidate comparisons, and blank level scaffolds.
+- Added `aigen/AIGEN.md` with the future AI level-generation workflow and command examples.
