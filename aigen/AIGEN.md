@@ -50,20 +50,22 @@ final ledge is added.
    default firstgid values, but bundled reference screens may reorder them.
 4. Create a candidate level as `.stplevel.json`. Keep screens 25x25 with
    row-major `tiles[y * width + x]` arrays.
-5. Validate before trying it in the editor:
+5. Style wall tiles with the wall-shaping rules below before saving the final
+   candidate. Do not leave every wall as one flat generic GID.
+6. Validate before trying it in the editor:
 
    ```bash
    python aigen/stplevel_tools.py validate aigen/work/candidate.stplevel.json
    ```
 
-6. Compare against the reference if the new level should preserve similar
+7. Compare against the reference if the new level should preserve similar
    pressure or density:
 
    ```bash
    python aigen/stplevel_tools.py compare reference.stplevel.json candidate.stplevel.json
    ```
 
-7. Load the candidate in the in-game level editor and playtest it through the
+8. Load the candidate in the in-game level editor and playtest it through the
    normal local server flow:
 
    ```bash
@@ -84,6 +86,54 @@ final ledge is added.
 - Validation is structural. It catches malformed files, missing screens,
   unknown GIDs, bad dimensions, and missing player starts, but it cannot prove
   that a level is solvable. Use the editor play mode for that.
+
+## Wall Style
+
+The original levels do not use one generic wall tile everywhere. A visually
+correct generated level should first design walls as a logical solid/empty mask,
+then convert each logical wall cell into the shaped `tileset1` wall GID that
+matches its neighbors.
+
+Avoid filling every wall with `gid 1`. That tile is the flat dark filler block
+and makes generated levels look wrong. With the default tileset ordering
+(`tileset1` firstgid `1`, `guard1set` firstgid `26`), Level 1-style walls
+mostly use these GIDs:
+
+- `2`, `3`, `6`, `7` - corner and cap pieces with diagonal cuts
+- `15` - left/vertical side strip
+- `19` - horizontal wall run
+- `18`, `22`, `24` - alternate side/cap pieces used by some neighbor shapes
+- `10` - torch wall accent from `tileset1`
+- `38` - window wall accent from `guard1set` local ID `12`
+
+The open-path tile in Level 1 is usually `gid 16`, not `gid 1`.
+
+Because `.stplevel.json` stores GIDs, always compute the final GID from the
+screen's actual tileset entry: `gid = firstgid + localId`. For new levels using
+the default ordering, `tileset1` starts at `1`, so `tileset1` local ID `18`
+becomes `gid 19`.
+
+Recommended wall-generation pass:
+
+1. Build or sketch the level with a logical grid: wall, empty/floor, player,
+   princess, save point, dogs, and other objects.
+2. For every logical wall cell, compute an 8-neighbor mask using north, east,
+   south, west, northeast, southeast, southwest, northwest. Neighboring wall,
+   torch wall, and window wall cells all count as wall.
+3. Learn a `mask -> wall gid` table from bundled reference levels, especially
+   `data/stplevels/level1.stplevel.json` and `level2.stplevel.json`. Count which
+   wall GID appears most often for each mask.
+4. When styling a new level, use the exact mask match if available. If not,
+   fall back to the most common 4-neighbor `NESW` match. If that is also unseen,
+   fall back to a common shaped wall tile such as `gid 15` for vertical wall
+   sides or `gid 19` for horizontal runs, depending on the local shape.
+5. Place torches and windows after the shape pass, replacing only cells that are
+   still logical walls. Keep them sparse, like the source levels.
+
+Practical rule of thumb: if the rendered preview shows large areas of flat grey
+or dark square blocks, the wall pass failed or used `gid 1` too often. The
+preview should show diagonal corner cuts, clean horizontal caps, and vertical
+side strips similar to the shipped levels.
 
 ## ASCII Symbol Key
 
