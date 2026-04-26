@@ -385,6 +385,7 @@ class GameScene extends Phaser.Scene {
         super({ key: 'GameScene' });
         this.stpview = null;
         this.isReady = false;
+        this.windowPointerDownHandler = null;
     }
 
     async create() {
@@ -421,21 +422,20 @@ class GameScene extends Phaser.Scene {
         // Virtual controls start hidden. Pointer input reveals them; real
         // keyboard input hides them and releases any held virtual keys.
         virtualControls.hide();
-        this.input.on('pointerdown', (pointer) => {
-            if (this.stpview && this.stpview.animationManager && this.stpview.animationManager.inAnimation) {
-                virtualControls.hide();
+        this.windowPointerDownHandler = (event) => {
+            if (event.target && event.target.tagName === 'CANVAS') {
                 return;
             }
-            if (this.stpview) {
-                this.stpview.setInputMode('pointer');
-                if (this.stpview.handlePauseHudPointerDown(pointer)) {
-                    return;
-                }
-                if (this.stpview.pauseMenuOpen) {
-                    return;
-                }
+            if (virtualControls.containsEventTarget &&
+                    virtualControls.containsEventTarget(event.target)) {
+                return;
             }
-            virtualControls.showAtPointerAndTrack(pointer);
+            this._handleVirtualControlsPointerDown(event);
+        };
+        window.addEventListener('pointerdown', this.windowPointerDownHandler);
+
+        this.input.on('pointerdown', (pointer) => {
+            this._handleVirtualControlsPointerDown(pointer);
         });
         this.input.on('pointerup', () => {
             if (this.stpview) {
@@ -456,6 +456,10 @@ class GameScene extends Phaser.Scene {
             }
         });
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            if (this.windowPointerDownHandler) {
+                window.removeEventListener('pointerdown', this.windowPointerDownHandler);
+                this.windowPointerDownHandler = null;
+            }
             virtualControls.hide();
         });
 
@@ -465,6 +469,23 @@ class GameScene extends Phaser.Scene {
     update(time, delta) {
         if (!this.isReady) return;
         this.stpview.update(delta);
+    }
+
+    _handleVirtualControlsPointerDown(pointer) {
+        if (this.stpview && this.stpview.animationManager && this.stpview.animationManager.inAnimation) {
+            virtualControls.hide();
+            return;
+        }
+        if (this.stpview) {
+            this.stpview.setInputMode('pointer');
+            if (this.stpview.handlePauseHudPointerDown(pointer)) {
+                return;
+            }
+            if (this.stpview.pauseMenuOpen) {
+                return;
+            }
+        }
+        virtualControls.showAtPointerAndTrack(pointer);
     }
 }
 

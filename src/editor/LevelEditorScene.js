@@ -2,6 +2,7 @@
 // Non-source addition; lives in src/editor/ beside the Java-faithful port.
 
 import StpLevelFormat from './StpLevelFormat.js';
+import ControlsInfo   from '../ControlsInfo.js';
 
 // ---------------------------------------------------------------------------
 // Layout constants (canvas is always 625 × 625)
@@ -205,6 +206,7 @@ export default class LevelEditorScene extends Phaser.Scene {
         // Virtual controls must not appear while the editor is active.
         const vcOverlay = document.getElementById('virtual-controls');
         if (vcOverlay) vcOverlay.style.display = 'none';
+        ControlsInfo.setMode('keyboard');
 
         this._addTilesetFrames();
         this._createEmptyTileTexture();

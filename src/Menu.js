@@ -2,6 +2,7 @@
 // Mirrors Menu.java
 
 import TimerCounter from './TimerCounter.js';
+import ControlsInfo from './ControlsInfo.js';
 
 // Render text at the display's physical pixel density so it stays crisp on
 // HiDPI / high-DPI screens (retina, 150 % browser zoom, etc.).
@@ -91,6 +92,7 @@ export default class Menu {
 
     create() {
         const s = this.scene;
+        ControlsInfo.setMode(this.inputMode === 'keyboard' ? 'keyboard' : 'virtual');
 
         // --- Menu (title) image ---
         this.menuImg  = s.add.image(0, 0, 'menunew').setOrigin(0, 0).setDisplaySize(625, 625);
@@ -604,6 +606,7 @@ export default class Menu {
     _setInputMode(mode) {
         this.inputMode = mode;
         this._updateStartPromptText();
+        ControlsInfo.setMode(mode === 'keyboard' ? 'keyboard' : 'virtual');
     }
 
     _getStartPromptText() {

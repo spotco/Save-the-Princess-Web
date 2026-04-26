@@ -1,6 +1,6 @@
 // VirtualControls.js - DOM overlay providing a virtual D-pad for touch / mouse play.
 // Non-source addition; sits outside Phaser entirely as a plain HTML div injected
-// over the canvas.  Fires synthetic KeyboardEvents on window so Player.js and
+// over the page.  Fires synthetic KeyboardEvents on window so Player.js and
 // STPView.js need zero changes - they keep reading key.isDown as usual.
 //
 // Sliding between buttons is handled by tracking each pointer's position on
@@ -23,7 +23,7 @@ const DPAD_DEFS = [
 export default class VirtualControls {
 
     constructor() {
-        this._overlay = null;   // outer <div> covering the 625x625 game area
+        this._overlay = null;   // outer <div> covering the viewport
         this._dpad    = null;   // d-pad <div>
         this._visible = false;  // is the overlay currently showing?
         this._isHiding = false; // prevents synthetic key releases from re-entering hide()
@@ -48,21 +48,21 @@ export default class VirtualControls {
 
     show() {
         if (!this._overlay) return;
-        this._syncOverlayToCanvas();
+        this._syncOverlayToViewport();
         this._overlay.style.display = 'block';
         this._visible = true;
     }
 
     showAtPointerAndTrack(pointer) {
         if (!this._overlay) return;
-        const canvasRect = this._syncOverlayToCanvas();
-        const point = this._pointerToCanvasPoint(pointer, canvasRect);
+        const viewportRect = this._syncOverlayToViewport();
+        const point = this._pointerToViewportPoint(pointer);
         if (!point) {
             this.show();
             return;
         }
 
-        this._moveDpadToCanvasPoint(point.x, point.y, canvasRect);
+        this._moveDpadToViewportPoint(point.x, point.y, viewportRect);
         this._overlay.style.display = 'block';
         this._visible = true;
 
@@ -84,6 +84,10 @@ export default class VirtualControls {
 
     isVisible() { return this._visible; }
 
+    containsEventTarget(target) {
+        return !!(this._overlay && target && this._overlay.contains(target));
+    }
+
     destroy() {
         this._releaseAll();
         window.removeEventListener('pointermove',  this._onWindowMove);
@@ -100,12 +104,12 @@ export default class VirtualControls {
     // -------------------------------------------------------------------------
 
     _build() {
-        // Outer container - full 625x625, pointer-events:none so the canvas
+        // Outer container - full viewport, pointer-events:none so the page/canvas
         // beneath still receives clicks in areas not covered by buttons.
         const ov = document.createElement('div');
         ov.id = 'virtual-controls';
         ov.style.cssText =
-            'position:fixed;top:0;left:0;width:625px;height:625px;' +
+            'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
             'pointer-events:none;z-index:70;display:none;' +
             'user-select:none;-webkit-user-select:none;-ms-user-select:none;' +
             '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;';
@@ -211,22 +215,23 @@ export default class VirtualControls {
     // Helpers
     // -------------------------------------------------------------------------
 
-    _syncOverlayToCanvas() {
-        const canvas = document.querySelector('canvas');
-        if (!canvas) {
-            return { left: 0, top: 0, width: 625, height: 625 };
-        }
-        const rect = canvas.getBoundingClientRect();
-        this._overlay.style.left   = `${rect.left}px`;
-        this._overlay.style.top    = `${rect.top}px`;
+    _syncOverlayToViewport() {
+        const rect = {
+            left:   0,
+            top:    0,
+            width:  window.innerWidth,
+            height: window.innerHeight
+        };
+        this._overlay.style.left   = '0px';
+        this._overlay.style.top    = '0px';
         this._overlay.style.width  = `${rect.width}px`;
         this._overlay.style.height = `${rect.height}px`;
         return rect;
     }
 
-    _moveDpadToCanvasPoint(localX, localY, canvasRect) {
+    _moveDpadToViewportPoint(localX, localY, viewportRect) {
         if (!this._dpad) return;
-        const rect = canvasRect || this._syncOverlayToCanvas();
+        const rect = viewportRect || this._syncOverlayToViewport();
         const maxLeft = Math.max(PAD_EDGE, rect.width  - PAD_SIZE - PAD_EDGE);
         const maxTop  = Math.max(PAD_EDGE, rect.height - PAD_SIZE - PAD_EDGE);
         const left = Math.min(Math.max(localX - PAD_SIZE / 2, PAD_EDGE), maxLeft);
@@ -236,23 +241,22 @@ export default class VirtualControls {
         this._dpad.style.bottom = 'auto';
     }
 
-    _pointerToCanvasPoint(pointer, canvasRect) {
+    _pointerToViewportPoint(pointer) {
         if (!pointer) return null;
-        const rect = canvasRect || this._syncOverlayToCanvas();
-        const baseWidth  = 625;
-        const baseHeight = 625;
-        if (Number.isFinite(pointer.x) && Number.isFinite(pointer.y)) {
+        const event = pointer.event || pointer;
+        if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
             return {
-                x: pointer.x * rect.width  / baseWidth,
-                y: pointer.y * rect.height / baseHeight
+                x: event.clientX,
+                y: event.clientY
             };
         }
 
-        const event = pointer.event || {};
-        if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+        const canvas = document.querySelector('canvas');
+        if (canvas && Number.isFinite(pointer.x) && Number.isFinite(pointer.y)) {
+            const rect = canvas.getBoundingClientRect();
             return {
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top
+                x: rect.left + pointer.x * rect.width  / 625,
+                y: rect.top  + pointer.y * rect.height / 625
             };
         }
 

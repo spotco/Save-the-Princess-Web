@@ -3,6 +3,7 @@
 
 import Player       from './Player.js';
 import TimerCounter from './TimerCounter.js';
+import ControlsInfo from './ControlsInfo.js';
 import AnimationManager from './AnimationManager.js';
 import Dog         from './enemy/Dog.js';
 import Guard       from './enemy/Guard.js';
@@ -134,10 +135,12 @@ export default class STPView {
             esc:   Phaser.Input.Keyboard.KeyCodes.ESC,
             up:    Phaser.Input.Keyboard.KeyCodes.UP,
             down:  Phaser.Input.Keyboard.KeyCodes.DOWN,
+            space: Phaser.Input.Keyboard.KeyCodes.SPACE,
             enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
         });
 
         this._render();
+        ControlsInfo.setMode(this.inputMode === 'pointer' ? 'virtual' : 'keyboard');
     }
 
     // Load lists and rebuild tilemap for the current locationx/locationy.
@@ -708,6 +711,7 @@ export default class STPView {
 
     setInputMode(mode) {
         this.inputMode = mode === 'pointer' ? 'pointer' : 'keyboard';
+        ControlsInfo.setMode(this.inputMode === 'pointer' ? 'virtual' : 'keyboard');
         this._renderPauseHud();
     }
 
@@ -724,7 +728,8 @@ export default class STPView {
     }
 
     isPauseHudPointer(pointer) {
-        return !!pointer && pointer.x >= 0 && pointer.x <= 170 && pointer.y >= 0 && pointer.y <= 43;
+        const point = this._pointerToGamePoint(pointer);
+        return !!point && point.x >= 0 && point.x <= 170 && point.y >= 0 && point.y <= 43;
     }
 
     handlePauseHudPointerDown(pointer) {
@@ -760,6 +765,27 @@ export default class STPView {
             this.pauseHudTimer = null;
         }
         this._renderPauseHud();
+    }
+
+    _pointerToGamePoint(pointer) {
+        if (!pointer) {
+            return null;
+        }
+        if (Number.isFinite(pointer.x) && Number.isFinite(pointer.y)) {
+            return { x: pointer.x, y: pointer.y };
+        }
+
+        const canvas = this.scene.game.canvas;
+        const event  = pointer.event ? pointer.event : pointer;
+        if (!canvas || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+            return null;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * 625 / rect.width,
+            y: (event.clientY - rect.top)  * 625 / rect.height
+        };
     }
 
     _renderPauseHud() {
@@ -861,7 +887,7 @@ export default class STPView {
             if (K(this.keys.down)) {
                 this._pauseMenuSelectEntry(Math.min(2, this.pauseMenuSelectedIndex + 1));
             }
-            if (K(this.keys.enter)) {
+            if (K(this.keys.space) || K(this.keys.enter)) {
                 this._pauseMenuConfirm();
             }
             return false;

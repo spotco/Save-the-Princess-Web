@@ -29,6 +29,10 @@ Only add items here when they are outside the original source behavior or featur
 - [x] Save point feature: `tileset1` bottom-right tile is now an `SV` editor tile and runtime checkpoint object. First touch activates a dim blue diamond and captures a full in-memory level snapshot; enemy/crush deaths restore that snapshot, while pause-menu Reset still restarts the level from its original state.
 - [x] Editor-play final ledge exits now return directly to the editor session instead of continuing into the campaign credits.
 - [x] Times screen now renders level labels and best-time columns with Phaser text, including player best times, developer best times, `none` for unfinished levels, and green player times that beat developer records.
+- [x] Added fixed bottom-right controls text that switches movement help between keyboard/WASD and virtual joypad modes.
+- [x] Virtual joypad can appear anywhere in the browser viewport instead of being constrained to the Phaser canvas.
+- [x] Off-canvas pointer input during gameplay can activate the virtual joypad; canvas input continues through Phaser's normal pointer path.
+- [x] Pause menu selection accepts Space as well as Enter.
 
 ## Human bugs (agents ignore for now)
 

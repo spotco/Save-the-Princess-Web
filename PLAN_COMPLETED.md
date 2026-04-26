@@ -319,3 +319,7 @@ Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 
 - Editor-play `finalTowerLedge` completion now returns directly to the preserved `LevelEditorScene` session; normal campaign play still continues from the ledge into the credits scroll.
 - Rebuilt the Times screen with Phaser text rows for level labels, player best times, and developer best times; unfinished levels display `none`, and player times turn green only when they beat the developer record.
+- Added browser-side controls help text in the bottom-right corner, with movement help switching between arrow/WASD keyboard input and virtual joypad pointer mode.
+- Expanded the virtual joypad overlay to the full browser viewport so pointer placement is no longer constrained by the Phaser canvas rectangle.
+- Added a gameplay-only window pointer listener so off-canvas page clicks can create the virtual joypad, while scene shutdown removes the listener.
+- Pause menu selection now accepts Space as well as Enter.
