@@ -87,6 +87,14 @@ export default class AnimationManager {
         } else if (completedType === 'knightBossInitAnimation') {
             this._activateKnightBoss();
         } else if (completedType === 'finalTowerLedge') {
+            if (this._isEditorPlay()) {
+                this._coverSceneForTransition();
+                if (this.display && this.display.sound) {
+                    this.display.sound.stop();
+                }
+                this.scene.scene.start('LevelEditorScene', this.display.getEditorPlayEditorData());
+                return;
+            }
             this.startAnimation('creditscroll', completedAltArg);
         } else if (completedType === 'creditscroll') {
             this._returnToTitle(completedAltArg);

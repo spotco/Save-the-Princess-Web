@@ -1,6 +1,6 @@
 # Save the Princess - Completed Implementation Notes
 
-**Last Updated**: 2026-04-19
+**Last Updated**: 2026-04-26
 
 ---
 
@@ -314,3 +314,7 @@ Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 - Added guarded exit screen transitions so attempts to enter missing map coordinates log the missing `(x, y)` and leave the current screen active instead of crashing.
 - Removed stale runtime wall flags from right, left, and up exit tile metadata so those exits can be entered like the down exit.
 - Removed the stale runtime wall flag from key tile metadata; key doors remain Java-faithful by adding/removing their blocking static from `KeyDoor`.
+
+### Fix Notes (2026-04-26)
+
+- Editor-play `finalTowerLedge` completion now returns directly to the preserved `LevelEditorScene` session; normal campaign play still continues from the ledge into the credits scroll.
