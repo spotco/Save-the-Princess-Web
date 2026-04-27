@@ -3,6 +3,7 @@
 
 import StpLevelFormat from './StpLevelFormat.js';
 import ControlsInfo   from '../ControlsInfo.js';
+import RenderModeManager from '../RenderModeManager.js';
 
 // ---------------------------------------------------------------------------
 // Layout constants (canvas is always 625 × 625)
@@ -174,6 +175,8 @@ export default class LevelEditorScene extends Phaser.Scene {
     // -------------------------------------------------------------------------
 
     create() {
+        this.renderMode = RenderModeManager.applySceneMode('LevelEditorScene');
+
         // Mutable editor state
         this.levelData          = null;
         this.currentScreen      = { sx: 0, sy: 0 };

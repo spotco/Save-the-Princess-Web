@@ -16,10 +16,15 @@ import LevelEditorScene  from './editor/LevelEditorScene.js';
 import CustomLevel       from './levels/CustomLevel.js';
 import VirtualControls   from './VirtualControls.js';
 import DebugCommands     from './DebugCommands.js';
+import RenderModeManager from './RenderModeManager.js';
+import GameplayThreeSurface from './three/GameplayThreeSurface.js';
 
 // Single VirtualControls instance shared across all scene transitions.
 const virtualControls = new VirtualControls();
 window.stpVirtualControls = virtualControls;
+window.stpRenderModeManager = RenderModeManager;
+
+RenderModeManager.install();
 
 // Factory: instantiate the correct Level subclass by name.
 // Mirrors the switch in STPView.java that selects the level class.
@@ -278,6 +283,7 @@ class BootScene extends Phaser.Scene {
     }
 
     create() {
+        RenderModeManager.applySceneMode('BootScene');
         this._createTilemapTilesetTexture('tileset1');
         this._createTilemapTilesetTexture('guard1set');
         this._createTilemapTilesetTexture('wizard1set');
@@ -344,6 +350,7 @@ class MenuScene extends Phaser.Scene {
     }
 
     create() {
+        this.renderMode = RenderModeManager.applySceneMode('MenuScene');
         this.soundManager = new SoundManager(this);
         this.saveReader   = new SaveReader();
         this.menu         = new Menu(this, this.soundManager, this.saveReader);
@@ -386,10 +393,14 @@ class GameScene extends Phaser.Scene {
         this.stpview = null;
         this.isReady = false;
         this.windowPointerDownHandler = null;
+        this.gameplayThreeSurface = null;
+        this.renderModeUnsubscribe = null;
     }
 
     async create() {
         this.isReady = false;
+        this.renderMode = RenderModeManager.applySceneMode('GameScene');
+        this.gameplayThreeSurface = new GameplayThreeSurface(this);
 
         const data       = this.scene.settings.data || {};
         const levelName  = data.levelName  || 'Level1';
@@ -410,7 +421,9 @@ class GameScene extends Phaser.Scene {
             level = createLevel(this, levelName);
         }
 
-        this.stpview = new STPView(this, level, sound, save);
+        this.stpview = new STPView(this, level, sound, save, this.gameplayThreeSurface);
+        this.stpview.preferredRenderMode = RenderModeManager.getMode();
+        this.stpview.setRenderMode(this.renderMode);
         this.stpview.isEditorPlay       = !!customData;
         this.stpview.currentLevelName   = customData ? null : levelName;
         this.stpview.customLevelData    = customData;
@@ -419,15 +432,20 @@ class GameScene extends Phaser.Scene {
         this.stpview.editorSession      = data.editorSession || null;
         await this.stpview.loadlevel();
 
+        this.renderModeUnsubscribe = RenderModeManager.subscribe(() => {
+            const nextRenderMode = RenderModeManager.applySceneMode('GameScene');
+            this.renderMode = nextRenderMode;
+            if (this.stpview) {
+                this.stpview.preferredRenderMode = RenderModeManager.getMode();
+                this.stpview.setRenderMode(nextRenderMode);
+            }
+        });
+
         // Virtual controls start hidden. Pointer input reveals them; real
         // keyboard input hides them and releases any held virtual keys.
         virtualControls.hide();
         this.windowPointerDownHandler = (event) => {
-            if (event.target && event.target.tagName === 'CANVAS') {
-                return;
-            }
-            if (virtualControls.containsEventTarget &&
-                    virtualControls.containsEventTarget(event.target)) {
+            if (this._shouldIgnoreVirtualControlsPointerTarget(event.target)) {
                 return;
             }
             this._handleVirtualControlsPointerDown(event);
@@ -460,6 +478,15 @@ class GameScene extends Phaser.Scene {
                 window.removeEventListener('pointerdown', this.windowPointerDownHandler);
                 this.windowPointerDownHandler = null;
             }
+            if (this.renderModeUnsubscribe) {
+                this.renderModeUnsubscribe();
+                this.renderModeUnsubscribe = null;
+            }
+            if (this.stpview) {
+                this.stpview.shutdown();
+                this.stpview = null;
+            }
+            this.gameplayThreeSurface = null;
             virtualControls.hide();
         });
 
@@ -468,7 +495,40 @@ class GameScene extends Phaser.Scene {
 
     update(time, delta) {
         if (!this.isReady) return;
+        if (!this.stpview) return;
         this.stpview.update(delta);
+        this.stpview.renderWorld();
+    }
+
+    _shouldIgnoreVirtualControlsPointerTarget(target) {
+        if (!target) {
+            return false;
+        }
+
+        if (target.tagName === 'CANVAS') {
+            return true;
+        }
+
+        if (virtualControls.containsEventTarget &&
+                virtualControls.containsEventTarget(target)) {
+            return true;
+        }
+
+        if (!target.closest) {
+            return false;
+        }
+
+        if (target.closest('[data-ignore-virtual-controls="true"]')) {
+            return true;
+        }
+
+        if (target.closest('#render-mode-controls') ||
+                target.closest('#github-link') ||
+                target.closest('#build-info')) {
+            return true;
+        }
+
+        return !!target.closest('a, button, input, select, textarea, label, summary');
     }
 
     _handleVirtualControlsPointerDown(pointer) {
@@ -495,6 +555,7 @@ class GameScene extends Phaser.Scene {
 //   container.setTargetFrameRate(60)
 const stpGame = new Phaser.Game({
     type:            Phaser.WEBGL,
+    transparent:     true,
     antialias:       false,
     parent:          'game-container',
     width:           625,

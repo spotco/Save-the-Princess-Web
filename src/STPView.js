@@ -5,6 +5,7 @@ import Player       from './Player.js';
 import TimerCounter from './TimerCounter.js';
 import ControlsInfo from './ControlsInfo.js';
 import AnimationManager from './AnimationManager.js';
+import GameplayRenderer from './render/GameplayRenderer.js';
 import Dog         from './enemy/Dog.js';
 import Guard       from './enemy/Guard.js';
 import Wizard      from './enemy/Wizard.js';
@@ -26,14 +27,24 @@ import KnightBossSpawn           from './other/KnightBossSpawn.js';
 import FinalCutscene             from './other/FinalCutscene.js';
 import SavePoint                 from './other/SavePoint.js';
 
+const WORLD_DISPLAY_OBJECT_KEYS = [
+    'sprite', 'haskeySprite', 'barsSprite',
+    '_sprite', '_spriteUp', '_spriteDown', '_pointer',
+    'emoteSprite', 'noticeSprite', 'questionSprite', 'helpSprite',
+    'emote2Sprite'
+];
+
 export default class STPView {
 
-    constructor(scene, level, soundManager, saveReader) {
+    constructor(scene, level, soundManager, saveReader, gameplayThreeSurface = null) {
         this.scene        = scene;
         this.level        = level;
         this.sound        = soundManager;
         this.save         = saveReader;
         this.currentLevelName = null;
+        this.renderMode = '2d';
+        this.preferredRenderMode = '2d';
+        this.gameplayRenderer = new GameplayRenderer(this.scene, gameplayThreeSurface);
 
         this.staticsList  = [];
         this.enemyList    = [];
@@ -67,7 +78,6 @@ export default class STPView {
         this.pauseMenuEntryYPositions = [];     // cursor Y per entry
 
         // Phaser display refs
-        this.currentTilemap = null;
         this.seemeSprite    = null;
         this.timerText      = null;
         this.bestTimeText   = null;
@@ -94,6 +104,7 @@ export default class STPView {
         }
 
         await this.level.init();
+        this.gameplayRenderer.setMode(this.renderMode, this);
 
         const spawn = this.level.createPlayer(0, 0);
         this.player = new Player(spawn.x, spawn.y);
@@ -162,7 +173,7 @@ export default class STPView {
         this.staticsList = lc.staticslist;
         this.enemyList   = lc.enemylist;
         this.objectList  = lc.objectlist;
-        this._rebuildTilemap(this.level.locationx, this.level.locationy);
+        this.gameplayRenderer.rebuildScreen(this, this.level.locationx, this.level.locationy);
         return true;
     }
 
@@ -655,13 +666,7 @@ export default class STPView {
         if (!entity) {
             return;
         }
-        const keys = [
-            'sprite', 'haskeySprite', 'barsSprite',
-            '_sprite', '_spriteUp', '_spriteDown', '_pointer',
-            'emoteSprite', 'noticeSprite', 'questionSprite', 'helpSprite',
-            'emote2Sprite'
-        ];
-        for (const key of keys) {
+        for (const key of WORLD_DISPLAY_OBJECT_KEYS) {
             const displayObject = entity[key];
             if (displayObject && displayObject.destroy && !seen.has(displayObject)) {
                 seen.add(displayObject);
@@ -669,6 +674,25 @@ export default class STPView {
                 entity[key] = null;
             }
         }
+    }
+
+    _collectEntityDisplayObjects(entity, displayObjects, seen) {
+        if (!entity) {
+            return;
+        }
+
+        for (const key of WORLD_DISPLAY_OBJECT_KEYS) {
+            this._pushDisplayObject(entity[key], displayObjects, seen);
+        }
+    }
+
+    _pushDisplayObject(displayObject, displayObjects, seen) {
+        if (!displayObject || !displayObject.frame || seen.has(displayObject)) {
+            return;
+        }
+
+        seen.add(displayObject);
+        displayObjects.push(displayObject);
     }
 
     // Update all Phaser display object positions.
@@ -707,6 +731,45 @@ export default class STPView {
         this._renderPauseHud();
 
         this._renderHitboxes();
+    }
+
+    renderWorld() {
+        if (this.gameplayRenderer) {
+            this.gameplayRenderer.render(this);
+        }
+    }
+
+    collectWorldDisplayObjects() {
+        const displayObjects = [];
+        const seen = new Set();
+
+        this._collectEntityDisplayObjects(this.player, displayObjects, seen);
+        for (const enemy of this.enemyList) {
+            this._collectEntityDisplayObjects(enemy, displayObjects, seen);
+        }
+        for (const object of this.objectList) {
+            this._collectEntityDisplayObjects(object, displayObjects, seen);
+        }
+        if (this.seemeSprite) {
+            this._pushDisplayObject(this.seemeSprite, displayObjects, seen);
+        }
+
+        return displayObjects;
+    }
+
+    setRenderMode(mode) {
+        this.renderMode = mode === '3d' ? '3d' : '2d';
+        if (!this.gameplayRenderer) {
+            return;
+        }
+
+        this.gameplayRenderer.setMode(this.renderMode, this);
+
+        if (this.level && this.level.storedmap && this._hasScreenLocation(this.level.locationx, this.level.locationy)) {
+            this.gameplayRenderer.rebuildScreen(this, this.level.locationx, this.level.locationy);
+        }
+
+        this.renderWorld();
     }
 
     setInputMode(mode) {
@@ -813,56 +876,6 @@ export default class STPView {
                 this.pauseHudBg.setFillStyle(0x000000, 0.55);
             }
         }
-    }
-
-    // Destroy any existing Phaser tilemap and build a new one for screen (mapX, mapY).
-    // Uses Phaser's make.tilemap() with a 2D tile-index array.
-    _rebuildTilemap(mapX, mapY) {
-        if (this.currentTilemap) {
-            this.currentTilemap.destroy();
-            this.currentTilemap = null;
-        }
-
-        const map = this.level.storedmap[mapX][mapY];
-
-        // Build 2D array: -1 = empty, otherwise use TMX gid space minus 1 so
-        // multiple tilesets can render into the same generated tilemap layer.
-        const tileData = [];
-        for (let y = 0; y < map.height; y++) {
-            const row = [];
-            for (let x = 0; x < map.width; x++) {
-                const gid = map.tiles[y * map.width + x];
-                row.push(gid > 0 ? gid - 1 : -1);
-            }
-            tileData.push(row);
-        }
-
-        const tilemap = this.scene.make.tilemap({
-            data:       tileData,
-            tileWidth:  25,
-            tileHeight: 25,
-            width:      map.width,
-            height:     map.height
-        });
-        const tilesets = [];
-        for (const tilesetInfo of map.tilesets) {
-            const tileset = tilemap.addTilesetImage(
-                tilesetInfo.name,
-                tilesetInfo.imageKey,
-                25,
-                25,
-                0,
-                0,
-                tilesetInfo.firstgid - 1
-            );
-            if (tileset) {
-                tilesets.push(tileset);
-            }
-        }
-        const layer   = tilemap.createLayer(0, tilesets, 0, 0);
-        layer.setDepth(0);
-
-        this.currentTilemap = tilemap;
     }
 
     _handleControlHotkeys() {
@@ -1156,6 +1169,13 @@ export default class STPView {
             this.scene.scene.start('MenuScene');
         } else {
             this.scene.scene.start('GameScene', { levelName: nextLevelName });
+        }
+    }
+
+    shutdown() {
+        this._closePauseMenu();
+        if (this.gameplayRenderer) {
+            this.gameplayRenderer.shutdown(this);
         }
     }
 }
