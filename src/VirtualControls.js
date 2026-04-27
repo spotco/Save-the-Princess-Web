@@ -62,7 +62,7 @@ export default class VirtualControls {
             return;
         }
 
-        this._moveDpadToViewportPoint(point.x, point.y, viewportRect);
+        this._moveDpadToBottomLeftViewportCorner(viewportRect);
         this._overlay.style.display = 'block';
         this._visible = true;
 
@@ -115,7 +115,7 @@ export default class VirtualControls {
             '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;';
         this._overlay = ov;
 
-        // D-pad - 3x3 button cross, moved to the player's click / touch point.
+        // D-pad - 3x3 button cross, snapped to the bottom-left corner.
         const dpad = document.createElement('div');
         dpad.style.cssText =
             'position:absolute;' +
@@ -229,13 +229,12 @@ export default class VirtualControls {
         return rect;
     }
 
-    _moveDpadToViewportPoint(localX, localY, viewportRect) {
+    _moveDpadToBottomLeftViewportCorner(viewportRect) {
         if (!this._dpad) return;
         const rect = viewportRect || this._syncOverlayToViewport();
-        const maxLeft = Math.max(PAD_EDGE, rect.width  - PAD_SIZE - PAD_EDGE);
         const maxTop  = Math.max(PAD_EDGE, rect.height - PAD_SIZE - PAD_EDGE);
-        const left = Math.min(Math.max(localX - PAD_SIZE / 2, PAD_EDGE), maxLeft);
-        const top  = Math.min(Math.max(localY - PAD_SIZE / 2, PAD_EDGE), maxTop);
+        const left = PAD_EDGE;
+        const top  = maxTop;
         this._dpad.style.left   = `${left}px`;
         this._dpad.style.top    = `${top}px`;
         this._dpad.style.bottom = 'auto';
