@@ -94,6 +94,7 @@ export default class Wizard extends Enemy {
             .setOrigin(0, 0)
             .setDepth(11)
             .setVisible(false);
+        this.emoteSprite.stpThreeDepthAnchor = this.sprite;
     }
 
     // Mirrors Wizard.update()

@@ -85,6 +85,9 @@ export default class Guard extends Enemy {
             .setOrigin(0, 0).setDepth(11).setVisible(false);
         this.helpSprite = scene.add.image(this.x + 5, this.y - 10, 'help')
             .setOrigin(0, 0).setDepth(11).setVisible(false);
+        this.noticeSprite.stpThreeDepthAnchor   = this.sprite;
+        this.questionSprite.stpThreeDepthAnchor = this.sprite;
+        this.helpSprite.stpThreeDepthAnchor     = this.sprite;
     }
 
     // Mirrors Guard.update().

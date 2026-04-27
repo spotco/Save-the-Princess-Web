@@ -318,6 +318,7 @@ Moved here on 2026-04-19 so `PLAN.md` can stay active-only.
 ### Fix Notes (2026-04-26)
 
 - Editor-play `finalTowerLedge` completion now returns directly to the preserved `LevelEditorScene` session; normal campaign play still continues from the ledge into the credits scroll.
+- Enemy overhead popups in 3D mode now use their owner sprite as their billboard depth anchor, so the player no longer sorts over a popup merely because the popup image sits higher on screen.
 - Rebuilt the Times screen with Phaser text rows for level labels, player best times, and developer best times; unfinished levels display `none`, and player times turn green only when they beat the developer record.
 - Added browser-side controls help text in the bottom-right corner, with movement help switching between arrow/WASD keyboard input and virtual joypad pointer mode.
 - Expanded the virtual joypad overlay to the full browser viewport so pointer placement is no longer constrained by the Phaser canvas rectangle.

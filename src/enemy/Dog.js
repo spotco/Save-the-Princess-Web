@@ -74,6 +74,7 @@ export default class Dog extends Enemy {
             .setOrigin(0, 0)
             .setDepth(11)
             .setVisible(false);
+        this.emoteSprite.stpThreeDepthAnchor = this.sprite;
     }
 
     // Mirrors Dog.update().

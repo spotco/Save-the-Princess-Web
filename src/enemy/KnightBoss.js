@@ -84,6 +84,8 @@ export default class KnightBoss extends Enemy {
             .setOrigin(0, 0).setDepth(6).setVisible(false);
         this.emote2Sprite = scene.add.image(this.x - 1, this.y - 18, 'coward')
             .setOrigin(0, 0).setDepth(6).setVisible(false);
+        this.emoteSprite.stpThreeDepthAnchor  = this.sprite;
+        this.emote2Sprite.stpThreeDepthAnchor = this.sprite;
     }
 
     // Mirrors KnightBoss.update().
