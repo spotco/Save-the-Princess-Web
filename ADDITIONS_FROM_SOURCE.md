@@ -1,6 +1,6 @@
 # Additions From Source
 
-**Last Updated**: 2026-04-26
+**Last Updated**: 2026-04-27
 
 ---
 
@@ -31,6 +31,7 @@ Only add items here when they are outside the original source behavior or featur
 - [x] Times screen now renders level labels and best-time columns with Phaser text, including player best times, developer best times, `none` for unfinished levels, and green player times that beat developer records.
 - [x] Added fixed bottom-right controls text that switches movement help between keyboard/WASD and virtual joypad modes.
 - [x] Virtual joypad can appear anywhere in the browser viewport instead of being constrained to the Phaser canvas.
+- [x] Virtual joypad uses a 9-button grid with cardinal directions, diagonals that press both matching directions, and a center neutral/none button.
 - [x] Off-canvas pointer input during gameplay can activate the virtual joypad; canvas input continues through Phaser's normal pointer path.
 - [x] Pause menu selection accepts Space as well as Enter.
 - [x] Added dev-only AI level generation helpers under `aigen/`: a canonical tile catalog, `.stplevel.json` validation/summary/comparison/scaffold tooling, and usage notes for future generated-level work.

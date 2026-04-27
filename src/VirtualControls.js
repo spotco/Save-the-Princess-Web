@@ -13,11 +13,23 @@ const PAD_SIZE = BTN_SIZE * 3;
 // Maximum distance from the d-pad area centre before a pointer is released.
 const PAD_MARGIN = BTN_SIZE * 0.6;
 
+const DPAD_KEY_DEFS = {
+    up:    { key: 'ArrowUp',    code: 'ArrowUp',    keyCode: 38 },
+    left:  { key: 'ArrowLeft',  code: 'ArrowLeft',  keyCode: 37 },
+    right: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+    down:  { key: 'ArrowDown',  code: 'ArrowDown',  keyCode: 40 },
+};
+
 const DPAD_DEFS = [
-    { label: '\u25b2', key: 'ArrowUp',    code: 'ArrowUp',    keyCode: 38, dx: 1, dy: 0 },
-    { label: '\u25c4', key: 'ArrowLeft',  code: 'ArrowLeft',  keyCode: 37, dx: 0, dy: 1 },
-    { label: '\u25ba', key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, dx: 2, dy: 1 },
-    { label: '\u25bc', key: 'ArrowDown',  code: 'ArrowDown',  keyCode: 40, dx: 1, dy: 2 },
+    { label: '\u2196', keys: [DPAD_KEY_DEFS.up,   DPAD_KEY_DEFS.left],  dx: 0, dy: 0 },
+    { label: '\u25b2', keys: [DPAD_KEY_DEFS.up],                         dx: 1, dy: 0 },
+    { label: '\u2197', keys: [DPAD_KEY_DEFS.up,   DPAD_KEY_DEFS.right], dx: 2, dy: 0 },
+    { label: '\u25c4', keys: [DPAD_KEY_DEFS.left],                       dx: 0, dy: 1 },
+    { label: '\u25cf', keys: [],                                         dx: 1, dy: 1 },
+    { label: '\u25ba', keys: [DPAD_KEY_DEFS.right],                      dx: 2, dy: 1 },
+    { label: '\u2199', keys: [DPAD_KEY_DEFS.down, DPAD_KEY_DEFS.left],  dx: 0, dy: 2 },
+    { label: '\u25bc', keys: [DPAD_KEY_DEFS.down],                       dx: 1, dy: 2 },
+    { label: '\u2198', keys: [DPAD_KEY_DEFS.down, DPAD_KEY_DEFS.right], dx: 2, dy: 2 },
 ];
 
 export default class VirtualControls {
@@ -110,12 +122,12 @@ export default class VirtualControls {
         ov.id = 'virtual-controls';
         ov.style.cssText =
             'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
-            'pointer-events:none;z-index:70;display:none;' +
+            'pointer-events:none;z-index:90;display:none;' +
             'user-select:none;-webkit-user-select:none;-ms-user-select:none;' +
             '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;';
         this._overlay = ov;
 
-        // D-pad - 3x3 button cross, snapped to the bottom-left corner.
+        // D-pad - 3x3 button grid, snapped to the bottom-left corner.
         const dpad = document.createElement('div');
         dpad.style.cssText =
             'position:absolute;' +
@@ -134,12 +146,14 @@ export default class VirtualControls {
         // D-pad pointerdown - start tracking the pointer.
         dpad.addEventListener('pointerdown', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             const def = this._closestDef(e.clientX, e.clientY);
             if (!def) return;
             this._activePointers.set(e.pointerId, def);
-            this._fireKey('keydown', def);
+            this._fireKeys('keydown', def);
             this._setButtonActive(def, true);
         });
+        dpad.addEventListener('click', (e) => this._consumeControlEvent(e));
         this._blockNativeTouchGestures(dpad);
 
         // pointermove / pointerup on window - track the pointer even when it
@@ -193,12 +207,13 @@ export default class VirtualControls {
 
         // Release old direction
         if (oldDef) {
-            this._fireKey('keyup', oldDef);
+            this._fireKeys('keyup', oldDef);
             this._setButtonActive(oldDef, false);
         }
-        // Engage new direction (may be null if pointer left the pad area)
+        // Engage new direction (may be null if pointer left the pad area).
+        // The middle button has no keys, so it acts as neutral/none.
         if (newDef) {
-            this._fireKey('keydown', newDef);
+            this._fireKeys('keydown', newDef);
             this._setButtonActive(newDef, true);
         }
         this._activePointers.set(e.pointerId, newDef || null);
@@ -209,7 +224,7 @@ export default class VirtualControls {
         if (!this._activePointers.has(e.pointerId)) return;
         const def = this._activePointers.get(e.pointerId);
         if (def) {
-            this._fireKey('keyup', def);
+            this._fireKeys('keyup', def);
             this._setButtonActive(def, false);
         }
         this._activePointers.delete(e.pointerId);
@@ -245,12 +260,17 @@ export default class VirtualControls {
     }
 
     _blockNativeTouchGestures(element) {
-        const preventDefault = (e) => e.preventDefault();
-        element.addEventListener('contextmenu', preventDefault);
-        element.addEventListener('selectstart', preventDefault);
-        element.addEventListener('dragstart',   preventDefault);
-        element.addEventListener('touchstart',  preventDefault, { passive: false });
-        element.addEventListener('touchmove',   preventDefault, { passive: false });
+        element.addEventListener('contextmenu', (e) => this._consumeControlEvent(e));
+        element.addEventListener('selectstart', (e) => this._consumeControlEvent(e));
+        element.addEventListener('dragstart',   (e) => this._consumeControlEvent(e));
+        element.addEventListener('touchstart',  (e) => this._consumeControlEvent(e), { passive: false });
+        element.addEventListener('touchmove',   (e) => this._consumeControlEvent(e), { passive: false });
+        element.addEventListener('touchend',    (e) => this._consumeControlEvent(e), { passive: false });
+    }
+
+    _consumeControlEvent(e) {
+        e.preventDefault();
+        e.stopPropagation();
     }
 
     _pointerToViewportPoint(pointer) {
@@ -314,11 +334,14 @@ export default class VirtualControls {
         return closest;
     }
 
-    _fireKey(type, def) {
-        window.dispatchEvent(new KeyboardEvent(type, {
-            key: def.key, code: def.code, keyCode: def.keyCode, which: def.keyCode,
-            bubbles: true, cancelable: true,
-        }));
+    _fireKeys(type, def) {
+        if (!def || !def.keys) return;
+        for (const keyDef of def.keys) {
+            window.dispatchEvent(new KeyboardEvent(type, {
+                key: keyDef.key, code: keyDef.code, keyCode: keyDef.keyCode, which: keyDef.keyCode,
+                bubbles: true, cancelable: true,
+            }));
+        }
     }
 
     _setButtonActive(def, active) {
@@ -333,15 +356,21 @@ export default class VirtualControls {
     _releaseAll() {
         for (const [, def] of this._activePointers) {
             if (def) {
-                this._fireKey('keyup', def);
+                this._fireKeys('keyup', def);
                 this._setButtonActive(def, false);
             }
         }
         this._activePointers.clear();
         this._trackingInitialPointer = false;
-        // Also unconditionally release all four keys as a safety net.
+        // Also unconditionally release all four real direction keys as a safety net.
+        for (const keyName of Object.keys(DPAD_KEY_DEFS)) {
+            const keyDef = DPAD_KEY_DEFS[keyName];
+            window.dispatchEvent(new KeyboardEvent('keyup', {
+                key: keyDef.key, code: keyDef.code, keyCode: keyDef.keyCode, which: keyDef.keyCode,
+                bubbles: true, cancelable: true,
+            }));
+        }
         for (const def of DPAD_DEFS) {
-            this._fireKey('keyup', def);
             this._setButtonActive(def, false);
         }
     }
