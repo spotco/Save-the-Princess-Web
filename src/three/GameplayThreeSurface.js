@@ -11,6 +11,10 @@ const CAMERA_Z_MULT      = 0.60;
 const WALL_SIDE_TEXTURE_WIDTH  = 16;
 const WALL_SIDE_TEXTURE_HEIGHT = 64;
 const WALL_SIDE_SAMPLE_ROWS    = 6;
+const SHARED_WALL_SIDE_TEXTURE_CACHE_KEY = 'shared-wall-side';
+const SHARED_WALL_CORNER_SEAM_MATERIAL_CACHE_KEY = 'shared-wall-corner-seam';
+const DEFAULT_WALL_SIDE_TILESET_KEY = 'tileset1';
+const DEFAULT_WALL_SIDE_LOCAL_ID    = 0;
 const FLOOR_RENDER_LAYER = 0;
 const WALL_RENDER_LAYER  = 4;
 const WALL_TOP_FACE_RENDER_LAYER = 6;
@@ -220,7 +224,7 @@ export default class GameplayThreeSurface {
                     wallTilesByCell[y][x] = tileInfo.tilesetKey;
                     const wallMesh = new THREE.Mesh(
                         this.wallGeometry,
-                        this._getWallMaterials(tileInfo.tilesetKey, tileInfo.localId)
+                        this._getWallMaterials(tileInfo.tilesetKey, tileInfo.localId, tileProps)
                     );
                     wallMesh.position.set(worldX, WALL_HEIGHT / 2, worldZ);
                     wallMesh.renderOrder = this._depthRenderOrderFromWorldZ(worldZ, WALL_RENDER_LAYER);
@@ -449,7 +453,7 @@ export default class GameplayThreeSurface {
         return material;
     }
 
-    _getWallMaterials(tilesetKey, localId) {
+    _getWallMaterials(tilesetKey, localId, tileProps) {
         const cacheKey = tilesetKey + ':' + localId;
         if (this.wallMaterialCache[cacheKey]) {
             return this.wallMaterialCache[cacheKey];
@@ -457,7 +461,7 @@ export default class GameplayThreeSurface {
 
         const THREE = this.THREE;
         const topTexture = this._getTileTexture(tilesetKey, localId);
-        const sideTexture = this._getWallSideTexture(tilesetKey, localId);
+        const sideTexture = this._getWallSideTexture();
         const sideMaterial = new THREE.MeshBasicMaterial({
             map:         sideTexture,
             transparent: false
@@ -481,26 +485,28 @@ export default class GameplayThreeSurface {
     }
 
     _getWallCornerSeamMaterial(tilesetKey) {
-        if (this.wallCornerSeamMaterialCache[tilesetKey]) {
-            return this.wallCornerSeamMaterialCache[tilesetKey];
+        if (this.wallCornerSeamMaterialCache[SHARED_WALL_CORNER_SEAM_MATERIAL_CACHE_KEY]) {
+            return this.wallCornerSeamMaterialCache[SHARED_WALL_CORNER_SEAM_MATERIAL_CACHE_KEY];
         }
 
         const material = new this.THREE.MeshBasicMaterial({
             color: 0x000000
         });
-        this.wallCornerSeamMaterialCache[tilesetKey] = material;
+        this.wallCornerSeamMaterialCache[SHARED_WALL_CORNER_SEAM_MATERIAL_CACHE_KEY] = material;
         return material;
     }
 
-    _getWallSideTexture(tilesetKey, localId) {
-        const cacheKey = tilesetKey;
+    _getWallSideTexture() {
+        const cacheKey = SHARED_WALL_SIDE_TEXTURE_CACHE_KEY;
         if (this.wallSideTextureCache[cacheKey]) {
             return this.wallSideTextureCache[cacheKey];
         }
 
         const THREE = this.THREE;
-        const baseColor = this._getAverageOpaqueTilesetColor(tilesetKey)
-            || this._getAverageOpaqueTileColor(this._createTileCanvas(tilesetKey, localId), WALL_SIDE_SAMPLE_ROWS);
+        const baseColor = this._getAverageOpaqueTileColor(
+            this._createTileCanvas(DEFAULT_WALL_SIDE_TILESET_KEY, DEFAULT_WALL_SIDE_LOCAL_ID),
+            WALL_SIDE_SAMPLE_ROWS
+        );
         const sideCanvas = document.createElement('canvas');
         sideCanvas.width  = WALL_SIDE_TEXTURE_WIDTH;
         sideCanvas.height = WALL_SIDE_TEXTURE_HEIGHT;
