@@ -1,0 +1,160 @@
+Summary: aigen/notes.txt says AI-generated levels are structurally valid but weak as authored Save the Princess levels. Future AI level generation should not directly emit raw tile JSON first. It should first design a
+  readable encounter/room plan around one dominant mechanic, then compile that plan into tiles, validate semantics, render/review, critique, and revise. Good original levels are compact, mean, readable, and
+  route-driven: threats control intended movement lanes, walls shape decisions, save points mark completed chunks, doors/buttons/keys have real routing purpose, each level has a clear spatial identity, and
+  deaths should feel explainable. Treat AI as a constrained assistant for room ideas, variants, decoration, and iteration, not as a one-shot level designer.
+
+---
+
+• I think the biggest issue is that the AI was probably asked to be both designer and tile serializer at once. The output is structurally valid, but it
+  feels like it optimized for “make a plausible .stplevel.json with the right objects” instead of “make a good Save the Princess level.”
+
+  From the aigen/output files:
+
+  - level1_alt matches the reference counts exactly for player/princess/savepoints/dogs, but has much less wall structure: 201 walls vs original Level 1’s
+    246. It reads more open and corridor-like, with dogs scattered into spaces rather than each encounter feeling like a deliberate lesson or trap.
+  - level2_alt is farther off mechanically: original Level 2 has 5 doors, 4 buttons, 6 guards, 12 guard points, and 2 stop points. The generated one has
+    only 2 doors, 2 buttons, 4 guards, 16 guard points, and 0 stops. So it resembles a Level 2 tileset, but loses some of the puzzle grammar that makes
+    Level 2 work.
+  - Both pass validation, which is useful, but the validator mostly checks format and counts. It cannot tell whether the authored sequence is interesting,
+    readable, paced, or meaningfully solvable.
+
+  What you could have done better:
+
+  1. Generate a design plan before generating tiles.
+     For example: “room A teaches dog sightline, room B combines dog plus savepoint, room C introduces button/door, room D has patrol timing, final room
+     tests both.” Then force the tile output to implement that plan.
+  2. Use a higher-level level DSL instead of raw tile arrays.
+     Have the AI output rooms, connectors, encounters, gates, rewards, and intended route first. Then use code to compile that into 25x25 tiles. LLMs are
+     much better at “room with one horizontal dog sightline and safe alcove” than at hand-authoring 625 GIDs.
+  3. Add semantic validators, not just structural validators.
+     Useful checks:
+      - shortest path from player to goal
+      - path must pass through named intended rooms
+      - button must gate some meaningful progress
+      - each door must have a reachable button/key
+     The current ASCII summaries are already helpful. A stronger loop would be: generate draft, summarize, critique, revise, then only save final. Ideally
+     also render a PNG from the actual tiles so the agent can judge visual composition.
+  5. Separate roles.
+     One agent designs the room graph. Another critiques it against Level 1/2 design grammar. Another compiles to tiles. Another validates/playtests. A
+     single pass from one agent is usually mediocre for game design.
+  6. Ask for “one authored encounter at a time.”
+     Instead of “make an alternate Level 2,” ask it to create one room that uses exactly one button, one door, one guard patrol, and one savepoint, then
+     compose rooms together. Good levels are made of good local interactions.
+  7. Use search, not just generation.
+     Have code mutate candidate levels and score them. The AI can provide the scoring rubric and critique; the computer should do the boring exploration.
+
+  Will AI agents get better at this? Yes, but not mainly because language models “understand fun” better in isolation. They’ll get better when connected to
+  tighter feedback loops:
+
+  - Engine-aware agents that can run the level, simulate paths, and detect softlocks.
+  - Visual feedback from actual rendered screenshots, not just JSON.
+  - Automated playtesters that try routes, deaths, timing windows, and puzzle dependencies.
+  - Learned style models trained on the original levels’ spatial patterns.
+  - Critic loops where generation, validation, playtesting, and revision happen repeatedly.
+  - Human-in-the-loop tools where the AI proposes rooms or variants, and the designer accepts, rejects, or nudges.
+
+  My honest take: AI is already decent at producing valid content-shaped output. It is not yet reliably good at compact handcrafted game design without
+  scaffolding. For this project, I’d treat the AI less like a level designer and more like a junior assistant using a strict editor: it can propose room
+  ideas, fill variants, decorate, and iterate, but the real leverage comes from better constraints, validators, and playtest loops.
+  
+  ---
+  
+  • The default levels seem good because they are built around legible pressure, not just obstacles. They usually make the player understand the room before the room kills them.
+
+  1. Each level has one main lesson
+
+  Level 1 is “dogs and sightlines.” It is almost pure dog pressure: 15 dogs, 5 save points, no doors, no guards, no keys, no crates. That restraint matters. The player learns that dogs are directional hazards,
+  that walls break sightlines, and that progress is mostly about choosing when to cross exposed lanes.
+
+  Level 2 is “buttons, doors, and patrol routes.” It adds doors/buttons/guards while keeping dogs low. Level 3 is crates. Level 5 is wizards. Level 6 is the boss/endgame mixture. The levels do not introduce
+  everything at once.
+
+  A generated level should probably start with: “what is the one mechanic this level is about?”
+
+  2. The maps are routes, not open arenas
+
+  The default levels are maze-like, but they are not arbitrary mazes. They use tight corridors, small rooms, bends, and gates to make the player commit to local decisions.
+
+  Level 1 has many compact dog pockets and narrow transitions. The princess is close in grid distance but separated by routed structure. Level 2 wraps the player through separated button/door areas. Level 4
+  expands this into a 2x2 prison where exits make the level feel larger, but each screen still has local room logic.
+
+  Bad AI levels tend to produce “connected floor with enemies.” The defaults are more like “authored path with interruptions.”
+
+  3. Threats point at intended movement
+
+  Dogs in Level 1 are not just sprinkled. They often face along corridors, across rooms, or into chokepoints the player must evaluate. Level 4 screen (1,0) is an extreme example: repeated dogs create a gauntlet-
+  like vertical pressure pattern. That is crude in a good way: the player can immediately read the joke/challenge.
+
+  Good placement asks: “what line does this enemy control?” Not “where can I put another enemy?”
+
+  4. Save points mark completed ideas
+
+  Save points generally appear after meaningful progress or before/after a dangerous section. Level 1 has 5 because the whole level is made of repeated dog challenges. Level 2 has only 2 because its challenge is
+  more routing/puzzle-based. Level 5 has 7 across 3 vertical screens because wizards and multi-screen travel raise attrition.
+
+  The important principle: a save point should say “you solved a chunk.” It should not be random comfort, and it should not sit inside the active kill zone.
+
+  5. Mechanics escalate by recombination
+
+  The campaign does not just add ingredients; it recombines old ones.
+
+  - Level 1: dogs
+  - Level 2: dogs plus buttons, doors, guards
+  - Level 3: crates added to routing and enemy pressure
+  - Level 4: multi-screen version of doors, keys, dogs, guards, crates
+  - Level 5: wizards layered into longer navigation
+  - Level 6: boss, trackers, delayed spawns, wizards, dogs, guards, doors
+
+  That is a useful design rule: later levels should reuse earlier literacy. They should not feel like unrelated gimmicks.
+
+  6. The levels have strong spatial identity
+
+  Level 1 feels like kennels/dog corridors. Level 2 feels like a security mechanism map. Level 3 has crate rooms that visibly read as crate rooms. Level 4 feels like a larger facility because of exits, keys,
+  patrols, and multiple screens. Level 5’s vertical 1x3 structure makes it feel like a tower/gauntlet. Level 6 has distinct boss, gauntlet, wizard, and final rooms.
+
+  This is where AI often fails: it matches counts but misses identity. A good level should be describable in one sentence from its silhouette and mechanic layout.
+
+  7. Decoration supports readability
+
+  Torches and windows are not just visual noise. They break up walls, make rooms memorable, and help areas read as authored. The originals use many shaped walls and accents. The generated levels were valid, but
+  they had less wall density and weaker visual cadence, so they felt flatter.
+
+  In this game, wall shape is part of level design. The castle look makes the route feel intentional.
+
+  8. Challenge is often local and recoverable
+
+  Most rooms are small enough that you can understand why you died. That is important for a simple, lethal game. The player dies because they crossed a line, mistimed a patrol, opened the wrong path, or entered
+  a wizard lane. The cause is readable.
+
+  Good levels should avoid deaths that feel like global confusion. The player should usually be able to say: “I see what I did wrong.”
+
+  9. Doors and keys create routing memory
+
+  Level 2 and Level 4 are good examples. Buttons and doors are not merely blockers; they make the player form a mental model of the map. Level 4 especially uses keys, keydoor, exits, save points, and patrol
+  clusters to create a prison-like navigation problem.
+
+  For AI generation, this means doors need purpose. A door should gate a reward, shortcut, required progression, or encounter transition. A random door/button pair is mechanically valid but design-empty.
+
+  10. The campaign has personality
+
+  The level names, extreme dog counts, dense patrol pockets, and boss setup all have a homemade arcade cruelty to them. That matters. These are not polished “balanced” puzzle rooms in the abstract. They are
+  compact, mean, readable, and a little ridiculous.
+
+  So the principle is not just “fair challenge.” It is more like:
+
+  > Make the player laugh, swear, understand the rule, and try again immediately.
+
+  If I were turning this into an AI rubric, I’d score generated levels on:
+
+  - one dominant mechanic theme
+  - readable intended route
+  - threats controlling real movement lanes
+  - save points after completed chunks
+  - doors/buttons/keys with actual routing purpose
+  - room identity and silhouette
+  - wall/decor fidelity
+  - escalation from previous levels
+  - no dead-feeling filler rooms
+  - deaths that are explainable from the screen layout
+
+  The current defaults work because they are authored around encounter grammar. The AI output mostly copied the vocabulary. That is the gap.
