@@ -140,6 +140,7 @@ export default class VirtualControls {
             this._fireKey('keydown', def);
             this._setButtonActive(def, true);
         });
+        this._blockNativeTouchGestures(dpad);
 
         // pointermove / pointerup on window - track the pointer even when it
         // slides off the button that originally received pointerdown.
@@ -152,6 +153,8 @@ export default class VirtualControls {
 
     _addArrowButton(def, parent) {
         const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.tabIndex = -1;
         btn.textContent = def.label;
         btn.style.cssText =
             'position:absolute;' +
@@ -163,7 +166,8 @@ export default class VirtualControls {
             // pointer-events:none - the parent dpad div handles all pointer events
             'pointer-events:none;touch-action:none;' +
             'user-select:none;-webkit-user-select:none;-ms-user-select:none;' +
-            '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;';
+            '-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;' +
+            '-webkit-user-drag:none;';
         this._buttonEls.set(btn, def);
         parent.appendChild(btn);
         def._el = btn;   // back-reference for visual feedback
@@ -238,6 +242,15 @@ export default class VirtualControls {
         this._dpad.style.left   = `${left}px`;
         this._dpad.style.top    = `${top}px`;
         this._dpad.style.bottom = 'auto';
+    }
+
+    _blockNativeTouchGestures(element) {
+        const preventDefault = (e) => e.preventDefault();
+        element.addEventListener('contextmenu', preventDefault);
+        element.addEventListener('selectstart', preventDefault);
+        element.addEventListener('dragstart',   preventDefault);
+        element.addEventListener('touchstart',  preventDefault, { passive: false });
+        element.addEventListener('touchmove',   preventDefault, { passive: false });
     }
 
     _pointerToViewportPoint(pointer) {
