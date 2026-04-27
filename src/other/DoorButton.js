@@ -12,6 +12,8 @@ export default class DoorButton {
 
         this._spriteUp   = scene.add.image(x, y, 'presspush')    .setOrigin(0, 0).setDepth(5);
         this._spriteDown = scene.add.image(x, y, 'presspushdown').setOrigin(0, 0).setDepth(5);
+        this._spriteUp.stpThreeRenderMode = 'floorFace';
+        this._spriteDown.stpThreeRenderMode = 'floorFace';
         this._spriteDown.setVisible(false);
     }
 

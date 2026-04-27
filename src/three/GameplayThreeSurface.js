@@ -16,9 +16,11 @@ const SHARED_WALL_CORNER_SEAM_MATERIAL_CACHE_KEY = 'shared-wall-corner-seam';
 const DEFAULT_WALL_SIDE_TILESET_KEY = 'tileset1';
 const DEFAULT_WALL_SIDE_LOCAL_ID    = 0;
 const FLOOR_RENDER_LAYER = 0;
+const FLOOR_FACE_RENDER_LAYER = 2;
 const WALL_RENDER_LAYER  = 4;
 const WALL_TOP_FACE_RENDER_LAYER = 6;
 const BILLBOARD_RENDER_LAYER = 8;
+const FLOOR_FACE_Y_OFFSET = 0.015;
 const WALL_TOP_FACE_Y_OFFSET = 0.01;
 
 export default class GameplayThreeSurface {
@@ -30,6 +32,7 @@ export default class GameplayThreeSurface {
         this.scene3d    = null;
         this.camera     = null;
         this.worldRoot  = null;
+        this.floorFaceRoot = null;
         this.wallTopFaceRoot = null;
         this.billboardRoot = null;
         this.domElement = null;
@@ -47,6 +50,7 @@ export default class GameplayThreeSurface {
         this.wallMaterialCache  = {};
         this.wallCornerSeamMaterialCache = {};
         this.displayTextureCache = {};
+        this.floorFaceEntries    = new Map();
         this.wallTopFaceEntries  = new Map();
         this.billboardEntries    = new Map();
 
@@ -75,9 +79,11 @@ export default class GameplayThreeSurface {
 
         this.scene3d = new THREE.Scene();
         this.worldRoot = new THREE.Group();
+        this.floorFaceRoot = new THREE.Group();
         this.wallTopFaceRoot = new THREE.Group();
         this.billboardRoot = new THREE.Group();
         this.scene3d.add(this.worldRoot);
+        this.scene3d.add(this.floorFaceRoot);
         this.scene3d.add(this.wallTopFaceRoot);
         this.scene3d.add(this.billboardRoot);
         this.floorGeometry = new THREE.PlaneGeometry(TILE_WORLD_SIZE, TILE_WORLD_SIZE);
@@ -256,7 +262,7 @@ export default class GameplayThreeSurface {
     }
 
     syncWorldDisplayObjects(displayObjects) {
-        if (!this.isBooted || !this.billboardRoot || !this.wallTopFaceRoot) {
+        if (!this.isBooted || !this.billboardRoot || !this.wallTopFaceRoot || !this.floorFaceRoot) {
             return;
         }
 
@@ -267,21 +273,32 @@ export default class GameplayThreeSurface {
             }
 
             const renderMode = this._getDisplayObjectRenderMode(displayObject);
-            if (renderMode === 'wallTopFace' && this.billboardEntries.has(displayObject)) {
+            if (renderMode !== 'billboard' && this.billboardEntries.has(displayObject)) {
                 this._removeBillboardEntry(displayObject, this.billboardEntries.get(displayObject));
-            } else if (renderMode !== 'wallTopFace' && this.wallTopFaceEntries.has(displayObject)) {
+            }
+            if (renderMode !== 'floorFace' && this.floorFaceEntries.has(displayObject)) {
+                this._removeFloorFaceEntry(displayObject, this.floorFaceEntries.get(displayObject));
+            }
+            if (renderMode !== 'wallTopFace' && this.wallTopFaceEntries.has(displayObject)) {
                 this._removeWallTopFaceEntry(displayObject, this.wallTopFaceEntries.get(displayObject));
             }
 
-            const entry = renderMode === 'wallTopFace'
-                ? this._getOrCreateWallTopFaceEntry(displayObject)
-                : this._getOrCreateBillboardEntry(displayObject);
+            let entry = null;
+            if (renderMode === 'wallTopFace') {
+                entry = this._getOrCreateWallTopFaceEntry(displayObject);
+            } else if (renderMode === 'floorFace') {
+                entry = this._getOrCreateFloorFaceEntry(displayObject);
+            } else {
+                entry = this._getOrCreateBillboardEntry(displayObject);
+            }
             if (!entry) {
                 continue;
             }
 
             if (renderMode === 'wallTopFace') {
                 this._syncWallTopFaceEntry(entry, displayObject);
+            } else if (renderMode === 'floorFace') {
+                this._syncFloorFaceEntry(entry, displayObject);
             } else {
                 this._syncBillboardEntry(entry, displayObject);
             }
@@ -291,6 +308,11 @@ export default class GameplayThreeSurface {
         for (const [displayObject, entry] of this.billboardEntries.entries()) {
             if (!seenEntries.has(displayObject)) {
                 this._removeBillboardEntry(displayObject, entry);
+            }
+        }
+        for (const [displayObject, entry] of this.floorFaceEntries.entries()) {
+            if (!seenEntries.has(displayObject)) {
+                this._removeFloorFaceEntry(displayObject, entry);
             }
         }
         for (const [displayObject, entry] of this.wallTopFaceEntries.entries()) {
@@ -336,6 +358,7 @@ export default class GameplayThreeSurface {
         this.wallCornerSeamGeometry = null;
         this.wallTopFaceGeometry = null;
         this.worldRoot  = null;
+        this.floorFaceRoot = null;
         this.wallTopFaceRoot = null;
         this.billboardRoot = null;
         this.domElement = null;
@@ -751,6 +774,35 @@ export default class GameplayThreeSurface {
         return entry;
     }
 
+    _getOrCreateFloorFaceEntry(displayObject) {
+        if (this.floorFaceEntries.has(displayObject)) {
+            return this.floorFaceEntries.get(displayObject);
+        }
+
+        const texture = this._getDisplayTexture(displayObject);
+        if (!texture) {
+            return null;
+        }
+
+        const material = new this.THREE.MeshBasicMaterial({
+            map:         texture,
+            transparent: false,
+            alphaTest:   0.1
+        });
+        const mesh = new this.THREE.Mesh(this.wallTopFaceGeometry, material);
+        mesh.rotation.x = -Math.PI / 2;
+        this.floorFaceRoot.add(mesh);
+
+        const entry = {
+            mesh,
+            material,
+            textureKey: null,
+            sourceAlpha: Number.isFinite(displayObject.alpha) ? displayObject.alpha : 1
+        };
+        this.floorFaceEntries.set(displayObject, entry);
+        return entry;
+    }
+
     _syncBillboardEntry(entry, displayObject) {
         const texture = this._getDisplayTexture(displayObject);
         const textureKey = this._displayTextureCacheKey(displayObject);
@@ -777,6 +829,35 @@ export default class GameplayThreeSurface {
             (topLeft.y + height) / 25,
             BILLBOARD_RENDER_LAYER
         );
+
+        if (displayObject.setAlpha && displayObject.alpha !== 0) {
+            displayObject.setAlpha(0);
+        }
+    }
+
+    _syncFloorFaceEntry(entry, displayObject) {
+        const texture = this._getDisplayTexture(displayObject);
+        const textureKey = this._displayTextureCacheKey(displayObject);
+        if (texture && entry.textureKey !== textureKey) {
+            entry.material.map = texture;
+            entry.material.needsUpdate = true;
+            entry.textureKey = textureKey;
+        }
+
+        const topLeft = displayObject.getTopLeft
+            ? displayObject.getTopLeft()
+            : { x: displayObject.x || 0, y: displayObject.y || 0 };
+        const width  = displayObject.displayWidth  || displayObject.width  || 25;
+        const height = displayObject.displayHeight || displayObject.height || 25;
+
+        entry.mesh.position.set(
+            (topLeft.x + width / 2) / 25,
+            FLOOR_FACE_Y_OFFSET,
+            (topLeft.y + height / 2) / 25
+        );
+        entry.mesh.scale.set(width / 25, height / 25, 1);
+        entry.mesh.visible = !!displayObject.visible;
+        entry.mesh.renderOrder = FLOOR_FACE_RENDER_LAYER;
 
         if (displayObject.setAlpha && displayObject.alpha !== 0) {
             displayObject.setAlpha(0);
@@ -818,6 +899,9 @@ export default class GameplayThreeSurface {
     _getDisplayObjectRenderMode(displayObject) {
         if (!displayObject) {
             return 'billboard';
+        }
+        if (displayObject.stpThreeRenderMode === 'floorFace') {
+            return 'floorFace';
         }
         return displayObject.stpThreeRenderMode === 'wallTopFace'
             ? 'wallTopFace'
@@ -919,6 +1003,12 @@ export default class GameplayThreeSurface {
                 entry.material.dispose();
             }
         }
+        for (const [displayObject, entry] of this.floorFaceEntries.entries()) {
+            this._restoreSourceDisplayObject(entry, displayObject);
+            if (entry.material && entry.material.dispose) {
+                entry.material.dispose();
+            }
+        }
         for (const [displayObject, entry] of this.wallTopFaceEntries.entries()) {
             this._restoreSourceDisplayObject(entry, displayObject);
             if (entry.material && entry.material.dispose) {
@@ -944,6 +1034,7 @@ export default class GameplayThreeSurface {
         this.floorMaterialCache = {};
         this.wallMaterialCache  = {};
         this.wallCornerSeamMaterialCache = {};
+        this.floorFaceEntries.clear();
         this.wallTopFaceEntries.clear();
         this.billboardEntries.clear();
     }
@@ -968,6 +1059,17 @@ export default class GameplayThreeSurface {
             entry.material.dispose();
         }
         this.wallTopFaceEntries.delete(displayObject);
+    }
+
+    _removeFloorFaceEntry(displayObject, entry) {
+        this._restoreSourceDisplayObject(entry, displayObject);
+        if (this.floorFaceRoot && entry && entry.mesh) {
+            this.floorFaceRoot.remove(entry.mesh);
+        }
+        if (entry && entry.material && entry.material.dispose) {
+            entry.material.dispose();
+        }
+        this.floorFaceEntries.delete(displayObject);
     }
 
     _restoreSourceDisplayObject(entry, displayObject) {

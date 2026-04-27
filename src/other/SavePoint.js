@@ -13,6 +13,7 @@ export default class SavePoint {
         this._FRAME_DUR  = 10;
         this._NUM_FRAMES = 4;
         this.sprite = scene.add.image(x, y, 'savepoint').setOrigin(0, 0).setDepth(5);
+        this.sprite.stpThreeRenderMode = 'floorFace';
     }
 
     update(game) {
