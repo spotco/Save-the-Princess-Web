@@ -14,6 +14,7 @@ export default class Window {
         this._NUM_FRAMES = 5;
 
         this.sprite = scene.add.image(x, y, 'window1').setOrigin(0, 0).setDepth(5);
+        this.sprite.stpThreeRenderMode = 'wallTopFace';
     }
 
     update(game) {

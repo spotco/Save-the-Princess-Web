@@ -102,6 +102,8 @@ The new rendering work should follow these boundaries:
    gameplay scene gains a new 3D renderer.
 5. Existing full-screen/menu/cutscene animations can remain 2D in the first pass
    unless gameplay-only 3D proves insufficient for the desired presentation.
+6. Animated wall decorations such as torches and windows should render as flat
+   overlays on the wall top face in 3D mode instead of as billboards.
 
 ---
 
