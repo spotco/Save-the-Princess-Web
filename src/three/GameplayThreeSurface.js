@@ -6,6 +6,9 @@ const WALL_HEIGHT        = 0.78;
 const CAMERA_FOV         = 26;
 const CAMERA_HEIGHT_MULT = 1.58;
 const CAMERA_Z_MULT      = 0.60;
+const WALL_SIDE_TEXTURE_WIDTH  = 16;
+const WALL_SIDE_TEXTURE_HEIGHT = 64;
+const WALL_SIDE_SAMPLE_ROWS    = 6;
 const FLOOR_RENDER_LAYER = 0;
 const WALL_RENDER_LAYER  = 4;
 const BILLBOARD_RENDER_LAYER = 8;
@@ -28,6 +31,7 @@ export default class GameplayThreeSurface {
         this.currentMapHeight = 25;
         this.currentMapMaxDim = 25;
         this.tileTextureCache   = {};
+        this.wallSideTextureCache = {};
         this.floorMaterialCache = {};
         this.wallMaterialCache  = {};
         this.displayTextureCache = {};
@@ -371,15 +375,14 @@ export default class GameplayThreeSurface {
         }
 
         const THREE = this.THREE;
-        const texture = this._getTileTexture(tilesetKey, localId);
+        const topTexture = this._getTileTexture(tilesetKey, localId);
+        const sideTexture = this._getWallSideTexture(tilesetKey, localId);
         const sideMaterial = new THREE.MeshBasicMaterial({
-            map:         texture,
-            color:       0x888888,
-            transparent: false,
-            alphaTest:   0.1
+            map:         sideTexture,
+            transparent: false
         });
         const topMaterial = new THREE.MeshBasicMaterial({
-            map:         texture,
+            map:         topTexture,
             transparent: false,
             alphaTest:   0.1
         });
@@ -396,31 +399,79 @@ export default class GameplayThreeSurface {
         return materials;
     }
 
+    _getWallSideTexture(tilesetKey, localId) {
+        const cacheKey = tilesetKey;
+        if (this.wallSideTextureCache[cacheKey]) {
+            return this.wallSideTextureCache[cacheKey];
+        }
+
+        const THREE = this.THREE;
+        const baseColor = this._getAverageOpaqueTilesetColor(tilesetKey)
+            || this._getAverageOpaqueTileColor(this._createTileCanvas(tilesetKey, localId), WALL_SIDE_SAMPLE_ROWS);
+        const sideCanvas = document.createElement('canvas');
+        sideCanvas.width  = WALL_SIDE_TEXTURE_WIDTH;
+        sideCanvas.height = WALL_SIDE_TEXTURE_HEIGHT;
+
+        const context = sideCanvas.getContext('2d');
+        const gradient = context.createLinearGradient(0, 0, 0, WALL_SIDE_TEXTURE_HEIGHT);
+        gradient.addColorStop(0, this._rgbCssString(this._shadeRgbColor(baseColor, 1.18)));
+        gradient.addColorStop(0.10, this._rgbCssString(this._shadeRgbColor(baseColor, 1.08)));
+        gradient.addColorStop(0.45, this._rgbCssString(this._shadeRgbColor(baseColor, 0.95)));
+        gradient.addColorStop(1, this._rgbCssString(this._shadeRgbColor(baseColor, 0.72)));
+
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, WALL_SIDE_TEXTURE_WIDTH, WALL_SIDE_TEXTURE_HEIGHT);
+        context.fillStyle = this._rgbCssString(this._shadeRgbColor(baseColor, 1.26));
+        context.fillRect(0, 0, WALL_SIDE_TEXTURE_WIDTH, 1);
+        context.fillStyle = this._rgbCssString(this._shadeRgbColor(baseColor, 0.56));
+        context.fillRect(0, WALL_SIDE_TEXTURE_HEIGHT - 2, WALL_SIDE_TEXTURE_WIDTH, 2);
+
+        const texture = new THREE.CanvasTexture(sideCanvas);
+        texture.magFilter = THREE.LinearFilter;
+        texture.minFilter = THREE.LinearFilter;
+        texture.generateMipmaps = false;
+        if ('colorSpace' in texture && THREE.SRGBColorSpace) {
+            texture.colorSpace = THREE.SRGBColorSpace;
+        }
+
+        this.wallSideTextureCache[cacheKey] = texture;
+        return texture;
+    }
+
+    _getAverageOpaqueTilesetColor(tilesetKey) {
+        const sourceTexture = this.scene.textures.get(tilesetKey);
+        if (!sourceTexture) {
+            return null;
+        }
+
+        const sourceImage = sourceTexture.getSourceImage();
+        const textureCanvas = document.createElement('canvas');
+        textureCanvas.width  = sourceImage.width;
+        textureCanvas.height = sourceImage.height;
+
+        const context = textureCanvas.getContext('2d', { willReadFrequently: true });
+        context.imageSmoothingEnabled = false;
+        context.clearRect(0, 0, textureCanvas.width, textureCanvas.height);
+        context.drawImage(sourceImage, 0, 0);
+        return this._getAverageOpaqueCanvasColorInRange(
+            context,
+            textureCanvas.width,
+            textureCanvas.height,
+            0,
+            textureCanvas.width,
+            0,
+            textureCanvas.height,
+            24
+        );
+    }
+
     _getTileTexture(tilesetKey, localId) {
         const cacheKey = tilesetKey + ':' + localId;
         if (this.tileTextureCache[cacheKey]) {
             return this.tileTextureCache[cacheKey];
         }
 
-        const sourceTexture = this.scene.textures.get(tilesetKey);
-        if (!sourceTexture) {
-            console.warn('GameplayThreeSurface: missing Phaser texture for', tilesetKey);
-            return null;
-        }
-
-        const sourceImage = sourceTexture.getSourceImage();
-        const columns = Math.max(1, Math.floor(sourceImage.width / 25));
-        const sourceX = (localId % columns) * 25;
-        const sourceY = Math.floor(localId / columns) * 25;
-        const tileCanvas = document.createElement('canvas');
-        tileCanvas.width  = 25;
-        tileCanvas.height = 25;
-
-        const context = tileCanvas.getContext('2d');
-        context.imageSmoothingEnabled = false;
-        context.clearRect(0, 0, 25, 25);
-        context.drawImage(sourceImage, sourceX, sourceY, 25, 25, 0, 0, 25, 25);
-
+        const tileCanvas = this._createTileCanvas(tilesetKey, localId);
         const texture = new this.THREE.CanvasTexture(tileCanvas);
         texture.magFilter = this.THREE.NearestFilter;
         texture.minFilter = this.THREE.NearestFilter;
@@ -431,6 +482,114 @@ export default class GameplayThreeSurface {
 
         this.tileTextureCache[cacheKey] = texture;
         return texture;
+    }
+
+    _createTileCanvas(tilesetKey, localId) {
+        const sourceTexture = this.scene.textures.get(tilesetKey);
+        const tileCanvas = document.createElement('canvas');
+        tileCanvas.width  = 25;
+        tileCanvas.height = 25;
+        if (!sourceTexture) {
+            console.warn('GameplayThreeSurface: missing Phaser texture for', tilesetKey);
+            return tileCanvas;
+        }
+
+        const sourceImage = sourceTexture.getSourceImage();
+        const columns = Math.max(1, Math.floor(sourceImage.width / 25));
+        const sourceX = (localId % columns) * 25;
+        const sourceY = Math.floor(localId / columns) * 25;
+
+        const context = tileCanvas.getContext('2d');
+        context.imageSmoothingEnabled = false;
+        context.clearRect(0, 0, 25, 25);
+        context.drawImage(sourceImage, sourceX, sourceY, 25, 25, 0, 0, 25, 25);
+        return tileCanvas;
+    }
+
+    _getAverageOpaqueTileColor(tileCanvas, sampleRows) {
+        const context = tileCanvas.getContext('2d', { willReadFrequently: true });
+        const width = tileCanvas.width;
+        const height = tileCanvas.height;
+        const sampleStartY = Math.max(0, height - Math.max(1, sampleRows || 1));
+        const sampledColor = this._getAverageOpaqueCanvasColorInRange(
+            context,
+            width,
+            height,
+            0,
+            width,
+            sampleStartY,
+            height
+        );
+        if (sampledColor) {
+            return sampledColor;
+        }
+
+        const fullTileColor = this._getAverageOpaqueCanvasColorInRange(
+            context,
+            width,
+            height,
+            0,
+            width,
+            0,
+            height
+        );
+        return fullTileColor || { red: 152, green: 152, blue: 152 };
+    }
+
+    _getAverageOpaqueCanvasColorInRange(context, width, height, startX, endX, startY, endY, minimumLuminance) {
+        const clampedStartX = Math.max(0, Math.min(width, startX));
+        const clampedEndX   = Math.max(clampedStartX, Math.min(width, endX));
+        const clampedStartY = Math.max(0, Math.min(height, startY));
+        const clampedEndY   = Math.max(clampedStartY, Math.min(height, endY));
+        const imageData = context.getImageData(
+            clampedStartX,
+            clampedStartY,
+            clampedEndX - clampedStartX,
+            clampedEndY - clampedStartY
+        ).data;
+        let redTotal   = 0;
+        let greenTotal = 0;
+        let blueTotal  = 0;
+        let pixelCount = 0;
+
+        for (let index = 0; index < imageData.length; index += 4) {
+            if (imageData[index + 3] < 8) {
+                continue;
+            }
+            if (minimumLuminance != null) {
+                const luminance = (imageData[index] * 0.299) + (imageData[index + 1] * 0.587) + (imageData[index + 2] * 0.114);
+                if (luminance < minimumLuminance) {
+                    continue;
+                }
+            }
+
+            redTotal   += imageData[index];
+            greenTotal += imageData[index + 1];
+            blueTotal  += imageData[index + 2];
+            pixelCount++;
+        }
+
+        if (pixelCount <= 0) {
+            return null;
+        }
+
+        return {
+            red:   Math.round(redTotal / pixelCount),
+            green: Math.round(greenTotal / pixelCount),
+            blue:  Math.round(blueTotal / pixelCount)
+        };
+    }
+
+    _shadeRgbColor(color, brightness) {
+        return {
+            red:   Math.max(0, Math.min(255, Math.round(color.red * brightness))),
+            green: Math.max(0, Math.min(255, Math.round(color.green * brightness))),
+            blue:  Math.max(0, Math.min(255, Math.round(color.blue * brightness)))
+        };
+    }
+
+    _rgbCssString(color) {
+        return 'rgb(' + color.red + ', ' + color.green + ', ' + color.blue + ')';
     }
 
     _getOrCreateBillboardEntry(displayObject) {
@@ -555,6 +714,11 @@ export default class GameplayThreeSurface {
                 texture.dispose();
             }
         }
+        for (const texture of Object.values(this.wallSideTextureCache)) {
+            if (texture && texture.dispose) {
+                texture.dispose();
+            }
+        }
         for (const texture of Object.values(this.displayTextureCache)) {
             if (texture && texture.dispose) {
                 texture.dispose();
@@ -566,7 +730,6 @@ export default class GameplayThreeSurface {
                 material.dispose();
             }
         }
-
         const seenMaterials = new Set();
         for (const materials of Object.values(this.wallMaterialCache)) {
             for (const material of materials || []) {
@@ -589,8 +752,8 @@ export default class GameplayThreeSurface {
         if (this.wallGeometry && this.wallGeometry.dispose) {
             this.wallGeometry.dispose();
         }
-
         this.tileTextureCache   = {};
+        this.wallSideTextureCache = {};
         this.displayTextureCache = {};
         this.floorMaterialCache = {};
         this.wallMaterialCache  = {};
