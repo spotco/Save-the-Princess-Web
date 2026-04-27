@@ -3,6 +3,8 @@
 const SURFACE_ELEMENT_ID = 'gameplay-three-canvas';
 const TILE_WORLD_SIZE    = 1;
 const WALL_HEIGHT        = 0.78;
+const WALL_CORNER_SEAM_SIZE      = 0.07;
+const WALL_CORNER_SEAM_TOP_INSET = 0.01;
 const CAMERA_FOV         = 26;
 const CAMERA_HEIGHT_MULT = 1.58;
 const CAMERA_Z_MULT      = 0.60;
@@ -27,6 +29,7 @@ export default class GameplayThreeSurface {
         this.isBooted   = false;
         this.floorGeometry = null;
         this.wallGeometry  = null;
+        this.wallCornerSeamGeometry = null;
         this.currentMapWidth  = 25;
         this.currentMapHeight = 25;
         this.currentMapMaxDim = 25;
@@ -34,6 +37,7 @@ export default class GameplayThreeSurface {
         this.wallSideTextureCache = {};
         this.floorMaterialCache = {};
         this.wallMaterialCache  = {};
+        this.wallCornerSeamMaterialCache = {};
         this.displayTextureCache = {};
         this.billboardEntries    = new Map();
 
@@ -67,6 +71,11 @@ export default class GameplayThreeSurface {
         this.scene3d.add(this.billboardRoot);
         this.floorGeometry = new THREE.PlaneGeometry(TILE_WORLD_SIZE, TILE_WORLD_SIZE);
         this.wallGeometry  = new THREE.BoxGeometry(TILE_WORLD_SIZE, WALL_HEIGHT, TILE_WORLD_SIZE);
+        this.wallCornerSeamGeometry = new THREE.BoxGeometry(
+            WALL_CORNER_SEAM_SIZE,
+            WALL_HEIGHT - WALL_CORNER_SEAM_TOP_INSET,
+            WALL_CORNER_SEAM_SIZE
+        );
 
         this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
         this.camera.position.set(0, 0, 10);
@@ -180,6 +189,7 @@ export default class GameplayThreeSurface {
         this.clearWorld();
         this._positionCameraForMap(map);
         const THREE = this.THREE;
+        const wallTilesByCell = Array.from({ length: map.height }, () => Array(map.width).fill(null));
 
         for (let y = 0; y < map.height; y++) {
             for (let x = 0; x < map.width; x++) {
@@ -199,6 +209,7 @@ export default class GameplayThreeSurface {
                 const worldZ = y + 0.5;
 
                 if (isWallTile) {
+                    wallTilesByCell[y][x] = tileInfo.tilesetKey;
                     const wallMesh = new THREE.Mesh(
                         this.wallGeometry,
                         this._getWallMaterials(tileInfo.tilesetKey, tileInfo.localId)
@@ -218,6 +229,8 @@ export default class GameplayThreeSurface {
                 }
             }
         }
+
+        this._buildWallCornerSeams(wallTilesByCell);
     }
 
     clearWorld() {
@@ -295,6 +308,7 @@ export default class GameplayThreeSurface {
         this.camera     = null;
         this.floorGeometry = null;
         this.wallGeometry  = null;
+        this.wallCornerSeamGeometry = null;
         this.worldRoot  = null;
         this.billboardRoot = null;
         this.domElement = null;
@@ -353,6 +367,50 @@ export default class GameplayThreeSurface {
         return Math.round(worldZ * 100) * 10 + layerOffset;
     }
 
+    _buildWallCornerSeams(wallTilesByCell) {
+        if (!this.worldRoot || !this.wallCornerSeamGeometry) {
+            return;
+        }
+
+        const height = wallTilesByCell.length;
+        const width = height > 0 ? wallTilesByCell[0].length : 0;
+        const seamHeight = WALL_HEIGHT - WALL_CORNER_SEAM_TOP_INSET;
+
+        for (let vertexY = 0; vertexY <= height; vertexY++) {
+            for (let vertexX = 0; vertexX <= width; vertexX++) {
+                const surroundingTiles = [
+                    this._getWallTilesetKeyAt(wallTilesByCell, vertexX - 1, vertexY - 1),
+                    this._getWallTilesetKeyAt(wallTilesByCell, vertexX, vertexY - 1),
+                    this._getWallTilesetKeyAt(wallTilesByCell, vertexX - 1, vertexY),
+                    this._getWallTilesetKeyAt(wallTilesByCell, vertexX, vertexY)
+                ].filter(Boolean);
+
+                if (surroundingTiles.length !== 1 && surroundingTiles.length !== 3) {
+                    continue;
+                }
+
+                const seamMesh = new this.THREE.Mesh(
+                    this.wallCornerSeamGeometry,
+                    this._getWallCornerSeamMaterial(surroundingTiles[0])
+                );
+                seamMesh.position.set(vertexX, seamHeight / 2, vertexY);
+                seamMesh.renderOrder = this._depthRenderOrderFromWorldZ(vertexY, WALL_RENDER_LAYER + 2);
+                this.worldRoot.add(seamMesh);
+            }
+        }
+    }
+
+    _getWallTilesetKeyAt(wallTilesByCell, x, y) {
+        if (!wallTilesByCell || y < 0 || y >= wallTilesByCell.length || x < 0) {
+            return null;
+        }
+        const row = wallTilesByCell[y];
+        if (!row || x >= row.length) {
+            return null;
+        }
+        return row[x] || null;
+    }
+
     _getFloorMaterial(tilesetKey, localId) {
         const cacheKey = tilesetKey + ':' + localId;
         if (this.floorMaterialCache[cacheKey]) {
@@ -397,6 +455,18 @@ export default class GameplayThreeSurface {
         ];
         this.wallMaterialCache[cacheKey] = materials;
         return materials;
+    }
+
+    _getWallCornerSeamMaterial(tilesetKey) {
+        if (this.wallCornerSeamMaterialCache[tilesetKey]) {
+            return this.wallCornerSeamMaterialCache[tilesetKey];
+        }
+
+        const material = new this.THREE.MeshBasicMaterial({
+            color: 0x000000
+        });
+        this.wallCornerSeamMaterialCache[tilesetKey] = material;
+        return material;
     }
 
     _getWallSideTexture(tilesetKey, localId) {
@@ -730,6 +800,11 @@ export default class GameplayThreeSurface {
                 material.dispose();
             }
         }
+        for (const material of Object.values(this.wallCornerSeamMaterialCache)) {
+            if (material && material.dispose) {
+                material.dispose();
+            }
+        }
         const seenMaterials = new Set();
         for (const materials of Object.values(this.wallMaterialCache)) {
             for (const material of materials || []) {
@@ -752,11 +827,15 @@ export default class GameplayThreeSurface {
         if (this.wallGeometry && this.wallGeometry.dispose) {
             this.wallGeometry.dispose();
         }
+        if (this.wallCornerSeamGeometry && this.wallCornerSeamGeometry.dispose) {
+            this.wallCornerSeamGeometry.dispose();
+        }
         this.tileTextureCache   = {};
         this.wallSideTextureCache = {};
         this.displayTextureCache = {};
         this.floorMaterialCache = {};
         this.wallMaterialCache  = {};
+        this.wallCornerSeamMaterialCache = {};
         this.billboardEntries.clear();
     }
 
