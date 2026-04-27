@@ -86,6 +86,8 @@ export default class Player {
         this.haskeySprite = scene.add.image(
             this.x + 2, this.y - 21, 'havekey'
         ).setOrigin(0, 0).setDepth(11).setVisible(false);
+        this.haskeySprite.stpThreeDepthAnchor = this.sprite;
+        this.haskeySprite.stpThreeRenderOrderBias = 1000;
 
         // Input — arrow keys + WASD
         this.keys = scene.input.keyboard.addKeys({

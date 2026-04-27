@@ -822,6 +822,7 @@ export default class GameplayThreeSurface {
             ? depthDisplayObject.getTopLeft()
             : { x: depthDisplayObject.x || 0, y: depthDisplayObject.y || 0 };
         const depthHeight = depthDisplayObject.displayHeight || depthDisplayObject.height || height;
+        const renderOrderBias = displayObject.stpThreeRenderOrderBias || 0;
 
         entry.sprite.position.set(
             (topLeft.x + width / 2) / 25,
@@ -833,7 +834,7 @@ export default class GameplayThreeSurface {
         entry.sprite.renderOrder = this._depthRenderOrderFromWorldZ(
             (depthTopLeft.y + depthHeight) / 25,
             BILLBOARD_RENDER_LAYER
-        );
+        ) + renderOrderBias;
 
         if (displayObject.setAlpha && displayObject.alpha !== 0) {
             displayObject.setAlpha(0);
