@@ -87,6 +87,51 @@ final ledge is added.
   unknown GIDs, bad dimensions, and missing player starts, but it cannot prove
   that a level is solvable. Use the editor play mode for that.
 
+## Level Design Findings
+
+The best generated Level 1-style drafts came from designing progression first,
+then decorating and tuning. Avoid starting from a random open maze or a simple
+transformation of an existing level.
+
+Good Level 1-style structure:
+
+- Use a clear room chain: start room, first lesson room, middle pressure room,
+  checkpoint room, final approach, and princess room.
+- Every carved room should matter. The shortest route from the player to the
+  princess should enter every intended room, unless the design explicitly calls
+  for an optional reward or secret.
+- Keep rooms distinct. Use narrow one- or two-tile connectors and empty void
+  between room clusters so the map reads as a castle layout, not one giant
+  connected floor.
+- Put save points at natural checkpoints after a challenge, not inside the
+  active threat area of that challenge.
+- Preserve Level 1's ingredient language for Level 1-like requests: dogs,
+  save points, princess, walls, torches/windows, and no doors/guards/wizards
+  unless the user asks for later-level mechanics.
+
+Dog placement:
+
+- Dogs should face along the intended player approach lane or across a room the
+  player must cross. Do not scatter dogs with arbitrary facing.
+- Pair dogs only when the player has room to read and respond. Early rooms
+  should teach one sightline at a time; later rooms can use crossfire.
+- Avoid pointing a dog directly at a save point. This can cause an immediate
+  death loop after respawn.
+- A useful safety check is: for each dog, trace from the dog in its facing
+  direction until a wall/torch/window wall is hit. No save point may appear on
+  that trace.
+
+Progression checks worth running before playtest:
+
+- Exactly one player start and one normal goal for a Level 1-like map.
+- The player can reach the princess through passable tiles when enemy movement
+  is ignored.
+- The shortest passable route enters every intended room.
+- No save point is in any dog's direct sightline.
+- Entity counts should stay close to the reference unless changing difficulty
+  deliberately. For Level 1-like maps, `1` player, `1` princess, roughly `5`
+  save points, and roughly `15` dogs felt close to the source.
+
 ## Wall Style
 
 The original levels do not use one generic wall tile everywhere. A visually
