@@ -1,6 +1,6 @@
 # Save the Princess - Completed Implementation Notes
 
-**Last Updated**: 2026-04-26
+**Last Updated**: 2026-05-08
 
 ---
 
@@ -8,6 +8,16 @@ This file tracks completed implementation work for the Java-faithful port.
 
 Active and upcoming work belongs in `PLAN.md`.
 Features not present in the original Java source belong in `ADDITIONS_FROM_SOURCE.md`.
+
+---
+
+## Timing Stability
+- [x] Added a fixed 60 Hz gameplay timestep in `GameScene`.
+- [x] Capped gameplay logic so high-refresh displays do not advance movement,
+      enemy AI, object counters, or Java-style animations faster than intended.
+- [x] Added limited low-FPS catch-up so slow frames can run multiple fixed
+      gameplay steps before rendering, with a clamp to avoid runaway catch-up
+      after long stalls.
 
 ---
 

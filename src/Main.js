@@ -19,6 +19,12 @@ import DebugCommands     from './DebugCommands.js';
 import RenderModeManager from './RenderModeManager.js';
 import GameplayThreeSurface from './three/GameplayThreeSurface.js';
 
+const EXPECTED_GAMEPLAY_FPS = 60;
+const GAMEPLAY_STEP_MS = 1000 / EXPECTED_GAMEPLAY_FPS;
+const MAX_GAMEPLAY_CATCH_UP_STEPS = 5;
+const MAX_GAMEPLAY_FRAME_DELTA = GAMEPLAY_STEP_MS * MAX_GAMEPLAY_CATCH_UP_STEPS;
+const GAMEPLAY_STEP_EPSILON = 0.0001;
+
 // Single VirtualControls instance shared across all scene transitions.
 const virtualControls = new VirtualControls();
 window.stpVirtualControls = virtualControls;
@@ -395,10 +401,12 @@ class GameScene extends Phaser.Scene {
         this.windowPointerDownHandler = null;
         this.gameplayThreeSurface = null;
         this.renderModeUnsubscribe = null;
+        this.gameplayStepAccumulator = 0;
     }
 
     async create() {
         this.isReady = false;
+        this.gameplayStepAccumulator = 0;
         this.renderMode = RenderModeManager.applySceneMode('GameScene');
         this.gameplayThreeSurface = new GameplayThreeSurface(this);
 
@@ -496,7 +504,23 @@ class GameScene extends Phaser.Scene {
     update(time, delta) {
         if (!this.isReady) return;
         if (!this.stpview) return;
-        this.stpview.update(delta);
+
+        const frameDelta = Number.isFinite(delta) ? delta : GAMEPLAY_STEP_MS;
+        this.gameplayStepAccumulator += Math.min(frameDelta, MAX_GAMEPLAY_FRAME_DELTA);
+
+        let steps = 0;
+        while (this.gameplayStepAccumulator + GAMEPLAY_STEP_EPSILON >= GAMEPLAY_STEP_MS &&
+                steps < MAX_GAMEPLAY_CATCH_UP_STEPS) {
+            this.stpview.update(GAMEPLAY_STEP_MS);
+            this.gameplayStepAccumulator -= GAMEPLAY_STEP_MS;
+            steps++;
+        }
+
+        if (steps === MAX_GAMEPLAY_CATCH_UP_STEPS &&
+                this.gameplayStepAccumulator >= GAMEPLAY_STEP_MS) {
+            this.gameplayStepAccumulator = 0;
+        }
+
         this.stpview.renderWorld();
     }
 

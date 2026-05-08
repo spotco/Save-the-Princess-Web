@@ -177,7 +177,7 @@ export default class STPView {
         return true;
     }
 
-    // Called every frame from GameScene.update(time, delta).
+    // Called once per fixed 60 Hz gameplay step from GameScene.update(time, delta).
     // Mirrors STPGame.update().
     update(delta) {
         if (this.animationManager && this.animationManager.inAnimation) {
@@ -230,7 +230,7 @@ export default class STPView {
         if (this.seeme) this.seemecounter++;
         if (this.seemecounter > 50) this.seemecounter = 0;
 
-        // Advance timer using Phaser delta (milliseconds)
+        // Advance timer using fixed-step milliseconds.
         if (this.timercounter) this.timercounter.tick(delta);
 
         this._render();
